@@ -547,7 +547,7 @@ const Home = () => {
           font-weight: 600;
           margin-bottom: 2rem;
         }
-
+        
         .content-image {
           width: 100%;
           height: 400px;

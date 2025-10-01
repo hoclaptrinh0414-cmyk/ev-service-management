@@ -1,65 +1,41 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import { authService } from '../services/authService';
-
-const AuthContext = createContext();
-
-export const AuthProvider = ({ children }) => {
-       const [user, setUser] = useState(null);
-       const [loading, setLoading] = useState(true);
-
-       useEffect(() => {
-              // Kiểm tra user đã đăng nhập chưa khi app khởi động
-              const currentUser = authService.getCurrentUser();
-              if (currentUser) {
-                     setUser(currentUser);
-              }
-              setLoading(false);
-       }, []);
-
-       const login = async (credentials) => {
-              try {
-                     const response = await authService.login(credentials);
-                     setUser(response.user);
-                     return response;
-              } catch (error) {
-                     throw error;
-              }
-       };
-
-       const register = async (userData) => {
-              try {
-                     const response = await authService.register(userData);
-                     return response;
-              } catch (error) {
-                     throw error;
-              }
-       };
-
-       const logout = () => {
-              authService.logout();
-              setUser(null);
-       };
-
-       const value = {
-              user,
-              login,
-              register,
-              logout,
-              loading,
-              isAuthenticated: !!user
-       };
-
-       return (
-              <AuthContext.Provider value={value}>
-                     {children}
-              </AuthContext.Provider>
-       );
-};
+// src/hooks/useAuth.js - COMPLETE FILE - CREATE THIS NEW FILE
+import { useState, useEffect } from 'react';
+import { authUtils } from '../services/api';
 
 export const useAuth = () => {
-       const context = useContext(AuthContext);
-       if (!context) {
-              throw new Error('useAuth must be used within AuthProvider');
-       }
-       return context;
+  const [user, setUser] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const checkAuth = () => {
+      const storedUser = authUtils.getUser();
+      const token = authUtils.getToken();
+      
+      if (storedUser && token) {
+        setUser(storedUser);
+        setIsAuthenticated(true);
+      } else {
+        setUser(null);
+        setIsAuthenticated(false);
+      }
+      setLoading(false);
+    };
+
+    checkAuth();
+  }, []);
+
+  const logout = () => {
+    authUtils.clearAuth();
+    setUser(null);
+    setIsAuthenticated(false);
+    window.location.href = '/login';
+  };
+
+  return {
+    user,
+    isAuthenticated,
+    loading,
+    logout
+  };
 };

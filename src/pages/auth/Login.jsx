@@ -135,6 +135,19 @@ const Login = () => {
     }
   };
 
+  // Handle social login success
+  const handleSocialLoginSuccess = (result) => {
+    console.log('Social login success:', result);
+    setError('');
+    navigate('/home');
+  };
+
+  // Handle social login error
+  const handleSocialLoginError = (errorMessage) => {
+    console.error('Social login error:', errorMessage);
+    setError(errorMessage);
+  };
+
   return (
     <>
       <div className="container-fluid p-0 h-100">
@@ -213,13 +226,28 @@ const Login = () => {
                   Forgot Password?
                 </Link>
                 
-                <div className="d-flex justify-content-center gap-3 mb-3">
-                  <a href="#" className="social-icon" title="Đăng nhập với Facebook">
-                    <i className="bi bi-facebook fs-4"></i>
-                  </a>
-                  <a href="#" className="social-icon" title="Đăng nhập với Google">
-                    <i className="bi bi-google fs-4"></i>
-                  </a>
+                {/* Divider */}
+                <div className="divider-container mb-3">
+                  <hr className="divider-line" />
+                  <span className="divider-text">or</span>
+                  <hr className="divider-line" />
+                </div>
+                
+                {/* Social Login Buttons */}
+                <div className="social-login-container mb-3">
+                  <button className="social-btn facebook-btn" onClick={() => handleSocialLoginSuccess()}>
+                    <i className="bi bi-facebook"></i>
+                    <span>Continue with Facebook</span>
+                  </button>
+                  <button className="social-btn google-btn" onClick={() => handleSocialLoginSuccess()}>
+                    <svg className="google-icon" width="18" height="18" viewBox="0 0 24 24">
+                      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                    </svg>
+                    <span>Continue with Google</span>
+                  </button>
                 </div>
                 
                 <p className="text-muted">
@@ -265,6 +293,7 @@ const Login = () => {
           color: white;
           transition: all 0.3s ease;
           border: none;
+          font-weight: 500;
         }
         .login-btn:hover:not(:disabled) {
           background-color: #333;
@@ -276,14 +305,6 @@ const Login = () => {
           background-color: #6c757d;
           cursor: not-allowed;
           opacity: 0.65;
-        }
-        .social-icon {
-          color: #6c757d;
-          transition: all 0.3s ease;
-        }
-        .social-icon:hover {
-          color: #007bff;
-          transform: scale(1.1);
         }
         .left-col img {
           width: 100%;
@@ -308,6 +329,90 @@ const Login = () => {
           text-align: left;
           font-size: 0.9rem;
         }
+
+        /* Divider Styles */
+        .divider-container {
+          display: flex;
+          align-items: center;
+          margin: 1.5rem 0;
+        }
+        .divider-line {
+          flex: 1;
+          height: 1px;
+          background-color: #e0e0e0;
+          border: none;
+          margin: 0;
+        }
+        .divider-text {
+          padding: 0 1rem;
+          color: #666;
+          font-size: 0.9rem;
+          font-weight: 500;
+        }
+
+        /* Social Login Container */
+        .social-login-container {
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+        }
+
+        /* Base Social Button Styles */
+        .social-btn {
+          width: 100%;
+          padding: 0.75rem 1rem;
+          border: 2px solid #e0e0e0;
+          border-radius: 8px;
+          background-color: white;
+          color: #333;
+          font-size: 0.95rem;
+          font-weight: 500;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.75rem;
+          transition: all 0.2s ease;
+          cursor: pointer;
+          text-decoration: none;
+        }
+
+        .social-btn:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+          text-decoration: none;
+        }
+
+        /* Facebook Button */
+        .facebook-btn {
+          border-color: #1877f2;
+          background-color: #1877f2;
+          color: white;
+        }
+        .facebook-btn:hover {
+          background-color: #166fe5;
+          border-color: #166fe5;
+          color: white;
+        }
+        .facebook-btn i {
+          font-size: 1.1rem;
+        }
+
+        /* Google Button */
+        .google-btn {
+          border-color: #dadce0;
+          background-color: white;
+          color: #3c4043;
+        }
+        .google-btn:hover {
+          background-color: #f8f9fa;
+          border-color: #c0c0c0;
+          color: #3c4043;
+        }
+        .google-icon {
+          flex-shrink: 0;
+        }
+
+        /* Responsive */
         @media (max-width: 768px) {
           .row .col-md-4,
           .row .col-md-8 {
@@ -316,6 +421,20 @@ const Login = () => {
           }
           .left-col img {
             height: auto;
+          }
+          .social-btn {
+            font-size: 0.9rem;
+            padding: 0.7rem 0.8rem;
+          }
+        }
+
+        @media (max-width: 576px) {
+          .social-login-container {
+            gap: 0.6rem;
+          }
+          .social-btn {
+            padding: 0.65rem 0.75rem;
+            font-size: 0.85rem;
           }
         }
       `}</style>
