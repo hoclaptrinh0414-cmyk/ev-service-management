@@ -1,8 +1,10 @@
-// src/pages/auth/Login.jsx - GIỮ UI CŨ + THÊM LOGIC MỚI
+// src/pages/auth/Login.jsx - HOÀN CHỈNH - COPY FILE NÀY VÀO PROJECT
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { authAPI, authUtils, socialAPI } from '../../services/api';
+import { authAPI, authUtils } from '../../services/api';
 import EmailVerificationModal from '../../components/EmailVerificationModal';
+import GoogleLoginButton from '../../components/GoogleLoginButton';
+import FacebookLoginButton from '../../components/FacebookLoginButton';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
@@ -26,7 +28,7 @@ const Login = () => {
   };
 
   // ============================================
-  // LOGIC MỚI - Redirect dựa vào Role từ API
+  // LOGIC REDIRECT DỰA VÀO ROLE TỪ API
   // ============================================
   const redirectBasedOnRole = (user) => {
     console.log('🔍 User from API:', user);
@@ -82,7 +84,7 @@ const Login = () => {
       authUtils.setAuth(token, user);
       console.log('Auth data saved to localStorage');
       
-      // LOGIC MỚI - Redirect dựa vào role
+      // Redirect dựa vào role
       redirectBasedOnRole(user);
     } else {
       console.error('Missing token or user in response');
@@ -152,41 +154,23 @@ const Login = () => {
   };
 
   // ============================================
-  // TÍNH NĂNG MỚI - Social Login
+  // SOCIAL LOGIN HANDLERS - DÙNG COMPONENTS CÓ SẴN
   // ============================================
-  const handleGoogleLogin = async () => {
-    try {
-      console.log('🔵 Google login clicked');
-      // TODO: Implement Google OAuth
-      // const credential = await getGoogleCredential();
-      // const result = await socialAPI.googleLogin(credential);
-      // handleLoginSuccess(result);
-      alert('Google login - Chức năng đang phát triển');
-    } catch (error) {
-      console.error('Google login error:', error);
-      setError('Đăng nhập Google thất bại');
-    }
+  const handleSocialLoginSuccess = (result) => {
+    console.log('✅ Social login success:', result);
+    handleLoginSuccess(result);
   };
 
-  const handleFacebookLogin = async () => {
-    try {
-      console.log('🔵 Facebook login clicked');
-      // TODO: Implement Facebook OAuth
-      // const accessToken = await getFacebookAccessToken();
-      // const result = await socialAPI.facebookLogin(accessToken);
-      // handleLoginSuccess(result);
-      alert('Facebook login - Chức năng đang phát triển');
-    } catch (error) {
-      console.error('Facebook login error:', error);
-      setError('Đăng nhập Facebook thất bại');
-    }
+  const handleSocialLoginError = (errorMessage) => {
+    console.error('❌ Social login error:', errorMessage);
+    setError(errorMessage);
   };
 
   return (
     <div className="container-fluid p-0" style={{ height: '100vh', width: '100vw', margin: 0, padding: 0, overflow: 'hidden' }}>
       <div className="card border-0" style={{ height: '100%', width: '100%', margin: 0, padding: 0 }}>
         <div className="row" style={{ height: '100%', margin: 0 }}>
-          {/* Cột hình ảnh (2/3 màn hình trên desktop) */}
+          {/* Cột hình ảnh */}
           <div className="col-md-8 d-none d-md-block" style={{ height: '100%', padding: 0 }}>
             <img
               src="https://tsportline.com/cdn/shop/files/black-tesla-model-s-21-inch-aftermarket-wheels-tss-gloss-black-rear-1920-2_1600x.png?v=1680200206"
@@ -195,7 +179,8 @@ const Login = () => {
               style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'left center' }}
             />
           </div>
-          {/* Cột form (1/3 màn hình trên desktop) */}
+          
+          {/* Cột form */}
           <div className="col-md-4 d-flex align-items-center justify-content-center" style={{ height: '100%', padding: 0 }}>
             <div className="card-body text-center" style={{ maxWidth: '400px', width: '100%', padding: '1rem' }}>
               <h3
@@ -267,24 +252,51 @@ const Login = () => {
                 Forgot Password?
               </Link>
 
-              {/* GIỮ NGUYÊN UI CŨ - Icon đơn giản */}
+              {/* ICON ĐƠN GIẢN - HOẠT ĐỘNG */}
               <div className="d-flex justify-content-center gap-3 mb-3">
-                <button
-                  className="btn social-icon"
-                  style={{ color: '#1877f2' }}
-                  onClick={handleFacebookLogin}
-                  title="Đăng nhập với Facebook"
-                >
-                  <i className="bi bi-facebook fs-4"></i>
-                </button>
-                <button
-                  className="btn social-icon"
-                  style={{ color: '#db4437' }}
-                  onClick={handleGoogleLogin}
-                  title="Đăng nhập với Google"
-                >
-                  <i className="bi bi-google fs-4"></i>
-                </button>
+                <div style={{ position: 'relative', width: '50px', height: '50px' }}>
+                  <i 
+                    className="bi bi-facebook" 
+                    style={{ 
+                      fontSize: '32px', 
+                      color: '#1877f2',
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      transform: 'translate(-50%, -50%)',
+                      pointerEvents: 'none',
+                      zIndex: 2
+                    }}
+                  ></i>
+                  <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0 }}>
+                    <FacebookLoginButton
+                      onSuccess={handleSocialLoginSuccess}
+                      onError={handleSocialLoginError}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ position: 'relative', width: '50px', height: '50px' }}>
+                  <i 
+                    className="bi bi-google" 
+                    style={{ 
+                      fontSize: '32px', 
+                      color: '#db4437',
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      transform: 'translate(-50%, -50%)',
+                      pointerEvents: 'none',
+                      zIndex: 2
+                    }}
+                  ></i>
+                  <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0 }}>
+                    <GoogleLoginButton
+                      onSuccess={handleSocialLoginSuccess}
+                      onError={handleSocialLoginError}
+                    />
+                  </div>
+                </div>
               </div>
 
               <p className="text-muted">
@@ -350,16 +362,57 @@ const Login = () => {
           cursor: not-allowed;
         }
 
-        .social-icon {
-          transition: all 0.3s ease;
-          background: none;
-          border: none;
-          padding: 0;
+        /* Social Login Wrapper - ẨN BUTTON XẤU, CHỈ HIỆN ICON */
+        .social-login-wrapper {
+          position: relative;
+          width: 48px;
+          height: 48px;
         }
 
-        .social-icon:hover {
-          color: #007bff;
+        .social-login-wrapper::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-family: 'bootstrap-icons';
+          font-size: 28px;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          z-index: 1;
+          pointer-events: none;
+        }
+
+        .social-login-wrapper:nth-child(1)::before {
+          content: '\\F344'; /* Facebook icon */
+          color: #1877f2;
+        }
+
+        .social-login-wrapper:nth-child(2)::before {
+          content: '\\F3F0'; /* Google icon */
+          color: #db4437;
+        }
+
+        .social-login-wrapper:hover::before {
           transform: scale(1.1);
+        }
+
+        /* ẨN HẾT CÁC BUTTON MẶC ĐỊNH */
+        .social-login-wrapper > div,
+        .social-login-wrapper button,
+        .social-login-wrapper a,
+        .social-login-wrapper iframe {
+          position: absolute !important;
+          top: 0 !important;
+          left: 0 !important;
+          width: 100% !important;
+          height: 100% !important;
+          opacity: 0 !important;
+          cursor: pointer !important;
         }
 
         img {
