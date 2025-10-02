@@ -1,14 +1,13 @@
-// src/services/api.js - COMPLETE FIXED FILE - REPLACE YOUR ENTIRE api.js WITH THIS
+// src/services/api.js - COMPLETE FILE - COPY TOÀN BỘ FILE NÀY
 const API_CONFIG = {
   baseURL: process.env.REACT_APP_API_URL || 'https://ccb8c212fd09.ngrok-free.app/api',
-  timeout: 15000, // Tăng timeout lên 15s
+  timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
-    'ngrok-skip-browser-warning': 'true' // Bỏ qua warning của ngrok
+    'ngrok-skip-browser-warning': 'true'
   },
 };
 
-// Thêm logging để debug
 console.log('🔧 API Configuration:', {
   baseURL: API_CONFIG.baseURL,
   appURL: process.env.REACT_APP_APP_URL || 'http://localhost:3000'
@@ -20,7 +19,6 @@ class UnifiedAPIService {
     this.timeout = API_CONFIG.timeout;
   }
 
-  // Helper method to get headers
   getHeaders(includeAuth = true) {
     const headers = { ...API_CONFIG.headers };
     
@@ -34,7 +32,6 @@ class UnifiedAPIService {
     return headers;
   }
 
-  // Generic request method với error handling được cải thiện
   async request(endpoint, options = {}) {
     const url = `${this.baseURL}${endpoint}`;
     const config = {
@@ -43,7 +40,6 @@ class UnifiedAPIService {
       ...options,
     };
 
-    // Add timeout
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
     config.signal = controller.signal;
@@ -64,7 +60,6 @@ class UnifiedAPIService {
         statusText: response.statusText
       });
 
-      // Parse response
       let data;
       const contentType = response.headers.get('content-type');
       if (contentType && contentType.includes('application/json')) {
@@ -91,7 +86,6 @@ class UnifiedAPIService {
         stack: error.stack
       });
       
-      // Handle different types of errors
       if (error.name === 'AbortError') {
         throw new Error('Request timeout');
       }
@@ -124,7 +118,7 @@ class UnifiedAPIService {
       fullName: userData.fullName,
       email: userData.email,
       phoneNumber: userData.phone || null,
-      roleId: userData.roleId || 4 // Default customer role
+      roleId: userData.roleId || 4
     };
 
     const response = await this.request('/auth/register', {
@@ -143,7 +137,6 @@ class UnifiedAPIService {
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      // Always clear auth data
       this.clearAuth();
     }
   }
@@ -289,6 +282,46 @@ class UnifiedAPIService {
     return response;
   }
 
+  // ============ VEHICLE MANAGEMENT METHODS - NEW ============
+  async getCustomerVehicles(params = {}) {
+    const queryString = new URLSearchParams(params).toString();
+    const response = await this.request(`/customer-vehicles${queryString ? `?${queryString}` : ''}`);
+    return response;
+  }
+
+  async getVehicle(vehicleId) {
+    const response = await this.request(`/customer-vehicles/${vehicleId}`);
+    return response;
+  }
+
+  async addVehicle(vehicleData) {
+    const response = await this.request('/customer-vehicles', {
+      method: 'POST',
+      body: JSON.stringify(vehicleData)
+    });
+    return response;
+  }
+
+  async updateVehicle(vehicleId, vehicleData) {
+    const response = await this.request(`/customer-vehicles/${vehicleId}`, {
+      method: 'PUT',
+      body: JSON.stringify(vehicleData)
+    });
+    return response;
+  }
+
+  async deleteVehicle(vehicleId) {
+    const response = await this.request(`/customer-vehicles/${vehicleId}`, {
+      method: 'DELETE'
+    });
+    return response;
+  }
+
+  async getVehicleStatistics() {
+    const response = await this.request('/customer-vehicles/statistics');
+    return response;
+  }
+
   // ============ SERVICE BOOKING METHODS ============
   async bookService(serviceData) {
     const response = await this.request('/bookings', {
@@ -422,21 +455,17 @@ class UnifiedAPIService {
 
   // ============ ERROR HANDLING UTILITY ============
   handleApiError(error) {
-    // Handle network errors
     if (error.message === 'Network error - Cannot connect to server') {
       return 'Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng.';
     }
 
-    // Handle timeout errors
     if (error.message === 'Request timeout') {
       return 'Yêu cầu quá thời gian chờ. Vui lòng thử lại.';
     }
 
-    // Handle API response errors
     if (error.response) {
       const { status, data } = error.response;
 
-      // Handle specific error codes
       if (data && data.errorCode) {
         switch (data.errorCode) {
           case 'INVALID_TOKEN':
@@ -460,7 +489,6 @@ class UnifiedAPIService {
         }
       }
 
-      // Handle HTTP status codes
       switch (status) {
         case 400:
           return data.message || 'Yêu cầu không hợp lệ.';
@@ -481,15 +509,14 @@ class UnifiedAPIService {
       }
     }
 
-    // Handle generic errors
     return error.message || 'Có lỗi xảy ra. Vui lòng thử lại.';
   }
 }
 
-// Tạo instance và export
+// Tạo instance
 const apiService = new UnifiedAPIService();
 
-// ============ EXPORTED API OBJECTS - FIXED VERSION ============
+// ============ EXPORTED API OBJECTS ============
 export const authAPI = {
   login: (credentials) => apiService.login(credentials),
   register: (userData) => apiService.register(userData),
@@ -530,6 +557,16 @@ export const usersAPI = {
   deleteUser: (userId) => apiService.deleteUser(userId)
 };
 
+// ============ VEHICLE API - NEW ============
+export const vehicleAPI = {
+  getCustomerVehicles: (params) => apiService.getCustomerVehicles(params),
+  getVehicle: (vehicleId) => apiService.getVehicle(vehicleId),
+  addVehicle: (vehicleData) => apiService.addVehicle(vehicleData),
+  updateVehicle: (vehicleId, vehicleData) => apiService.updateVehicle(vehicleId, vehicleData),
+  deleteVehicle: (vehicleId) => apiService.deleteVehicle(vehicleId),
+  getVehicleStatistics: () => apiService.getVehicleStatistics()
+};
+
 export const serviceAPI = {
   bookService: (serviceData) => apiService.bookService(serviceData),
   getBookings: () => apiService.getBookings(),
@@ -565,8 +602,6 @@ export const authUtils = {
   setAuth: (token, user) => apiService.setAuth(token, user)
 };
 
-// Export error handling utility
 export const handleApiError = (error) => apiService.handleApiError(error);
 
-// Export default instance
 export default apiService;
