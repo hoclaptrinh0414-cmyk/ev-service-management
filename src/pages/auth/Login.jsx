@@ -135,7 +135,7 @@ const Login = () => {
               src="https://tsportline.com/cdn/shop/files/black-tesla-model-s-21-inch-aftermarket-wheels-tss-gloss-black-rear-1920-2_1600x.png?v=1680200206"
               alt="Tesla Model S"
               className="img-fluid"
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'left center' }}
             />
           </div>
           {/* Cột form (1/3 màn hình trên desktop) */}
@@ -206,9 +206,10 @@ const Login = () => {
                 </button>
               </form>
 
-              <a href="#" className="text-decoration-none text-muted mb-3 d-block">
+              {/* Sửa lại thành Link để chuyển trang đúng */}
+              <Link to="/forgot-password" className="text-decoration-none text-muted mb-3 d-block">
                 Forgot Password?
-              </a>
+              </Link>
 
               <div className="d-flex justify-content-center gap-3 mb-3">
                 <button
@@ -306,6 +307,21 @@ const Login = () => {
           width: 100%;
           height: 100%;
           object-fit: cover;
+          object-position: left center;
+          transition: none !important;
+          transform: none !important;
+        }
+
+        img:hover {
+          transform: none !important;
+        }
+
+        .img-fluid {
+          transition: none !important;
+        }
+
+        .img-fluid:hover {
+          transform: none !important;
         }
 
         @media (max-width: 768px) {
