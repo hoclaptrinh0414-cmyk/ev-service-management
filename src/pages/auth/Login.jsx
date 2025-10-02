@@ -1,6 +1,7 @@
+// src/pages/auth/Login.jsx - GIỮ UI CŨ + THÊM LOGIC MỚI
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { authAPI, authUtils } from '../../services/api';
+import { authAPI, authUtils, socialAPI } from '../../services/api';
 import EmailVerificationModal from '../../components/EmailVerificationModal';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
@@ -22,6 +23,32 @@ const Login = () => {
       [e.target.name]: e.target.value,
     });
     if (error) setError('');
+  };
+
+  // ============================================
+  // LOGIC MỚI - Redirect dựa vào Role từ API
+  // ============================================
+  const redirectBasedOnRole = (user) => {
+    console.log('🔍 User from API:', user);
+    
+    const role = user.role || user.Role || user.roleName || user.RoleName;
+    const roleId = user.roleId || user.RoleId;
+    
+    console.log('📋 Role info:', { role, roleId });
+    
+    // Admin/Staff -> /admin, Customer -> /home
+    if (
+      role?.toLowerCase() === 'admin' ||
+      role?.toLowerCase() === 'staff' ||
+      roleId === 1 || 
+      roleId === 2
+    ) {
+      console.log('✅ Redirect to /admin');
+      navigate('/admin');
+    } else {
+      console.log('✅ Redirect to /home');
+      navigate('/home');
+    }
   };
 
   const handleLoginSuccess = (result) => {
@@ -54,10 +81,9 @@ const Login = () => {
     if (token && user) {
       authUtils.setAuth(token, user);
       console.log('Auth data saved to localStorage');
-      console.log('Token:', token);
-      console.log('User:', user);
       
-      navigate('/home');
+      // LOGIC MỚI - Redirect dựa vào role
+      redirectBasedOnRole(user);
     } else {
       console.error('Missing token or user in response');
       setError('Dữ liệu đăng nhập không hợp lệ');
@@ -122,6 +148,37 @@ const Login = () => {
       handleLoginError(error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ============================================
+  // TÍNH NĂNG MỚI - Social Login
+  // ============================================
+  const handleGoogleLogin = async () => {
+    try {
+      console.log('🔵 Google login clicked');
+      // TODO: Implement Google OAuth
+      // const credential = await getGoogleCredential();
+      // const result = await socialAPI.googleLogin(credential);
+      // handleLoginSuccess(result);
+      alert('Google login - Chức năng đang phát triển');
+    } catch (error) {
+      console.error('Google login error:', error);
+      setError('Đăng nhập Google thất bại');
+    }
+  };
+
+  const handleFacebookLogin = async () => {
+    try {
+      console.log('🔵 Facebook login clicked');
+      // TODO: Implement Facebook OAuth
+      // const accessToken = await getFacebookAccessToken();
+      // const result = await socialAPI.facebookLogin(accessToken);
+      // handleLoginSuccess(result);
+      alert('Facebook login - Chức năng đang phát triển');
+    } catch (error) {
+      console.error('Facebook login error:', error);
+      setError('Đăng nhập Facebook thất bại');
     }
   };
 
@@ -206,23 +263,25 @@ const Login = () => {
                 </button>
               </form>
 
-              {/* Sửa lại thành Link để chuyển trang đúng */}
               <Link to="/forgot-password" className="text-decoration-none text-muted mb-3 d-block">
                 Forgot Password?
               </Link>
 
+              {/* GIỮ NGUYÊN UI CŨ - Icon đơn giản */}
               <div className="d-flex justify-content-center gap-3 mb-3">
                 <button
                   className="btn social-icon"
                   style={{ color: '#1877f2' }}
-                  onClick={() => console.log('Continue with Facebook clicked')}
+                  onClick={handleFacebookLogin}
+                  title="Đăng nhập với Facebook"
                 >
                   <i className="bi bi-facebook fs-4"></i>
                 </button>
                 <button
                   className="btn social-icon"
                   style={{ color: '#db4437' }}
-                  onClick={() => console.log('Continue with Google clicked')}
+                  onClick={handleGoogleLogin}
+                  title="Đăng nhập với Google"
                 >
                   <i className="bi bi-google fs-4"></i>
                 </button>

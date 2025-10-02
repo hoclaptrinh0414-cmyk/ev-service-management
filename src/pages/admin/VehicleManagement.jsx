@@ -1,4 +1,4 @@
-// src/pages/admin/VehicleManagement.jsx - COMPLETE FILE - COPY TOÀN BỘ FILE NÀY
+// src/pages/admin/VehicleManagement.jsx - HOÀN CHỈNH - THAY THẾ FILE CŨ
 import React, { useState, useEffect } from 'react';
 import { vehicleAPI } from '../../services/api';
 
@@ -21,60 +21,61 @@ const VehicleManagement = () => {
     setError('');
     
     try {
-      // Gọi API thật - uncomment khi BE sẵn sàng
+      console.log('🚗 Fetching vehicles from API...');
+      
+      // Tạo params cho API
       const params = {
         page: currentPage,
         pageSize: pageSize,
-        searchTerm: searchTerm || undefined,
-        maintenanceStatus: filterStatus !== 'all' ? filterStatus : undefined
       };
 
+      // Thêm search term nếu có
+      if (searchTerm && searchTerm.trim() !== '') {
+        params.searchTerm = searchTerm.trim();
+      }
+
+      // Thêm filter nếu không phải 'all'
+      if (filterStatus !== 'all') {
+        params.maintenanceStatus = filterStatus;
+      }
+
+      console.log('📋 Request params:', params);
+
+      // GỌI API THẬT
       const response = await vehicleAPI.getCustomerVehicles(params);
+      console.log('✅ API Response:', response);
       
+      // Xử lý response
       if (response.success && response.data) {
-        setVehicles(response.data.items || []);
-        setTotalPages(response.data.totalPages || 1);
+        const vehicleData = response.data.items || response.data;
+        const pages = response.data.totalPages || 1;
+        
+        setVehicles(Array.isArray(vehicleData) ? vehicleData : []);
+        setTotalPages(pages);
+        console.log(`✅ Loaded ${vehicleData.length} vehicles`);
+      } else if (Array.isArray(response)) {
+        setVehicles(response);
+        setTotalPages(1);
+        console.log(`✅ Loaded ${response.length} vehicles`);
       } else {
         throw new Error('Invalid response format');
       }
 
-      // ============================================
-      // MOCK DATA - XÓA PHẦN NÀY KHI DÙNG API THẬT
-      // ============================================
-      // const mockData = {
-      //   items: [
-      //     {
-      //       vehicleId: 9,
-      //       customerName: "Nguyễn Văn An",
-      //       fullModelName: "Tesla Model 3",
-      //       licensePlate: "29A-99999",
-      //       nextMaintenanceDate: "2025-04-01",
-      //       lastMaintenanceDate: "2024-10-15",
-      //       mileage: 15000,
-      //       batteryHealthPercent: 100.00,
-      //       maintenanceStatus: "Cần bảo dưỡng"
-      //     },
-      //     // ... more mock data
-      //   ],
-      //   totalPages: 1
-      // };
-      // 
-      // setTimeout(() => {
-      //   setVehicles(mockData.items);
-      //   setTotalPages(mockData.totalPages);
-      //   setLoading(false);
-      // }, 500);
-
     } catch (error) {
-      console.error('Error fetching vehicles:', error);
-      setError('Không thể tải dữ liệu. Vui lòng thử lại sau.');
+      console.error('❌ Error fetching vehicles:', error);
       
-      // Fallback to mock data on error
+      if (error.message === 'Network error - Cannot connect to server') {
+        setError('Không thể kết nối đến server. Đang hiển thị dữ liệu mẫu.');
+      } else {
+        setError('Không thể tải dữ liệu từ API. Đang hiển thị dữ liệu mẫu.');
+      }
+      
+      // Fallback: Mock data
       const mockData = [
         {
           vehicleId: 9,
           customerName: "Nguyễn Văn An",
-          fullModelName: "Tesla Model 3",
+          fullModelName: "Tesla Model 3 Long Range 2023",
           licensePlate: "29A-99999",
           nextMaintenanceDate: "2025-04-01",
           lastMaintenanceDate: "2024-10-15",
@@ -85,7 +86,7 @@ const VehicleManagement = () => {
         {
           vehicleId: 8,
           customerName: "Trần Thị Bình",
-          fullModelName: "Tesla Model Y",
+          fullModelName: "Tesla Model Y Performance 2024",
           licensePlate: "30B-88888",
           nextMaintenanceDate: "2025-05-15",
           lastMaintenanceDate: "2024-11-20",
@@ -96,23 +97,48 @@ const VehicleManagement = () => {
         {
           vehicleId: 7,
           customerName: "Lê Văn Cường",
-          fullModelName: "VinFast VF8",
+          fullModelName: "VinFast VF8 Plus 2024",
           licensePlate: "51C-77777",
           nextMaintenanceDate: "2025-03-20",
           lastMaintenanceDate: "2024-09-10",
           mileage: 22000,
           batteryHealthPercent: 88.00,
           maintenanceStatus: "Cần bảo dưỡng"
+        },
+        {
+          vehicleId: 6,
+          customerName: "Phạm Minh Đức",
+          fullModelName: "Tesla Model S Plaid 2023",
+          licensePlate: "59D-66666",
+          nextMaintenanceDate: "2025-06-10",
+          lastMaintenanceDate: "2024-12-05",
+          mileage: 5000,
+          batteryHealthPercent: 98.00,
+          maintenanceStatus: "Bình thường"
+        },
+        {
+          vehicleId: 5,
+          customerName: "Hoàng Thị Em",
+          fullModelName: "Tesla Model X Long Range 2023",
+          licensePlate: "92E-55555",
+          nextMaintenanceDate: "2025-02-28",
+          lastMaintenanceDate: "2024-08-25",
+          mileage: 35000,
+          batteryHealthPercent: 82.00,
+          maintenanceStatus: "Cần bảo dưỡng"
         }
       ];
+      
       setVehicles(mockData);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
   };
 
   const handleSearch = (e) => {
-    setSearchTerm(e.target.value);
+    const value = e.target.value;
+    setSearchTerm(value);
     setCurrentPage(1);
   };
 
@@ -129,8 +155,12 @@ const VehicleManagement = () => {
 
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('vi-VN');
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('vi-VN');
+    } catch (error) {
+      return dateString;
+    }
   };
 
   const getBatteryHealthColor = (percent) => {
@@ -145,7 +175,7 @@ const VehicleManagement = () => {
         <div className="spinner-border" role="status">
           <span className="visually-hidden">Loading...</span>
         </div>
-        <p>Đang tải dữ liệu...</p>
+        <p>Đang tải dữ liệu xe...</p>
       </div>
     );
   }
@@ -153,10 +183,10 @@ const VehicleManagement = () => {
   return (
     <div className="vehicle-management">
       <div className="section-header">
-        <h2>Vehicle Management</h2>
+        <h2>🚗 Quản lý Xe Điện</h2>
         <button className="btn-add">
           <i className="bi bi-plus-circle me-2"></i>
-          Add New Vehicle
+          Thêm xe mới
         </button>
       </div>
 
@@ -174,7 +204,7 @@ const VehicleManagement = () => {
           <i className="bi bi-search"></i>
           <input
             type="text"
-            placeholder="Tìm kiếm theo tên, biển số..."
+            placeholder="Tìm kiếm theo tên khách hàng, biển số, model..."
             value={searchTerm}
             onChange={handleSearch}
           />
@@ -185,19 +215,19 @@ const VehicleManagement = () => {
             className={`filter-btn ${filterStatus === 'all' ? 'active' : ''}`}
             onClick={() => handleFilterChange('all')}
           >
-            Tất cả
+            Tất cả ({vehicles.length})
           </button>
           <button 
             className={`filter-btn ${filterStatus === 'Cần bảo dưỡng' ? 'active' : ''}`}
             onClick={() => handleFilterChange('Cần bảo dưỡng')}
           >
-            Cần bảo dưỡng
+            Cần bảo dưỡng ({vehicles.filter(v => v.maintenanceStatus === 'Cần bảo dưỡng').length})
           </button>
           <button 
             className={`filter-btn ${filterStatus === 'Bình thường' ? 'active' : ''}`}
             onClick={() => handleFilterChange('Bình thường')}
           >
-            Bình thường
+            Bình thường ({vehicles.filter(v => v.maintenanceStatus === 'Bình thường').length})
           </button>
         </div>
       </div>
@@ -235,28 +265,29 @@ const VehicleManagement = () => {
         </div>
       </div>
 
-      {/* Table */}
+      {/* Table - HIỂN THỊ ĐÚNG YÊU CẦU */}
       <div className="table-wrapper">
         <table>
           <thead>
             <tr>
               <th>STT</th>
-              <th>Tên khách hàng</th>
-              <th>Model xe</th>
-              <th>Biển số</th>
-              <th>Bảo dưỡng lần cuối</th>
-              <th>Bảo dưỡng tiếp theo</th>
-              <th>Km đã chạy</th>
-              <th>Sức khỏe pin</th>
-              <th>Trạng thái</th>
-              <th>Thao tác</th>
+              <th>👤 Tên khách hàng</th>
+              <th>🚗 Model xe (Full)</th>
+              <th>🔖 Biển số</th>
+              <th>🔧 Sửa chữa lần cuối</th>
+              <th>📅 Bảo dưỡng tiếp theo</th>
+              <th>📏 Km đã chạy</th>
+              <th>🔋 Sức khỏe pin</th>
+              <th>📊 Trạng thái</th>
+              <th>⚙️ Thao tác</th>
             </tr>
           </thead>
           <tbody>
             {vehicles.length === 0 ? (
               <tr>
                 <td colSpan="10" style={{ textAlign: 'center', padding: '2rem' }}>
-                  Không có dữ liệu
+                  <i className="bi bi-inbox" style={{ fontSize: '3rem', color: '#ccc' }}></i>
+                  <p className="mt-2 text-muted">Không có dữ liệu xe</p>
                 </td>
               </tr>
             ) : (
@@ -272,7 +303,7 @@ const VehicleManagement = () => {
                   <td>
                     <span className="license-plate">{vehicle.licensePlate}</span>
                   </td>
-                  <td>{formatDate(vehicle.lastMaintenanceDate)}</td>
+                  <td><strong>{formatDate(vehicle.lastMaintenanceDate)}</strong></td>
                   <td>{formatDate(vehicle.nextMaintenanceDate)}</td>
                   <td>{vehicle.mileage?.toLocaleString() || 0} km</td>
                   <td>
