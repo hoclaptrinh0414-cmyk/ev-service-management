@@ -1,4 +1,4 @@
-// src/App.js - COMPLETE FILE - BỔ SUNG ADMIN ROUTES
+// src/App.js - COPY TOÀN BỘ FILE NÀY - ĐÃ THÊM APIDebug
 import React from "react";
 import {
   BrowserRouter as Router,
@@ -13,7 +13,7 @@ import "./App.css";
 // Import components
 import ProtectedRoute from "./components/ProtectedRoute";
 
-// Import pages - GIỮ NGUYÊN TẤT CẢ
+// Import pages
 import Home from "./pages/Home";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
@@ -23,12 +23,11 @@ import EmailVerificationPage from "./pages/auth/EmailVerificationPage";
 import ResendVerification from "./pages/auth/ResendVerification";
 import CustomerDashboard from "./pages/customer/Dashboard";
 
-// Import test component (chỉ để debug)
+// Import test components
 import PasswordResetTest from "./components/PasswordResetTest";
+import APIDebug from "./components/APIDebug";
 
-// ============================================
-// THÊM MỚI - ADMIN COMPONENTS
-// ============================================
+// Admin components
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/Dashboard";
 import VehicleManagement from "./pages/admin/VehicleManagement";
@@ -41,9 +40,7 @@ function App() {
           {/* Redirect root to login */}
           <Route path="/" element={<Navigate to="/login" replace />} />
           
-          {/* ============================================ */}
-          {/* Auth routes - GIỮ NGUYÊN */}
-          {/* ============================================ */}
+          {/* Auth routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -51,12 +48,11 @@ function App() {
           <Route path="/verify-email" element={<EmailVerificationPage />} />
           <Route path="/resend-verification" element={<ResendVerification />} />
           
-          {/* Test route - XÓA SAU KHI HOÀN THÀNH */}
+          {/* Test routes */}
           <Route path="/test-password-reset" element={<PasswordResetTest />} />
+          <Route path="/api-debug" element={<APIDebug />} />
           
-          {/* ============================================ */}
-          {/* Protected routes - CUSTOMER - GIỮ NGUYÊN */}
-          {/* ============================================ */}
+          {/* Protected routes - Customer */}
           <Route
             path="/home"
             element={
@@ -84,9 +80,7 @@ function App() {
             }
           />
 
-          {/* ============================================ */}
-          {/* THÊM MỚI - ADMIN ROUTES - NESTED ROUTING */}
-          {/* ============================================ */}
+          {/* Admin routes */}
           <Route 
             path="/admin" 
             element={
@@ -95,13 +89,8 @@ function App() {
               </ProtectedRoute>
             }
           >
-            {/* Admin Dashboard - Default page */}
             <Route index element={<AdminDashboard />} />
-            
-            {/* Vehicle Management */}
             <Route path="vehicles" element={<VehicleManagement />} />
-            
-            {/* Các trang khác - Placeholder */}
             <Route 
               path="customers" 
               element={<div className="placeholder">Customer Management - Coming Soon</div>} 

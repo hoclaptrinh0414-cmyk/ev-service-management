@@ -1,6 +1,6 @@
 // src/services/api.js - COMPLETE FILE - COPY TOÀN BỘ FILE NÀY
 const API_CONFIG = {
-  baseURL: process.env.REACT_APP_API_URL || 'https://ccb8c212fd09.ngrok-free.app/api',
+  baseURL: process.env.REACT_APP_API_URL || 'https://57013b70a404.ngrok-free.app/api',
   timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
