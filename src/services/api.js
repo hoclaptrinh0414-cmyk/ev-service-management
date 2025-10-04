@@ -117,7 +117,9 @@ class UnifiedAPIService {
       password: userData.password,
       fullName: userData.fullName,
       email: userData.email,
-      phoneNumber: userData.phone || null,
+      phoneNumber: userData.phone || '',
+      acceptTerms: true,        // Tự động đồng ý điều khoản
+      marketingOptIn: true,     // Tự động đồng ý nhận marketing
       roleId: userData.roleId || 4
     };
 
@@ -282,6 +284,30 @@ class UnifiedAPIService {
     return response;
   }
 
+  // ============ CAR BRANDS & MODELS METHODS - NEW ============
+  // ✅ KHÔNG CẦN TOKEN (AllowAnonymous)
+  async getActiveBrands() {
+    const response = await this.request('/car-brands/active', { auth: false });
+    return response;
+  }
+
+  async getModelsByBrand(brandId) {
+    const response = await this.request(`/car-models/by-brand/${brandId}`, { auth: false });
+    return response;
+  }
+
+  async getAllBrands(params = {}) {
+    const queryString = new URLSearchParams(params).toString();
+    const response = await this.request(`/car-brands${queryString ? `?${queryString}` : ''}`);
+    return response;
+  }
+
+  async getAllModels(params = {}) {
+    const queryString = new URLSearchParams(params).toString();
+    const response = await this.request(`/car-models${queryString ? `?${queryString}` : ''}`);
+    return response;
+  }
+
   // ============ VEHICLE MANAGEMENT METHODS - NEW ============
   async getCustomerVehicles(params = {}) {
     const queryString = new URLSearchParams(params).toString();
@@ -295,7 +321,8 @@ class UnifiedAPIService {
   }
 
   async addVehicle(vehicleData) {
-    const response = await this.request('/customer-vehicles', {
+    // ✅ ENDPOINT MỚI theo BE: /api/customer/profile/my-vehicles
+    const response = await this.request('/customer/profile/my-vehicles', {
       method: 'POST',
       body: JSON.stringify(vehicleData)
     });
@@ -555,6 +582,17 @@ export const usersAPI = {
   getUser: (userId) => apiService.getUser(userId),
   updateUser: (userId, userData) => apiService.updateUser(userId, userData),
   deleteUser: (userId) => apiService.deleteUser(userId)
+};
+
+// ============ CAR BRANDS & MODELS API - NEW ============
+export const carBrandAPI = {
+  getActiveBrands: () => apiService.getActiveBrands(),
+  getAllBrands: (params) => apiService.getAllBrands(params)
+};
+
+export const carModelAPI = {
+  getModelsByBrand: (brandId) => apiService.getModelsByBrand(brandId),
+  getAllModels: (params) => apiService.getAllModels(params)
 };
 
 // ============ VEHICLE API - NEW ============

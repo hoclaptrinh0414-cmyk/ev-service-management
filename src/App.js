@@ -22,6 +22,7 @@ import ResetPassword from "./pages/auth/ResetPassword";
 import EmailVerificationPage from "./pages/auth/EmailVerificationPage";
 import ResendVerification from "./pages/auth/ResendVerification";
 import CustomerDashboard from "./pages/customer/Dashboard";
+import RegisterVehicle from "./pages/customer/RegisterVehicle";
 
 // Import test components
 import PasswordResetTest from "./components/PasswordResetTest";
@@ -67,6 +68,15 @@ function App() {
             element={
               <ProtectedRoute>
                 <CustomerDashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/register-vehicle"
+            element={
+              <ProtectedRoute>
+                <RegisterVehicle />
               </ProtectedRoute>
             }
           />

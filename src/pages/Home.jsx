@@ -1,5 +1,6 @@
-// src/pages/Home.jsx - FIXED - COPY TOÀN BỘ FILE NÀY
+// src/pages/Home.jsx - UPDATED WITH USER MENU
 import React, { useState, useEffect } from 'react';
+import UserMenu from '../components/UserMenu';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import '@fortawesome/fontawesome-free/css/all.min.css';
@@ -59,10 +60,7 @@ const Home = () => {
             </a>
 
             <div className="nav-icons d-flex align-items-center">
-              <a href="#" className="nav-link move">
-                <i className="fas fa-user"></i>
-                <span>Tài khoản</span>
-              </a>
+              <UserMenu />
               <a href="#" className="nav-link move">
                 <i className="fas fa-shopping-cart"></i>
                 <span>Giỏ hàng</span>
