@@ -249,3 +249,166 @@ body {
   border-color: #d4a574;
   transform: scale(1.1);
 }
+
+/* Track Section Styles */
+.track-section {
+  padding: 4rem 0;
+  background: #f8f9fa;
+}
+
+.track-card {
+  background: white;
+  border-radius: 15px;
+  padding: 2rem;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+  transition: transform 0.3s ease;
+}
+
+.track-card:hover {
+  transform: translateY(-5px);
+}
+
+/* Booking Section Styles */
+.booking-section {
+  padding: 4rem 0;
+  background: #f8f9fa;
+}
+
+.booking-card {
+  background: white;
+  border-radius: 15px;
+  padding: 2rem;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+  transition: transform 0.3s ease;
+}
+
+.booking-card:hover {
+  transform: translateY(-5px);
+}
+
+.form-label {
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.form-control,
+.form-select {
+  border-radius: 5px;
+  border: 1px solid #dee2e6;
+  padding: 0.6rem;
+  font-size: 0.9rem;
+}
+
+.form-check-label {
+  font-size: 0.9rem;
+  color: #333;
+  margin-left: 0.5rem;
+}
+
+.btn-submit {
+  background: #000;
+  color: white;
+  border: none;
+  padding: 0.6rem 2rem;
+  border-radius: 5px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.btn-submit:hover {
+  color: white;
+  background: #333;
+  border-color: #d4a574;
+  transform: scale(1.05);
+}
+
+.btn-pay {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 0.6rem 2rem;
+  border-radius: 5px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  display: none;
+}
+
+.btn-pay:hover {
+  color: white;
+  background: #c82333;
+  border-color: #d4a574;
+  transform: scale(1.05);
+}
+
+.content-title {
+  font-size: 2.5rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 1rem;
+}
+
+.content-text {
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: #666;
+}
+
+/* Footer */
+.footer {
+  background: #1a1a1a;
+  color: #fff;
+  padding: 3rem 0;
+  font-size: 0.9rem;
+}
+
+.footer a {
+  color: #d4a574;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.footer a:hover {
+  color: #fff;
+}
+
+.footer .nav-link {
+  color: #fff;
+  padding: 0.3rem 0;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  transition: color 0.3s ease;
+}
+
+.footer .nav-link:hover {
+  color: #d4a574;
+}
+
+.footer .social-icons a {
+  font-size: 1.2rem;
+  margin: 0 0.5rem;
+  color: #fff;
+  transition: color 0.3s ease;
+}
+
+.footer .social-icons a:hover {
+  color: #d4a574;
+}
+
+.footer .contact-info p {
+  margin-bottom: 0.5rem;
+  color: #ccc;
+}
+
+.footer .contact-info i {
+  margin-right: 0.5rem;
+  color: #d4a574;
+}
+
+.footer .footer-bottom {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 1rem;
+  margin-top: 2rem;
+  text-align: center;
+  color: #ccc;
+}
