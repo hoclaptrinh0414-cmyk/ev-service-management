@@ -15,6 +15,8 @@ import ProtectedRoute from "./components/ProtectedRoute";
 
 // Import pages
 import Home from "./pages/Home";
+import TrackReminder from "./pages/TrackReminder";
+import ScheduleService from "./pages/ScheduleService";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import ForgotPassword from "./pages/auth/ForgotPassword";
@@ -77,6 +79,24 @@ function App() {
             element={
               <ProtectedRoute>
                 <RegisterVehicle />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/track-reminder"
+            element={
+              <ProtectedRoute>
+                <TrackReminder />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/schedule-service"
+            element={
+              <ProtectedRoute>
+                <ScheduleService />
               </ProtectedRoute>
             }
           />
