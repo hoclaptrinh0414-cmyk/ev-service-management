@@ -45,6 +45,25 @@ You can learn more in the [Create React App documentation](https://facebook.gith
 
 To learn React, check out the [React documentation](https://reactjs.org/).
 
+## Google Sign-In Configuration
+
+Follow the steps below to keep the React app and ASP.NET Core API aligned when using Google sign-in:
+
+1. Create or update a Google OAuth 2.0 Web application credential and copy the **Client ID** and **Client Secret**.
+2. Set the React environment variable in `.env` (or `.env.development.local` during local work):
+	- `REACT_APP_GOOGLE_CLIENT_ID=402182573159-gf1i4nu0f1qorshklgsdnem03rc6h07f.apps.googleusercontent.com`
+	- Restart the frontend dev server after changing the file so Create React App picks up the new value. If the env var is missing, the app now falls back to the same default client ID and logs a warning in the console.
+3. Provide the backend with the same Client ID and Secret. You can either edit `EVServiceCenter.API/appsettings.Development.json` for local work or, preferably, set environment variables:
+	- `Authentication__Google__ClientId=402182573159-gf1i4nu0f1qorshklgsdnem03rc6h07f.apps.googleusercontent.com`
+	- `Authentication__Google__ClientSecret=<your-google-client-secret>`
+	- When using `dotnet user-secrets`, run it from the `EVServiceCenter.API` project directory.
+4. In the Google Cloud Console credential, ensure:
+	- **Authorized JavaScript origins** include `http://localhost:3000` (and any deployed domains).
+	- **Authorized redirect URIs** cover any challenge-based flows you enable, such as `https://localhost:7077/signin-google`.
+5. Restart the ASP.NET API so it reloads the updated configuration.
+
+With matching credentials in place, the backend can validate Google ID tokens and the React client can request them without `invalid_client` errors.
+
 ### Code Splitting
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)

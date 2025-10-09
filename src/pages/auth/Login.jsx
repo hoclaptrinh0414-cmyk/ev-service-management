@@ -316,7 +316,7 @@ const Login = () => {
         email={userEmail}
       />
 
-      <style jsx>{`
+  <style>{`
         html,
         body {
           height: 100%;

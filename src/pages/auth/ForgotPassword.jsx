@@ -1,61 +1,51 @@
 // src/pages/auth/ForgotPassword.jsx - FIXED VERSION - REPLACE YOUR ENTIRE ForgotPassword.jsx WITH THIS
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { accountRecoveryService, handleApiError } from '../../services/api';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import 'bootstrap-icons/font/bootstrap-icons.css';
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { accountRecoveryService, handleApiError } from "../../services/api";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "bootstrap-icons/font/bootstrap-icons.css";
 
 const ForgotPassword = () => {
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState('');
-  const [error, setError] = useState('');
+  const [success, setSuccess] = useState("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
 
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      setError('Vui lòng nhập email hợp lệ.');
+      setError("Vui lòng nhập email hợp lệ.");
       setLoading(false);
       return;
     }
 
     try {
-      console.log('🔐 Sending forgot password request for:', email);
-      
-      // FIXED: Use direct axios-style call that matches backend exactly
-      const response = await fetch('/api/account/forgot-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email })
-      });
+      console.log("🔐 Sending forgot password request for:", email);
 
-      const data = await response.json();
-      console.log('✅ Forgot password response:', data);
-      
-      if (response.ok && data.success) {
-        setSuccess('Vui lòng kiểm tra email để đặt lại mật khẩu.');
-        setEmail(''); // Clear form
-        
+      const data = await accountRecoveryService.forgotPassword(email);
+      console.log("✅ Forgot password response:", data);
+
+      if (data.success) {
+        setSuccess("Vui lòng kiểm tra email để đặt lại mật khẩu.");
+        setEmail(""); // Clear form
+
         // Auto redirect sau 5 giây
         setTimeout(() => {
-          navigate('/login');
+          navigate("/login");
         }, 5000);
       } else {
-        setError(data.message || 'Có lỗi xảy ra.');
+        setError(data.message || "Có lỗi xảy ra.");
       }
-
     } catch (error) {
-      console.error('❌ Forgot password error:', error);
-      setError('Có lỗi xảy ra.');
+      console.error("❌ Forgot password error:", error);
+      setError("Có lỗi xảy ra.");
     } finally {
       setLoading(false);
     }
@@ -64,7 +54,7 @@ const ForgotPassword = () => {
   return (
     <>
       <div className="container-fluid p-0 h-100">
-        <div className="card"> 
+        <div className="card">
           <div className="row g-0 h-100">
             <div className="col-md-8 d-none d-md-block left-col h-auto">
               <img
@@ -74,13 +64,20 @@ const ForgotPassword = () => {
               />
             </div>
             <div className="col col-md-4 d-flex align-items-center justify-content-center">
-              <div className="card-body text-center" style={{ maxWidth: '450px', width: '100%' }}>
+              <div
+                className="card-body text-center"
+                style={{ maxWidth: "450px", width: "100%" }}
+              >
                 <div className="mb-4">
-                  <i className="bi bi-key-fill text-primary" style={{ fontSize: '3rem' }}></i>
+                  <i
+                    className="bi bi-key-fill text-primary"
+                    style={{ fontSize: "3rem" }}
+                  ></i>
                   <h3
                     className="mt-3"
                     style={{
-                      fontFamily: "'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif"
+                      fontFamily:
+                        "'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif",
                     }}
                   >
                     Quên mật khẩu
@@ -91,14 +88,20 @@ const ForgotPassword = () => {
                 </div>
 
                 {success && (
-                  <div className="alert alert-success alert-dismissible fade show" role="alert">
+                  <div
+                    className="alert alert-success alert-dismissible fade show"
+                    role="alert"
+                  >
                     <i className="bi bi-check-circle-fill me-2"></i>
                     {success}
                   </div>
                 )}
 
                 {error && (
-                  <div className="alert alert-danger alert-dismissible fade show" role="alert">
+                  <div
+                    className="alert alert-danger alert-dismissible fade show"
+                    role="alert"
+                  >
                     <i className="bi bi-exclamation-triangle-fill me-2"></i>
                     {error}
                   </div>
@@ -118,18 +121,26 @@ const ForgotPassword = () => {
                         value={email}
                         onChange={(e) => {
                           setEmail(e.target.value);
-                          if (error) setError('');
-                          if (success) setSuccess('');
+                          if (error) setError("");
+                          if (success) setSuccess("");
                         }}
                         required
                         disabled={loading}
                       />
                     </div>
-                    
-                    <button type="submit" className="btn reset-btn w-100 mb-3" disabled={loading}>
+
+                    <button
+                      type="submit"
+                      className="btn reset-btn w-100 mb-3"
+                      disabled={loading}
+                    >
                       {loading ? (
                         <>
-                          <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                          <span
+                            className="spinner-border spinner-border-sm me-2"
+                            role="status"
+                            aria-hidden="true"
+                          ></span>
                           Đang gửi...
                         </>
                       ) : (
@@ -159,8 +170,12 @@ const ForgotPassword = () => {
                     </div>
 
                     <p className="text-muted mb-0">
-                      Chưa có tài khoản?{' '}
-                      <Link to="/register" className="text-decoration-none" style={{ color: '#8B0000' }}>
+                      Chưa có tài khoản?{" "}
+                      <Link
+                        to="/register"
+                        className="text-decoration-none"
+                        style={{ color: "#8B0000" }}
+                      >
                         Đăng ký ngay
                       </Link>
                     </p>
@@ -172,14 +187,17 @@ const ForgotPassword = () => {
         </div>
       </div>
 
-      <style jsx>{`
-        html, body {
+  <style>{`
+        html,
+        body {
           height: 100%;
           margin: 0;
           padding: 0;
           overflow: hidden;
         }
-        .container, .card, .row {
+        .container,
+        .card,
+        .row {
           height: 100%;
           width: 100%;
         }
@@ -245,7 +263,8 @@ const ForgotPassword = () => {
           font-size: 0.9rem;
         }
         @media (max-width: 768px) {
-          .row .col-md-4, .row .col-md-8 {
+          .row .col-md-4,
+          .row .col-md-8 {
             width: 100%;
             height: auto;
           }

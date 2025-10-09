@@ -273,7 +273,7 @@ const Register = () => {
         </div>
       </div>
 
-      <style jsx>{`
+  <style>{`
         html,
         body {
           height: 100%;

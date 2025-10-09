@@ -192,7 +192,7 @@ const EmailVerificationModal = ({ show, onHide, email }) => {
         </div>
       </div>
 
-      <style jsx>{`
+  <style>{`
         .modal {
           position: fixed;
           z-index: 1000;

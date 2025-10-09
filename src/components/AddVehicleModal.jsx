@@ -433,7 +433,7 @@ const AddVehicleModal = ({ show, onHide }) => {
         </div>
       </div>
 
-      <style jsx>{`
+  <style>{`
         /* Backdrop - Lớp phủ tối */
         .modal-backdrop {
           position: fixed !important;

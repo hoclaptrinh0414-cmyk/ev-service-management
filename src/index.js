@@ -7,7 +7,14 @@ import './index.css';
 import reportWebVitals from './reportWebVitals'; // Thêm dòng này
 
 // Thay đổi giá trị này thành Google Client ID thật của bạn
-const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID";
+const DEFAULT_GOOGLE_CLIENT_ID = "402182573159-gf1i4nu0f1qorshklgsdnem03rc6h07f.apps.googleusercontent.com";
+const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || DEFAULT_GOOGLE_CLIENT_ID;
+
+if (!process.env.REACT_APP_GOOGLE_CLIENT_ID) {
+  console.warn(
+    "[Google OAuth] Đang dùng Google Client ID mặc định. Đặt REACT_APP_GOOGLE_CLIENT_ID trong .env rồi khởi động lại npm start để dùng giá trị riêng."
+  );
+}
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

@@ -95,7 +95,7 @@ const UserMenu = () => {
         )}
       </div>
 
-      <style jsx>{`
+  <style>{`
         .user-menu-wrapper {
           position: relative;
         }
