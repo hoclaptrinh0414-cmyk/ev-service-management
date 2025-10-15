@@ -1,8 +1,13 @@
 // src/pages/customer/RegisterVehicle.jsx - TRANG ĐĂNG KÝ XE MỚI
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { vehicleAPI, carBrandAPI, carModelAPI } from '../../services/api';
 import UserMenu from '../../components/UserMenu';
+import NotificationDropdown from '../../components/NotificationDropdown';
+import useNotifications from '../../hooks/useNotifications';
+import FancyButton from '../../components/FancyButton';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import '@fortawesome/fontawesome-free/css/all.min.css';
@@ -10,13 +15,12 @@ import '../Home.css';
 
 const RegisterVehicle = () => {
   const navigate = useNavigate();
+  const { notifications, markAsRead, dismissNotification } = useNotifications();
   const [brands, setBrands] = useState([]);
   const [models, setModels] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingBrands, setLoadingBrands] = useState(false);
   const [loadingModels, setLoadingModels] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
 
   const [formData, setFormData] = useState({
     modelId: '',
@@ -34,6 +38,9 @@ const RegisterVehicle = () => {
 
   // Fetch brands khi component mount
   useEffect(() => {
+    // Scroll to top when component mounts
+    window.scrollTo(0, 0);
+
     fetchBrands();
   }, []);
 
@@ -49,18 +56,23 @@ const RegisterVehicle = () => {
 
   const fetchBrands = async () => {
     setLoadingBrands(true);
-    setError('');
     try {
       const result = await carBrandAPI.getActiveBrands();
       const brandList = result.data || [];
       setBrands(brandList);
 
       if (brandList.length === 0) {
-        setError('⚠️ Chưa có hãng xe nào. Vui lòng liên hệ admin.');
+        toast.warning('⚠️ Chưa có hãng xe nào. Vui lòng liên hệ admin.', {
+          position: "bottom-right",
+          autoClose: 3000
+        });
       }
     } catch (error) {
       console.error('❌ Error fetching brands:', error);
-      setError('⚠️ Không thể tải danh sách hãng xe.');
+      toast.error('⚠️ Không thể tải danh sách hãng xe.', {
+        position: "bottom-right",
+        autoClose: 3000
+      });
       setBrands([]);
     } finally {
       setLoadingBrands(false);
@@ -69,18 +81,23 @@ const RegisterVehicle = () => {
 
   const fetchModels = async (brandId) => {
     setLoadingModels(true);
-    setError('');
     try {
       const result = await carModelAPI.getModelsByBrand(brandId);
       const modelList = result.data || [];
       setModels(modelList);
 
       if (modelList.length === 0) {
-        setError('⚠️ Hãng xe này chưa có mẫu xe nào.');
+        toast.warning('⚠️ Hãng xe này chưa có mẫu xe nào.', {
+          position: "bottom-right",
+          autoClose: 3000
+        });
       }
     } catch (error) {
       console.error('❌ Error fetching models:', error);
-      setError('⚠️ Không thể tải danh sách mẫu xe.');
+      toast.error('⚠️ Không thể tải danh sách mẫu xe.', {
+        position: "bottom-right",
+        autoClose: 3000
+      });
       setModels([]);
     } finally {
       setLoadingModels(false);
@@ -95,21 +112,32 @@ const RegisterVehicle = () => {
     }));
   };
 
+  const handleNotificationClick = (notification) => {
+    markAsRead(notification.id);
+    if (notification.type === 'appointment_reminder' && notification.appointmentId) {
+      navigate('/my-appointments');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
-    setSuccess('');
 
     // Validation
     if (!formData.modelId) {
-      setError('Vui lòng chọn mẫu xe');
+      toast.error('Vui lòng chọn mẫu xe', {
+        position: "bottom-right",
+        autoClose: 3000
+      });
       setLoading(false);
       return;
     }
 
     if (!formData.licensePlate.trim()) {
-      setError('Vui lòng nhập biển số xe');
+      toast.error('Vui lòng nhập biển số xe', {
+        position: "bottom-right",
+        autoClose: 3000
+      });
       setLoading(false);
       return;
     }
@@ -131,7 +159,10 @@ const RegisterVehicle = () => {
       const result = await vehicleAPI.addVehicle(vehicleData);
       console.log('✅ Vehicle added:', result);
 
-      setSuccess('Đăng ký xe thành công!');
+      toast.success('✅ Đăng ký xe thành công!', {
+        position: "bottom-right",
+        autoClose: 2000
+      });
 
       // Redirect về trang chủ sau 2 giây
       setTimeout(() => {
@@ -140,7 +171,10 @@ const RegisterVehicle = () => {
 
     } catch (error) {
       console.error('❌ Error:', error);
-      setError(error.response?.data?.message || error.message || 'Không thể đăng ký xe. Vui lòng thử lại.');
+      toast.error(error.response?.data?.message || error.message || 'Không thể đăng ký xe. Vui lòng thử lại.', {
+        position: "bottom-right",
+        autoClose: 4000
+      });
     } finally {
       setLoading(false);
     }
@@ -163,17 +197,18 @@ const RegisterVehicle = () => {
               </button>
             </form>
 
-            <a style={{ fontSize: '2rem' }} className="navbar-brand" href="/home">
+            <Link style={{ fontSize: '2rem' }} className="navbar-brand" to="/home">
               Tesla
-            </a>
+            </Link>
 
             <div className="nav-icons d-flex align-items-center">
               <UserMenu />
-              <a href="#" className="nav-link move">
-                <i className="fas fa-shopping-cart"></i>
-                <span>Giỏ hàng</span>
-                <span className="cart-badge">0</span>
-              </a>
+              <NotificationDropdown
+                notifications={notifications}
+                onMarkRead={markAsRead}
+                onDismiss={dismissNotification}
+                onNotificationClick={handleNotificationClick}
+              />
             </div>
           </div>
 
@@ -185,16 +220,16 @@ const RegisterVehicle = () => {
             <div className="collapse navbar-collapse" id="navbarNav">
               <ul className="navbar-nav w-100 justify-content-center">
                 <li className="nav-item">
-                  <a className="nav-link move" href="/home">TRANG CHỦ</a>
+                  <Link className="nav-link move" to="/home">TRANG CHỦ</Link>
                 </li>
                 <li className="nav-item dropdown">
                   <a className="nav-link dropdown-toggle move" href="#" role="button" data-bs-toggle="dropdown">
-                    BỘ SƯU TẬP
+                    DỊCH VỤ
                   </a>
                   <ul className="dropdown-menu">
-                    <li><a className="dropdown-item" href="#">Xe đạp thể thao</a></li>
-                    <li><a className="dropdown-item" href="#">Xe đạp địa hình</a></li>
-                    <li><a className="dropdown-item" href="#">Xe đạp đường phố</a></li>
+                    <li><Link className="dropdown-item" to="/track-reminder">Theo dõi & Nhắc nhở</Link></li>
+                    <li><Link className="dropdown-item" to="/schedule-service">Đặt lịch dịch vụ</Link></li>
+                    <li><a className="dropdown-item" href="#">Quản lý chi phí</a></li>
                   </ul>
                 </li>
                 <li className="nav-item">
@@ -225,19 +260,6 @@ const RegisterVehicle = () => {
               </div>
 
               <div className="card-body p-5">
-                {error && (
-                  <div className="alert alert-warning alert-dismissible fade show" role="alert">
-                    {error}
-                    <button type="button" className="btn-close" onClick={() => setError('')}></button>
-                  </div>
-                )}
-
-                {success && (
-                  <div className="alert alert-success alert-dismissible fade show" role="alert">
-                    {success}
-                  </div>
-                )}
-
                 <form onSubmit={handleSubmit}>
                   <div className="row">
                     {/* Hãng xe */}
@@ -393,13 +415,13 @@ const RegisterVehicle = () => {
 
                   {/* Buttons */}
                   <div className="d-flex justify-content-center mt-4">
-                    <button
+                    <FancyButton
                       type="submit"
-                      className="btn btn-dark btn-lg px-5"
                       disabled={loading}
+                      variant="dark"
                     >
-                      Đăng ký
-                    </button>
+                      {loading ? 'Đang đăng ký...' : 'Đăng ký'}
+                    </FancyButton>
                   </div>
                 </form>
               </div>
@@ -444,6 +466,8 @@ const RegisterVehicle = () => {
           color: #dc3545;
         }
       `}</style>
+
+      <ToastContainer />
     </>
   );
 };

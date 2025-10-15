@@ -1,5 +1,14 @@
 /* src/pages/Home.css - TẠO FILE MỚI NÀY */
 
+/* Global font family - áp dụng cho toàn bộ trang */
+* {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 /* Reset margin và padding của body */
 body {
   margin: 0;
@@ -167,6 +176,28 @@ body {
 
 .nav-icons .nav-link i {
   font-size: 1rem;
+}
+
+/* Notification bell and UserMenu colors */
+.navbar-custom .nav-icons button,
+.navbar-custom .nav-icons button svg,
+.navbar-custom .nav-icons .user-name,
+.navbar-custom .nav-icons .user-email {
+  color: #ffffff !important;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
+  transition: color 0.3s ease;
+}
+
+.navbar-custom:hover .nav-icons button,
+.navbar-custom:hover .nav-icons button svg,
+.navbar-custom:hover .nav-icons .user-name,
+.navbar-custom:hover .nav-icons .user-email,
+.navbar-custom.scrolled .nav-icons button,
+.navbar-custom.scrolled .nav-icons button svg,
+.navbar-custom.scrolled .nav-icons .user-name,
+.navbar-custom.scrolled .nav-icons .user-email {
+  color: #000000 !important;
+  text-shadow: none;
 }
 
 .img-fluid {
@@ -358,14 +389,24 @@ body {
 .footer {
   background: #1a1a1a;
   color: #fff;
-  padding: 3rem 0;
-  font-size: 0.9rem;
+  padding: 2.5rem 0;
+  font-size: 0.85rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  font-weight: 300;
+}
+
+.footer h5 {
+  font-size: 1rem;
+  font-weight: 400;
 }
 
 .footer a {
   color: #d4a574;
   text-decoration: none;
   transition: color 0.3s ease;
+  font-weight: 300;
 }
 
 .footer a:hover {
@@ -374,10 +415,11 @@ body {
 
 .footer .nav-link {
   color: #fff;
-  padding: 0.3rem 0;
-  font-size: 0.9rem;
+  padding: 0.25rem 0;
+  font-size: 0.85rem;
   text-transform: uppercase;
   transition: color 0.3s ease;
+  font-weight: 300;
 }
 
 .footer .nav-link:hover {
@@ -385,8 +427,8 @@ body {
 }
 
 .footer .social-icons a {
-  font-size: 1.2rem;
-  margin: 0 0.5rem;
+  font-size: 1rem;
+  margin: 0 0.4rem;
   color: #fff;
   transition: color 0.3s ease;
 }
@@ -396,19 +438,24 @@ body {
 }
 
 .footer .contact-info p {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.4rem;
   color: #ccc;
+  font-size: 0.85rem;
+  font-weight: 300;
 }
 
 .footer .contact-info i {
-  margin-right: 0.5rem;
+  margin-right: 0.4rem;
   color: #d4a574;
+  font-size: 0.85rem;
 }
 
 .footer .footer-bottom {
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  padding-top: 1rem;
-  margin-top: 2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 0.8rem;
+  margin-top: 1.5rem;
   text-align: center;
   color: #ccc;
+  font-size: 0.8rem;
+  font-weight: 300;
 }

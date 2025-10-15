@@ -1,16 +1,19 @@
-// src/pages/auth/ForgotPassword.jsx - FIXED VERSION - REPLACE YOUR ENTIRE ForgotPassword.jsx WITH THIS
+// src/pages/auth/ForgotPassword.jsx
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { accountRecoveryService, handleApiError } from '../../services/api';
+import authService from '../../services/authService';
+import { useToast } from '../../contexts/ToastContext';
+import FancyButton from '../../components/FancyButton';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
 const ForgotPassword = () => {
+  const navigate = useNavigate();
+  const toast = useToast();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
-  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -28,34 +31,37 @@ const ForgotPassword = () => {
 
     try {
       console.log('🔐 Sending forgot password request for:', email);
-      
-      // FIXED: Use direct axios-style call that matches backend exactly
-      const response = await fetch('/api/account/forgot-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email })
-      });
 
-      const data = await response.json();
-      console.log('✅ Forgot password response:', data);
-      
-      if (response.ok && data.success) {
-        setSuccess('Vui lòng kiểm tra email để đặt lại mật khẩu.');
+      // Use authService.forgotPassword()
+      const response = await authService.forgotPassword(email);
+
+      console.log('✅ Forgot password response:', response);
+
+      if (response.success) {
+        setSuccess('Chúng tôi đã gửi mã OTP đến email của bạn. Vui lòng kiểm tra email để đặt lại mật khẩu.');
+        toast.success('Đã gửi OTP đến email của bạn!');
         setEmail(''); // Clear form
-        
-        // Auto redirect sau 5 giây
+
+        // Redirect to reset password page after 3 seconds
         setTimeout(() => {
-          navigate('/login');
-        }, 5000);
+          navigate('/reset-password', { state: { email } });
+        }, 3000);
       } else {
-        setError(data.message || 'Có lỗi xảy ra.');
+        setError(response.message || 'Có lỗi xảy ra. Vui lòng thử lại.');
       }
 
     } catch (error) {
       console.error('❌ Forgot password error:', error);
-      setError('Có lỗi xảy ra.');
+
+      if (error.response?.data?.message) {
+        setError(error.response.data.message);
+      } else if (error.message === 'Network error - Cannot connect to server') {
+        setError('Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.');
+      } else if (error.message === 'Request timeout') {
+        setError('Kết nối bị timeout. Vui lòng thử lại.');
+      } else {
+        setError(error.message || 'Có lỗi xảy ra. Vui lòng thử lại.');
+      }
     } finally {
       setLoading(false);
     }
@@ -126,19 +132,16 @@ const ForgotPassword = () => {
                       />
                     </div>
                     
-                    <button type="submit" className="btn reset-btn w-100 mb-3" disabled={loading}>
+                    <FancyButton type="submit" fullWidth disabled={loading} variant="dark">
                       {loading ? (
                         <>
                           <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                           Đang gửi...
                         </>
                       ) : (
-                        <>
-                          <i className="bi bi-envelope-plus me-2"></i>
-                          Gửi
-                        </>
+                        'Gửi'
                       )}
-                    </button>
+                    </FancyButton>
                   </form>
                 )}
 

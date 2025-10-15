@@ -1,4 +1,4 @@
-// src/App.js - COPY TOÀN BỘ FILE NÀY - ĐÃ THÊM APIDebug
+// src/App.js - UPDATED WITH REACT QUERY
 import React from "react";
 import {
   BrowserRouter as Router,
@@ -6,12 +6,15 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import "./App.css";
 
 // Import components
 import ProtectedRoute from "./components/ProtectedRoute";
+import { ToastProvider } from "./contexts/ToastContext";
+import { AuthProvider } from "./contexts/AuthContext";
 
 // Import pages
 import Home from "./pages/Home";
@@ -25,6 +28,10 @@ import EmailVerificationPage from "./pages/auth/EmailVerificationPage";
 import ResendVerification from "./pages/auth/ResendVerification";
 import CustomerDashboard from "./pages/customer/Dashboard";
 import RegisterVehicle from "./pages/customer/RegisterVehicle";
+import Profile from "./pages/customer/Profile";
+import MyAppointments from "./pages/customer/MyAppointments";
+import MySubscriptions from "./pages/customer/MySubscriptions";
+import Packages from "./pages/customer/Packages";
 
 // Import test components
 import PasswordResetTest from "./components/PasswordResetTest";
@@ -35,11 +42,25 @@ import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/Dashboard";
 import VehicleManagement from "./pages/admin/VehicleManagement";
 
+// Create React Query client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+  },
+});
+
 function App() {
   return (
-    <Router>
-      <div className="App">
-        <Routes>
+    <QueryClientProvider client={queryClient}>
+      <ToastProvider>
+        <AuthProvider>
+          <Router>
+            <div className="App">
+              <Routes>
           {/* Redirect root to login */}
           <Route path="/" element={<Navigate to="/login" replace />} />
           
@@ -105,7 +126,34 @@ function App() {
             path="/profile"
             element={
               <ProtectedRoute>
-                <div>Profile - Protected Page</div>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/my-appointments"
+            element={
+              <ProtectedRoute>
+                <MyAppointments />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/my-subscriptions"
+            element={
+              <ProtectedRoute>
+                <MySubscriptions />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/packages"
+            element={
+              <ProtectedRoute>
+                <Packages />
               </ProtectedRoute>
             }
           />
@@ -153,9 +201,12 @@ function App() {
           
           {/* Catch all route */}
           <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </div>
-    </Router>
+              </Routes>
+            </div>
+          </Router>
+        </AuthProvider>
+      </ToastProvider>
+    </QueryClientProvider>
   );
 }
 

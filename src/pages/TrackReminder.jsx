@@ -1,13 +1,18 @@
 // src/pages/TrackReminder.jsx
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import UserMenu from '../components/UserMenu';
+import NotificationDropdown from '../components/NotificationDropdown';
+import useNotifications from '../hooks/useNotifications';
+import FancyButton from '../components/FancyButton';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 import './Home.css';
 
 const TrackReminder = () => {
+  const navigate = useNavigate();
+  const { notifications, markAsRead, dismissNotification } = useNotifications();
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [reminderMessage, setReminderMessage] = useState('');
@@ -15,6 +20,9 @@ const TrackReminder = () => {
   let lastScrollY = 0;
 
   useEffect(() => {
+    // Scroll to top when component mounts
+    window.scrollTo(0, 0);
+
     const handleScroll = () => {
       const navbar = document.querySelector('.navbar-custom');
       const carousel = document.querySelector('#carouselExampleAutoplaying');
@@ -40,6 +48,13 @@ const TrackReminder = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const handleNotificationClick = (notification) => {
+    markAsRead(notification.id);
+    if (notification.type === 'appointment_reminder' && notification.appointmentId) {
+      navigate('/my-appointments');
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -80,7 +95,7 @@ const TrackReminder = () => {
   return (
     <>
       {/* Navbar */}
-      <nav className={`navbar navbar-expand-lg navbar-custom ${scrolled ? 'scrolled' : ''} ${hidden ? 'hidden' : ''}`}>
+      <nav className="navbar navbar-expand-lg navbar-custom scrolled">
         <div className="container d-flex flex-column">
           <div className="d-flex justify-content-between align-items-center w-100 top-navbar">
             <form className="search-form">
@@ -100,11 +115,12 @@ const TrackReminder = () => {
 
             <div className="nav-icons d-flex align-items-center">
               <UserMenu />
-              <a href="#" className="nav-link move">
-                <i className="fas fa-shopping-cart"></i>
-                <span>Giỏ hàng</span>
-                <span className="cart-badge">0</span>
-              </a>
+              <NotificationDropdown
+                notifications={notifications}
+                onMarkRead={markAsRead}
+                onDismiss={dismissNotification}
+                onNotificationClick={handleNotificationClick}
+              />
             </div>
           </div>
 
@@ -123,9 +139,9 @@ const TrackReminder = () => {
                     DỊCH VỤ
                   </a>
                   <ul className="dropdown-menu">
-                    <li><a className="dropdown-item" href="#">Lưu lịch sử bảo dưỡng</a></li>
-                    <li><a className="dropdown-item" href="#">Quản lý chi phí bảo dưỡng & sửa chữa</a></li>
-                    <li><a className="dropdown-item" href="#">Thanh toán online</a></li>
+                    <li><Link className="dropdown-item" to="/track-reminder">Theo dõi & Nhắc nhở</Link></li>
+                    <li><Link className="dropdown-item" to="/schedule-service">Đặt lịch dịch vụ</Link></li>
+                    <li><a className="dropdown-item" href="#">Quản lý chi phí</a></li>
                   </ul>
                 </li>
                 <li className="nav-item">
@@ -143,97 +159,75 @@ const TrackReminder = () => {
         </div>
       </nav>
 
-      {/* Carousel */}
-      <div id="carouselExampleAutoplaying" className="carousel slide" data-bs-ride="carousel">
-        <div className="carousel-inner">
-          <div className="carousel-item active">
-            <img
-              src="https://www.reuters.com/resizer/v2/O2JH3CKXTZMY5FRVALTHVZI3WA.jpg?auth=9e3d2c9df7e8afdba0b1fee35f6ef89db69c61827e0820130589ebafb75686d5&width=5588&quality=80"
-              className="d-block w-100"
-              alt="Tesla Model Y"
-            />
-          </div>
-          <div className="carousel-item">
-            <img
-              src="http://www.shop4tesla.com/cdn/shop/articles/1roadi_42f236a7-c4fe-465f-bc7b-1377b0ce2d66.png?v=1740472787"
-              className="d-block w-100"
-              alt="Tesla Model Y"
-            />
-          </div>
-          <div className="carousel-item">
-            <img
-              src="https://media-cldnry.s-nbcnews.com/image/upload/t_fit-1500w,f_auto,q_auto:best/rockcms/2025-02/250213-Cybertruck-aa-1045-dd55f3.jpg"
-              className="d-block w-100"
-              alt="Tesla Cybertruck"
-            />
-          </div>
-        </div>
-        <button className="carousel-control-prev" type="button" data-bs-target="#carouselExampleAutoplaying" data-bs-slide="prev">
-          <span className="carousel-control-prev-icon" aria-hidden="true"></span>
-          <span className="visually-hidden">Previous</span>
-        </button>
-        <button className="carousel-control-next" type="button" data-bs-target="#carouselExampleAutoplaying" data-bs-slide="next">
-          <span className="carousel-control-next-icon" aria-hidden="true"></span>
-          <span className="visually-hidden">Next</span>
-        </button>
-      </div>
-
       {/* Track and Reminder Section */}
-      <section className="track-section">
+      <section className="track-section" style={{ marginTop: '180px' }}>
         <div className="container">
-          <h2 className="text-center mb-4 content-title">Theo Dõi Xe & Nhắc Nhở Bảo Dưỡng</h2>
-          <p className="text-center mb-5 content-text">
-            Đăng ký để nhận nhắc nhở bảo dưỡng định kỳ mỗi 4 tháng và quản lý gói dịch vụ của bạn.
-          </p>
+          <div className="text-center mb-4">
+            <h2 className="mb-2" style={{ fontSize: '1.75rem', fontWeight: 600 }}>Theo Dõi Xe & Nhắc Nhở Bảo Dưỡng</h2>
+            <p className="mb-4" style={{ fontSize: '0.95rem', color: '#666' }}>
+              Đăng ký để nhận nhắc nhở bảo dưỡng định kỳ mỗi 4 tháng và quản lý gói dịch vụ của bạn.
+            </p>
+          </div>
           <div className="row justify-content-center">
-            <div className="col-md-8">
+            <div className="col-12">
               <div className="track-card">
                 <form id="track-form" onSubmit={handleSubmit}>
-                  <div className="mb-3">
-                    <label htmlFor="name" className="form-label">Tên</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="name"
-                      placeholder="Nhập tên của bạn"
-                      required
-                    />
+                  <div className="row">
+                    {/* Cột trái */}
+                    <div className="col-md-6">
+                      <div className="mb-3">
+                        <label htmlFor="name" className="form-label">Tên</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="name"
+                          placeholder="Nhập tên của bạn"
+                          required
+                        />
+                      </div>
+                      <div className="mb-3">
+                        <label htmlFor="email" className="form-label">Email</label>
+                        <input
+                          type="email"
+                          className="form-control"
+                          id="email"
+                          placeholder="Nhập email của bạn"
+                          required
+                        />
+                      </div>
+                      <div className="mb-3">
+                        <label htmlFor="phone" className="form-label">Số điện thoại</label>
+                        <input
+                          type="tel"
+                          className="form-control"
+                          id="phone"
+                          placeholder="Nhập số điện thoại"
+                          required
+                          pattern="[0-9]{10}"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Cột phải */}
+                    <div className="col-md-6">
+                      <div className="mb-3">
+                        <label htmlFor="package" className="form-label">Gói dịch vụ</label>
+                        <select className="form-select" id="package" required>
+                          <option value="" disabled>Chọn gói dịch vụ</option>
+                          <option value="Cơ bản">Cơ bản</option>
+                          <option value="Tiêu chuẩn">Tiêu chuẩn</option>
+                          <option value="Cao cấp">Cao cấp</option>
+                        </select>
+                      </div>
+                      <div className="mb-3">
+                        <label htmlFor="last-maintenance" className="form-label">Ngày bảo dưỡng gần nhất</label>
+                        <input type="date" className="form-control" id="last-maintenance" required />
+                      </div>
+                    </div>
                   </div>
-                  <div className="mb-3">
-                    <label htmlFor="email" className="form-label">Email</label>
-                    <input
-                      type="email"
-                      className="form-control"
-                      id="email"
-                      placeholder="Nhập email của bạn"
-                      required
-                    />
+                  <div className="d-flex justify-content-center mt-3">
+                    <FancyButton type="submit" variant="dark" style={{ minWidth: '250px' }}>Đăng ký nhắc nhở</FancyButton>
                   </div>
-                  <div className="mb-3">
-                    <label htmlFor="phone" className="form-label">Số điện thoại</label>
-                    <input
-                      type="tel"
-                      className="form-control"
-                      id="phone"
-                      placeholder="Nhập số điện thoại"
-                      required
-                      pattern="[0-9]{10}"
-                    />
-                  </div>
-                  <div className="mb-3">
-                    <label htmlFor="package" className="form-label">Gói dịch vụ</label>
-                    <select className="form-select" id="package" required>
-                      <option value="" disabled>Chọn gói dịch vụ</option>
-                      <option value="Cơ bản">Cơ bản</option>
-                      <option value="Tiêu chuẩn">Tiêu chuẩn</option>
-                      <option value="Cao cấp">Cao cấp</option>
-                    </select>
-                  </div>
-                  <div className="mb-3">
-                    <label htmlFor="last-maintenance" className="form-label">Ngày bảo dưỡng gần nhất</label>
-                    <input type="date" className="form-control" id="last-maintenance" required />
-                  </div>
-                  <button type="submit" className="btn btn-submit w-100">Đăng ký nhắc nhở</button>
                 </form>
                 {reminderMessage && (
                   <p id="reminder-message" className="text-center" style={{ marginTop: '1rem', fontWeight: 500, color: 'red' }}>
@@ -241,14 +235,16 @@ const TrackReminder = () => {
                   </p>
                 )}
                 {showPayButton && (
-                  <a
-                    href="#"
-                    id="pay-button"
-                    className="btn btn-pay w-100 mt-3"
-                    style={{ display: 'block', background: 'black', color: 'white' }}
-                  >
-                    Thanh toán gói dịch vụ
-                  </a>
+                  <div className="d-flex justify-content-center mt-3">
+                    <FancyButton
+                      id="pay-button"
+                      variant="dark"
+                      style={{ minWidth: '250px' }}
+                      onClick={(e) => e.preventDefault()}
+                    >
+                      Thanh toán gói dịch vụ
+                    </FancyButton>
+                  </div>
                 )}
               </div>
             </div>
