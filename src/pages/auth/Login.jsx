@@ -1,10 +1,13 @@
 // src/pages/auth/Login.jsx - HOÀN CHỈNH - COPY FILE NÀY VÀO PROJECT
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { authAPI, authUtils } from '../../services/api';
+import { authUtils } from '../../services/api';
+import authService from '../../services/authService';
+import { useToast } from '../../contexts/ToastContext';
 import EmailVerificationModal from '../../components/EmailVerificationModal';
 import GoogleLoginButton from '../../components/GoogleLoginButton';
 import FacebookLoginButton from '../../components/FacebookLoginButton';
+import FancyButton from '../../components/FancyButton';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
@@ -18,6 +21,7 @@ const Login = () => {
   const [showModal, setShowModal] = useState(false);
   const [userEmail, setUserEmail] = useState('');
   const navigate = useNavigate();
+  const toast = useToast();
 
   const handleChange = (e) => {
     setFormData({
@@ -32,17 +36,18 @@ const Login = () => {
   // ============================================
   const redirectBasedOnRole = (user) => {
     console.log('🔍 User from API:', user);
-    
-    const role = user.role || user.Role || user.roleName || user.RoleName;
-    const roleId = user.roleId || user.RoleId;
-    
+
+    // ✅ BE trả về PascalCase: RoleName, RoleId
+    const role = user.RoleName || user.roleName || user.Role || user.role;
+    const roleId = user.RoleId || user.roleId;
+
     console.log('📋 Role info:', { role, roleId });
-    
+
     // Admin/Staff -> /admin, Customer -> /home
     if (
       role?.toLowerCase() === 'admin' ||
       role?.toLowerCase() === 'staff' ||
-      roleId === 1 || 
+      roleId === 1 ||
       roleId === 2
     ) {
       console.log('✅ Redirect to /admin');
@@ -54,41 +59,19 @@ const Login = () => {
   };
 
   const handleLoginSuccess = (result) => {
-    console.log('Login success result:', result);
-    
-    let token, user;
-    
-    if (result.token && result.user) {
-      token = result.token;
-      user = result.user;
-    }
-    else if (result.data && result.data.token && result.data.user) {
-      token = result.data.token;
-      user = result.data.user;
-    }
-    else if (result.accessToken && result.user) {
-      token = result.accessToken;
-      user = result.user;
-    }
-    else if (result.access_token && result.user) {
-      token = result.access_token;
-      user = result.user;
-    }
-    else {
-      console.error('Unexpected login response format:', result);
-      setError('Định dạng phản hồi không hợp lệ');
-      return;
-    }
-    
-    if (token && user) {
-      authUtils.setAuth(token, user);
-      console.log('Auth data saved to localStorage');
-      
-      // Redirect dựa vào role
+    console.log('✅ Login success result:', result);
+
+    // ✅ BE trả về PascalCase: { data: { User, Customer, Token } }
+    // authService.login() đã tự động lưu token và user data vào localStorage
+    // Chỉ cần lấy user từ localStorage và redirect
+    const user = authUtils.getUser();
+
+    if (user) {
+      console.log('✅ User data from localStorage:', user);
       redirectBasedOnRole(user);
     } else {
-      console.error('Missing token or user in response');
-      setError('Dữ liệu đăng nhập không hợp lệ');
+      console.error('❌ No user data in localStorage after login');
+      setError('Có lỗi xảy ra khi đăng nhập');
     }
   };
 
@@ -144,8 +127,17 @@ const Login = () => {
 
     try {
       console.log('Attempting login with:', { username: formData.username });
-      const result = await authAPI.login(formData);
-      handleLoginSuccess(result);
+      // Sử dụng authService.login() để tự động lấy full profile
+      const result = await authService.login(formData.username, formData.password);
+
+      // authService.login() đã tự động lưu token và full profile vào localStorage
+      // Chỉ cần redirect dựa vào role
+      const user = authUtils.getUser();
+      if (user) {
+        redirectBasedOnRole(user);
+      } else {
+        setError('Có lỗi xảy ra khi đăng nhập');
+      }
     } catch (error) {
       handleLoginError(error);
     } finally {
@@ -190,7 +182,7 @@ const Login = () => {
                 }}
                 className="mb-4"
               >
-                Tesla Login
+                Login
               </h3>
 
               {error && (
@@ -204,7 +196,7 @@ const Login = () => {
                 <div className="form-floating mb-3">
                   <input
                     type="text"
-                    className="form-control"
+                    className="form-control custom-input"
                     id="floatingInput"
                     name="username"
                     placeholder="Enter your username"
@@ -218,7 +210,7 @@ const Login = () => {
                 <div className="form-floating mb-3">
                   <input
                     type="password"
-                    className="form-control"
+                    className="form-control custom-input"
                     id="floatingPassword"
                     name="password"
                     placeholder="Enter your password"
@@ -229,23 +221,23 @@ const Login = () => {
                   />
                   <label htmlFor="floatingPassword">Password</label>
                 </div>
-                <button
-                  type="submit"
-                  className="btn login-btn w-100 mb-3"
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <>
-                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                      Đang đăng nhập...
-                    </>
-                  ) : (
-                    <>
-                      <i className="bi bi-box-arrow-in-right me-2"></i>
-                      Login
-                    </>
-                  )}
-                </button>
+                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                  <FancyButton
+                    type="submit"
+                    disabled={loading}
+                    variant="dark"
+                    style={{ width: '47%' }}
+                  >
+                    {loading ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        Loading...
+                      </>
+                    ) : (
+                      'Login'
+                    )}
+                  </FancyButton>
+                </div>
               </form>
 
               <Link to="/forgot-password" className="text-decoration-none text-muted mb-3 d-block">
@@ -255,10 +247,10 @@ const Login = () => {
               {/* ICON ĐƠN GIẢN - HOẠT ĐỘNG */}
               <div className="d-flex justify-content-center gap-3 mb-3">
                 <div style={{ position: 'relative', width: '50px', height: '50px' }}>
-                  <i 
-                    className="bi bi-facebook" 
-                    style={{ 
-                      fontSize: '32px', 
+                  <i
+                    className="bi bi-facebook"
+                    style={{
+                      fontSize: '32px',
                       color: '#1877f2',
                       position: 'absolute',
                       top: '50%',
@@ -277,10 +269,10 @@ const Login = () => {
                 </div>
 
                 <div style={{ position: 'relative', width: '50px', height: '50px' }}>
-                  <i 
-                    className="bi bi-google" 
-                    style={{ 
-                      fontSize: '32px', 
+                  <i
+                    className="bi bi-google"
+                    style={{
+                      fontSize: '32px',
                       color: '#db4437',
                       position: 'absolute',
                       top: '50%',
@@ -343,6 +335,26 @@ const Login = () => {
 
         .card {
           border-radius: 0;
+        }
+
+        .custom-input {
+          border: 2px solid #000 !important;
+          border-radius: 0 !important;
+          box-shadow: none !important;
+        }
+
+        .custom-input:focus {
+          border-color: #000 !important;
+          box-shadow: none !important;
+        }
+
+        .form-floating > label {
+          color: #6c757d;
+        }
+
+        .form-floating > .custom-input:focus ~ label,
+        .form-floating > .custom-input:not(:placeholder-shown) ~ label {
+          color: #000;
         }
 
         .login-btn {

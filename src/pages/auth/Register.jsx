@@ -1,17 +1,24 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { authAPI } from '../../services/api';
+import authService from '../../services/authService';
+import { useToast } from '../../contexts/ToastContext';
+import FancyButton from '../../components/FancyButton';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
 const Register = () => {
   const navigate = useNavigate();
+  const toast = useToast();
   const [formData, setFormData] = useState({
     username: '',
     fullName: '',
-    password: '',
-    phone: '',
     email: '',
+    password: '',
+    confirmPassword: '',
+    phoneNumber: '',
+    address: '',
+    dateOfBirth: '',
+    gender: 'Male' // Default value
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -29,7 +36,7 @@ const Register = () => {
 
   const validateForm = () => {
     // Basic validation
-    if (!formData.username || !formData.fullName || !formData.password || !formData.email) {
+    if (!formData.username || !formData.fullName || !formData.password || !formData.confirmPassword || !formData.email) {
       setError('Vui lòng điền đầy đủ thông tin bắt buộc.');
       return false;
     }
@@ -37,6 +44,12 @@ const Register = () => {
     // Password validation
     if (formData.password.length < 6) {
       setError('Mật khẩu phải có ít nhất 6 ký tự.');
+      return false;
+    }
+
+    // Password match validation
+    if (formData.password !== formData.confirmPassword) {
+      setError('Mật khẩu xác nhận không khớp.');
       return false;
     }
 
@@ -63,45 +76,56 @@ const Register = () => {
     }
 
     try {
-      // Call register API
-      const response = await authAPI.register(formData);
-      console.log('Registration success:', response);
+      console.log('Attempting registration with:', { username: formData.username, email: formData.email });
+
+      // Call authService.register()
+      const response = await authService.register(formData);
+
+      console.log('✅ Registration success:', response);
 
       // Registration successful
       setSuccess('Đăng ký thành công! Chúng tôi đã gửi email xác nhận, vui lòng kiểm tra hộp thư của bạn.');
-      
+      toast.success('Đăng ký thành công! Vui lòng kiểm tra email để xác nhận tài khoản.');
+
       // Clear form
       setFormData({
         username: '',
         fullName: '',
-        password: '',
-        phone: '',
         email: '',
+        password: '',
+        confirmPassword: '',
+        phoneNumber: '',
+        address: '',
+        dateOfBirth: '',
+        gender: 'Male'
       });
-      
+
       // Redirect to login page after 3 seconds
       setTimeout(() => {
-        navigate('/login');
+        navigate('/resend-verification', { state: { email: formData.email } });
       }, 3000);
 
     } catch (error) {
-      console.error('Registration error:', error);
-      
+      console.error('❌ Registration error:', error);
+
+      // Handle different error types
       if (error.response?.data) {
         const data = error.response.data;
         if (data.message) {
           setError(data.message);
         } else if (data.errors) {
-          // Handle validation errors
+          // Handle validation errors from backend
           const errorMessages = Object.values(data.errors).flat().join(', ');
           setError(errorMessages);
         } else {
           setError('Đăng ký thất bại. Vui lòng thử lại.');
         }
-      } else if (error.code === 'ERR_NETWORK') {
+      } else if (error.message === 'Network error - Cannot connect to server') {
         setError('Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.');
+      } else if (error.message === 'Request timeout') {
+        setError('Kết nối bị timeout. Vui lòng thử lại.');
       } else {
-        setError('Đã xảy ra lỗi. Vui lòng thử lại sau.');
+        setError(error.message || 'Đã xảy ra lỗi. Vui lòng thử lại sau.');
       }
     } finally {
       setLoading(false);
@@ -202,16 +226,18 @@ const Register = () => {
 
                   <div className="input-group mb-3">
                     <span className="input-group-text">
-                      <i className="bi bi-telephone"></i>
+                      <i className="bi bi-lock-fill"></i>
                     </span>
                     <input
-                      name="phone"
-                      placeholder="Phone (optional)"
-                      type="tel"
+                      name="confirmPassword"
+                      placeholder="Confirm Password *"
+                      type="password"
                       className="form-control"
-                      aria-label="Phone"
-                      value={formData.phone}
+                      aria-label="Confirm Password"
+                      value={formData.confirmPassword}
                       onChange={handleChange}
+                      required
+                      minLength="6"
                       disabled={loading}
                     />
                   </div>
@@ -233,10 +259,78 @@ const Register = () => {
                     />
                   </div>
 
-                  <button
+                  <div className="input-group mb-3">
+                    <span className="input-group-text">
+                      <i className="bi bi-telephone"></i>
+                    </span>
+                    <input
+                      name="phoneNumber"
+                      placeholder="Phone (optional)"
+                      type="tel"
+                      className="form-control"
+                      aria-label="Phone"
+                      value={formData.phoneNumber}
+                      onChange={handleChange}
+                      disabled={loading}
+                    />
+                  </div>
+
+                  <div className="input-group mb-3">
+                    <span className="input-group-text">
+                      <i className="bi bi-geo-alt"></i>
+                    </span>
+                    <input
+                      name="address"
+                      placeholder="Address (optional)"
+                      type="text"
+                      className="form-control"
+                      aria-label="Address"
+                      value={formData.address}
+                      onChange={handleChange}
+                      disabled={loading}
+                    />
+                  </div>
+
+                  <div className="input-group mb-3">
+                    <span className="input-group-text">
+                      <i className="bi bi-calendar"></i>
+                    </span>
+                    <input
+                      name="dateOfBirth"
+                      placeholder="Date of Birth"
+                      type="date"
+                      className="form-control"
+                      aria-label="Date of Birth"
+                      value={formData.dateOfBirth}
+                      onChange={handleChange}
+                      max={new Date().toISOString().split('T')[0]}
+                      disabled={loading}
+                    />
+                  </div>
+
+                  <div className="input-group mb-3">
+                    <span className="input-group-text">
+                      <i className="bi bi-gender-ambiguous"></i>
+                    </span>
+                    <select
+                      name="gender"
+                      className="form-select"
+                      aria-label="Gender"
+                      value={formData.gender}
+                      onChange={handleChange}
+                      disabled={loading}
+                    >
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+
+                  <FancyButton
                     type="submit"
-                    className="btn login-btn w-100 mb-3"
+                    fullWidth
                     disabled={loading}
+                    variant="dark"
                   >
                     {loading ? (
                       <>
@@ -244,12 +338,9 @@ const Register = () => {
                         Đang đăng ký...
                       </>
                     ) : (
-                      <>
-                        <i className="bi bi-person-plus me-2"></i>
-                        Sign up
-                      </>
+                      'Sign up'
                     )}
-                  </button>
+                  </FancyButton>
                 </form>
 
                 <div className="d-flex justify-content-center gap-3 mb-3">

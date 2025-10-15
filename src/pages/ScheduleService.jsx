@@ -1,19 +1,28 @@
 // src/pages/ScheduleService.jsx
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import UserMenu from '../components/UserMenu';
+import NotificationDropdown from '../components/NotificationDropdown';
+import useNotifications from '../hooks/useNotifications';
+import FancyButton from '../components/FancyButton';
 import appointmentService from '../services/appointmentService';
+import subscriptionService from '../services/subscriptionService';
+import { validateAgeForService } from '../utils/ageValidator';
+import { formatCurrency } from '../utils/currencyUtils';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 import './Home.css';
 
 const ScheduleService = () => {
+  const navigate = useNavigate();
+  const { notifications, markAsRead, dismissNotification } = useNotifications();
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [bookingMessage, setBookingMessage] = useState('');
   const [showPayButton, setShowPayButton] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [ageValidation, setAgeValidation] = useState({ isValid: true, message: '', needsDateOfBirth: false });
 
   // Data from API
   const [vehicles, setVehicles] = useState([]);
@@ -22,12 +31,61 @@ const ScheduleService = () => {
   const [timeSlots, setTimeSlots] = useState([]);
   const [selectedCenter, setSelectedCenter] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
+  const [selectedSlot, setSelectedSlot] = useState(null);
+
+  // Smart Subscription
+  const [selectedVehicleId, setSelectedVehicleId] = useState('');
+  const [selectedServiceIds, setSelectedServiceIds] = useState([]);
+  const [activeSubscription, setActiveSubscription] = useState(null);
+  const [checkingSubscription, setCheckingSubscription] = useState(false);
 
   let lastScrollY = 0;
 
   // Load initial data
   useEffect(() => {
+    // Scroll to top when component mounts
+    window.scrollTo(0, 0);
+
+    // Check age requirement first
+    const user = JSON.parse(localStorage.getItem('user'));
+    console.log('👤 User from localStorage:', user);
+    console.log('📅 Date of birth:', user?.dateOfBirth);
+
+    const validation = validateAgeForService(user);
+    console.log('✅ Age validation result:', validation);
+    setAgeValidation(validation);
+
+    // If user needs to provide date of birth, show alert and redirect
+    if (validation.needsDateOfBirth) {
+      console.log('⚠️ User needs to provide date of birth');
+      if (window.confirm('Bạn cần cập nhật ngày sinh trong Thông tin cá nhân để sử dụng dịch vụ. Chuyển đến trang Thông tin cá nhân ngay?')) {
+        navigate('/profile');
+        return;
+      }
+    }
+
+    if (!validation.isValid) {
+      console.log('❌ User is not eligible for service:', validation.message);
+    } else {
+      console.log('✅ User is eligible for service');
+    }
+
     loadInitialData();
+
+    // Reload data when user comes back to this page
+    const handleFocus = () => {
+      // Re-check age when user comes back
+      const updatedUser = JSON.parse(localStorage.getItem('user'));
+      const updatedValidation = validateAgeForService(updatedUser);
+      setAgeValidation(updatedValidation);
+
+      if (!updatedValidation.needsDateOfBirth) {
+        loadInitialData();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, []);
 
   // Scroll handler
@@ -70,11 +128,50 @@ const ScheduleService = () => {
         appointmentService.getActiveServices()
       ]);
 
-      setVehicles(vehiclesRes.data || []);
-      setServiceCenters(centersRes.data || []);
-      setServices(servicesRes.data || []);
+      console.log('🚗 Vehicles response:', vehiclesRes);
+      console.log('🚗 Vehicles data:', vehiclesRes.data);
+      console.log('🏢 Centers:', centersRes);
+      console.log('🏢 Centers data:', centersRes.data);
+      console.log('🔧 Services:', servicesRes);
+      console.log('🔧 Services data:', servicesRes.data);
+
+      // Handle different response formats and filter out deleted vehicles
+      const rawVehicles = Array.isArray(vehiclesRes.data) ? vehiclesRes.data :
+                          Array.isArray(vehiclesRes) ? vehiclesRes : [];
+
+      // Get frontend-deleted vehicles from localStorage
+      const deletedVehicles = JSON.parse(localStorage.getItem('deletedVehicles') || '[]');
+
+      const vehiclesData = rawVehicles.filter(vehicle => {
+        // Filter out backend soft-deleted vehicles
+        const isDeleted = vehicle.isDeleted || vehicle.IsDeleted || false;
+        if (isDeleted) {
+          console.log(`🗑️ Filtering out BE-deleted vehicle: ${vehicle.licensePlate}`);
+          return false;
+        }
+
+        // Filter out frontend-deleted vehicles
+        const isFrontendDeleted = deletedVehicles.includes(vehicle.vehicleId);
+        if (isFrontendDeleted) {
+          console.log(`🗑️ Filtering out frontend-deleted vehicle: ${vehicle.licensePlate}`);
+          return false;
+        }
+
+        return true;
+      });
+
+      const centersData = Array.isArray(centersRes.data) ? centersRes.data :
+                         Array.isArray(centersRes) ? centersRes : [];
+
+      const servicesData = Array.isArray(servicesRes.data) ? servicesRes.data :
+                          Array.isArray(servicesRes) ? servicesRes : [];
+
+      setVehicles(vehiclesData);
+      setServiceCenters(centersData);
+      setServices(servicesData);
     } catch (error) {
-      console.error('Error loading data:', error);
+      console.error('❌ Error loading data:', error);
+      console.error('❌ Error response:', error.response);
       setBookingMessage('Có lỗi xảy ra khi tải dữ liệu. Vui lòng thử lại.');
     } finally {
       setLoading(false);
@@ -83,12 +180,21 @@ const ScheduleService = () => {
 
   // Load time slots when center and date change
   const handleCenterOrDateChange = async (centerId, date) => {
+    console.log('🕐 Loading time slots for center:', centerId, 'date:', date);
     if (!centerId || !date) return;
 
     try {
       setLoading(true);
+      setSelectedSlot(null); // Reset selected slot when changing center or date
       const slotsRes = await appointmentService.getAvailableSlots(centerId, date);
-      setTimeSlots(slotsRes.data || []);
+      console.log('🕐 Time slots response:', slotsRes);
+      console.log('🕐 Time slots data:', slotsRes.data);
+
+      const slotsData = Array.isArray(slotsRes.data) ? slotsRes.data :
+                       Array.isArray(slotsRes) ? slotsRes : [];
+
+      console.log('🕐 Final time slots:', slotsData);
+      setTimeSlots(slotsData);
     } catch (error) {
       console.error('Error loading time slots:', error);
       setTimeSlots([]);
@@ -97,22 +203,99 @@ const ScheduleService = () => {
     }
   };
 
+  const handleNotificationClick = (notification) => {
+    markAsRead(notification.id);
+    if (notification.type === 'appointment_reminder' && notification.appointmentId) {
+      navigate('/my-appointments');
+    }
+  };
+
+  // Check active subscription khi vehicle và services thay đổi
+  useEffect(() => {
+    checkActiveSubscription();
+  }, [selectedVehicleId, selectedServiceIds]);
+
+  const checkActiveSubscription = async () => {
+    if (!selectedVehicleId || selectedServiceIds.length === 0) {
+      setActiveSubscription(null);
+      return;
+    }
+
+    try {
+      setCheckingSubscription(true);
+      const response = await subscriptionService.getActiveSubscriptionsByVehicle(selectedVehicleId);
+      const activeSubscriptions = Array.isArray(response.data) ? response.data : [];
+
+      // Check if any service is covered by subscription
+      const matchingSubscription = activeSubscriptions.find(sub =>
+        sub.packageServices && sub.packageServices.some(ps =>
+          selectedServiceIds.includes(ps.serviceId) && sub.remainingServices > 0
+        )
+      );
+
+      setActiveSubscription(matchingSubscription || null);
+
+      if (matchingSubscription) {
+        console.log('✅ Found active subscription:', matchingSubscription);
+      }
+    } catch (error) {
+      console.error('Error checking subscription:', error);
+      setActiveSubscription(null);
+    } finally {
+      setCheckingSubscription(false);
+    }
+  };
+
+  const handleVehicleChange = (vehicleId) => {
+    setSelectedVehicleId(vehicleId);
+    checkActiveSubscription();
+  };
+
+  const handleServiceChange = (serviceId, isChecked) => {
+    setSelectedServiceIds(prev => {
+      if (isChecked) {
+        return [...prev, parseInt(serviceId)];
+      } else {
+        return prev.filter(id => id !== parseInt(serviceId));
+      }
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setBookingMessage('');
 
     try {
+      // Get customer ID from localStorage (set during login)
+      const user = JSON.parse(localStorage.getItem('user'));
+
+      // Re-validate age before submitting
+      const validation = validateAgeForService(user);
+      if (!validation.isValid) {
+        setBookingMessage(validation.message);
+        setLoading(false);
+        return;
+      }
+
       // Get form values
       const vehicleId = document.getElementById('vehicle').value;
       const serviceCenterId = document.getElementById('service-center').value;
-      const slotId = document.getElementById('time-slot').value;
+      const slotId = selectedSlot?.slotId;
       const serviceIds = Array.from(document.querySelectorAll('input[name="service-type"]:checked'))
         .map(el => parseInt(el.value));
       const customerNotes = document.getElementById('notes')?.value || '';
 
-      // Get customer ID from localStorage (set during login)
-      const customerId = JSON.parse(localStorage.getItem('user'))?.customerId;
+      if (!slotId) {
+        setBookingMessage('Vui lòng chọn khung giờ.');
+        setLoading(false);
+        return;
+      }
+
+      const customerId = user?.customerId || user?.CustomerId;
+
+      console.log('📋 User from localStorage:', user);
+      console.log('👤 Customer ID:', customerId);
 
       if (!customerId) {
         setBookingMessage('Vui lòng đăng nhập để đặt lịch.');
@@ -138,8 +321,12 @@ const ScheduleService = () => {
         setBookingMessage(response.message || 'Đặt lịch thành công! Vui lòng kiểm tra email để xác nhận.');
         setShowPayButton(true);
 
-        // Reset form
+        // Reset form and states
         e.target.reset();
+        setSelectedSlot(null);
+        setSelectedCenter('');
+        setSelectedDate('');
+        setTimeSlots([]);
       } else {
         setBookingMessage(response.message || 'Có lỗi xảy ra khi đặt lịch.');
       }
@@ -157,7 +344,7 @@ const ScheduleService = () => {
   return (
     <>
       {/* Navbar */}
-      <nav className={`navbar navbar-expand-lg navbar-custom ${scrolled ? 'scrolled' : ''} ${hidden ? 'hidden' : ''}`}>
+      <nav className="navbar navbar-expand-lg navbar-custom scrolled">
         <div className="container d-flex flex-column">
           <div className="d-flex justify-content-between align-items-center w-100 top-navbar">
             <form className="search-form">
@@ -177,11 +364,12 @@ const ScheduleService = () => {
 
             <div className="nav-icons d-flex align-items-center">
               <UserMenu />
-              <a href="#" className="nav-link move">
-                <i className="fas fa-shopping-cart"></i>
-                <span>Giỏ hàng</span>
-                <span className="cart-badge">0</span>
-              </a>
+              <NotificationDropdown
+                notifications={notifications}
+                onMarkRead={markAsRead}
+                onDismiss={dismissNotification}
+                onNotificationClick={handleNotificationClick}
+              />
             </div>
           </div>
 
@@ -200,9 +388,9 @@ const ScheduleService = () => {
                     DỊCH VỤ
                   </a>
                   <ul className="dropdown-menu">
-                    <li><a className="dropdown-item" href="#">Lưu lịch sử bảo dưỡng</a></li>
-                    <li><a className="dropdown-item" href="#">Quản lý chi phí bảo dưỡng & sửa chữa</a></li>
-                    <li><a className="dropdown-item" href="#">Thanh toán online</a></li>
+                    <li><Link className="dropdown-item" to="/track-reminder">Theo dõi & Nhắc nhở</Link></li>
+                    <li><Link className="dropdown-item" to="/schedule-service">Đặt lịch dịch vụ</Link></li>
+                    <li><a className="dropdown-item" href="#">Quản lý chi phí</a></li>
                   </ul>
                 </li>
                 <li className="nav-item">
@@ -220,176 +408,247 @@ const ScheduleService = () => {
         </div>
       </nav>
 
-      {/* Carousel */}
-      <div id="carouselExampleAutoplaying" className="carousel slide" data-bs-ride="carousel">
-        <div className="carousel-inner">
-          <div className="carousel-item active">
-            <img
-              src="https://www.reuters.com/resizer/v2/O2JH3CKXTZMY5FRVALTHVZI3WA.jpg?auth=9e3d2c9df7e8afdba0b1fee35f6ef89db69c61827e0820130589ebafb75686d5&width=5588&quality=80"
-              className="d-block w-100"
-              alt="Tesla Model Y"
-            />
-          </div>
-          <div className="carousel-item">
-            <img
-              src="http://www.shop4tesla.com/cdn/shop/articles/1roadi_42f236a7-c4fe-465f-bc7b-1377b0ce2d66.png?v=1740472787"
-              className="d-block w-100"
-              alt="Tesla Model Y"
-            />
-          </div>
-          <div className="carousel-item">
-            <img
-              src="https://media-cldnry.s-nbcnews.com/image/upload/t_fit-1500w,f_auto,q_auto:best/rockcms/2025-02/250213-Cybertruck-aa-1045-dd55f3.jpg"
-              className="d-block w-100"
-              alt="Tesla Cybertruck"
-            />
-          </div>
-        </div>
-        <button className="carousel-control-prev" type="button" data-bs-target="#carouselExampleAutoplaying" data-bs-slide="prev">
-          <span className="carousel-control-prev-icon" aria-hidden="true"></span>
-          <span className="visually-hidden">Previous</span>
-        </button>
-        <button className="carousel-control-next" type="button" data-bs-target="#carouselExampleAutoplaying" data-bs-slide="next">
-          <span className="carousel-control-next-icon" aria-hidden="true"></span>
-          <span className="visually-hidden">Next</span>
-        </button>
-      </div>
-
       {/* Booking Section */}
-      <section className="booking-section">
+      <section className="booking-section" style={{ marginTop: '180px' }}>
         <div className="container">
-          <h2 className="text-center mb-4 content-title">Đặt Lịch Dịch Vụ</h2>
-          <p className="text-center mb-5 content-text">
-            Đặt lịch bảo dưỡng hoặc sửa chữa trực tuyến, chọn trung tâm dịch vụ và nhận xác nhận nhanh chóng.
-          </p>
+          {/* Age Validation Alert */}
+          {!ageValidation.isValid && (
+            <div className={`alert ${ageValidation.needsDateOfBirth ? 'alert-warning' : 'alert-danger'} mb-4`} role="alert">
+              <div className="d-flex align-items-center">
+                <i className={`bi ${ageValidation.needsDateOfBirth ? 'bi-exclamation-triangle-fill' : 'bi-x-circle-fill'} me-2`} style={{ fontSize: '1.5rem' }}></i>
+                <div className="flex-grow-1">
+                  <h5 className="alert-heading mb-1">
+                    {ageValidation.needsDateOfBirth ? 'Cần cập nhật thông tin' : 'Không đủ điều kiện'}
+                  </h5>
+                  <p className="mb-0">{ageValidation.message}</p>
+                </div>
+                {ageValidation.needsDateOfBirth && (
+                  <button
+                    className="btn btn-warning btn-sm ms-3"
+                    onClick={() => navigate('/profile')}
+                  >
+                    <i className="bi bi-person-fill me-1"></i>
+                    Cập nhật ngay
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="text-center mb-4 position-relative">
+            <h2 className="mb-2" style={{ fontSize: '1.75rem', fontWeight: 600 }}>ĐẶT LỊCH DỊCH VỤ</h2>
+            <p className="mb-4" style={{ fontSize: '0.95rem', color: '#666' }}>
+              Đặt lịch bảo dưỡng hoặc sửa chữa trực tuyến, chọn trung tâm dịch vụ và nhận xác nhận nhanh chóng.
+            </p>
+            <button
+              onClick={loadInitialData}
+              className="btn btn-outline-dark btn-sm position-absolute"
+              disabled={loading}
+              style={{ top: 0, right: 0 }}
+            >
+              <i className="fas fa-sync-alt"></i> Làm mới
+            </button>
+          </div>
           <div className="row justify-content-center">
-            <div className="col-md-8">
+            <div className="col-12">
               <div className="booking-card">
                 <form id="booking-form" onSubmit={handleSubmit}>
                   {loading && <div className="alert alert-info">Đang tải dữ liệu...</div>}
 
-                  {/* Vehicle Selection */}
-                  <h5 className="mb-3" style={{ fontWeight: 600 }}>Chọn xe</h5>
-                  <div className="mb-3">
-                    <label htmlFor="vehicle" className="form-label">Xe của bạn</label>
-                    <select className="form-select" id="vehicle" required disabled={loading || vehicles.length === 0}>
-                      <option value="">Chọn xe</option>
-                      {vehicles.map(vehicle => (
-                        <option key={vehicle.vehicleId} value={vehicle.vehicleId}>
-                          {vehicle.licensePlate} - {vehicle.modelName}
-                        </option>
-                      ))}
-                    </select>
-                    {vehicles.length === 0 && !loading && (
-                      <small className="text-danger">Bạn chưa đăng ký xe. Vui lòng đăng ký xe trước.</small>
-                    )}
-                  </div>
-
-                  {/* Service Center Selection */}
-                  <h5 className="mb-3" style={{ fontWeight: 600 }}>Trung tâm dịch vụ</h5>
-                  <div className="mb-3">
-                    <label htmlFor="service-center" className="form-label">Chọn trung tâm</label>
-                    <select
-                      className="form-select"
-                      id="service-center"
-                      required
-                      disabled={loading}
-                      onChange={(e) => {
-                        setSelectedCenter(e.target.value);
-                        if (selectedDate) {
-                          handleCenterOrDateChange(e.target.value, selectedDate);
-                        }
-                      }}
-                    >
-                      <option value="">Chọn trung tâm dịch vụ</option>
-                      {serviceCenters.map(center => (
-                        <option key={center.centerId} value={center.centerId}>
-                          {center.centerName} - {center.address}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Date Selection */}
-                  <h5 className="mb-3" style={{ fontWeight: 600 }}>Chọn ngày & giờ</h5>
-                  <div className="mb-3">
-                    <label htmlFor="date" className="form-label">Ngày đặt lịch</label>
-                    <input
-                      type="date"
-                      className="form-control"
-                      id="date"
-                      required
-                      min={new Date().toISOString().split('T')[0]}
-                      onChange={(e) => {
-                        setSelectedDate(e.target.value);
-                        if (selectedCenter) {
-                          handleCenterOrDateChange(selectedCenter, e.target.value);
-                        }
-                      }}
-                    />
-                  </div>
-
-                  {/* Time Slot Selection */}
-                  <div className="mb-3">
-                    <label htmlFor="time-slot" className="form-label">Khung giờ</label>
-                    <select
-                      className="form-select"
-                      id="time-slot"
-                      required
-                      disabled={timeSlots.length === 0 || loading}
-                    >
-                      <option value="">Chọn khung giờ</option>
-                      {timeSlots.map(slot => (
-                        <option key={slot.slotId} value={slot.slotId}>
-                          {slot.startTime} - {slot.endTime} ({slot.availableSlots} slots còn trống)
-                        </option>
-                      ))}
-                    </select>
-                    {timeSlots.length === 0 && selectedCenter && selectedDate && (
-                      <small className="text-warning">Không có khung giờ trống cho ngày này</small>
-                    )}
-                  </div>
-
-                  {/* Service Selection */}
-                  <h5 className="mb-3" style={{ fontWeight: 600 }}>Chọn dịch vụ</h5>
-                  <div className="mb-3">
-                    {services.map(service => (
-                      <div key={service.serviceId} className="form-check">
-                        <input
-                          className="form-check-input"
-                          type="checkbox"
-                          name="service-type"
-                          id={`service-${service.serviceId}`}
-                          value={service.serviceId}
-                        />
-                        <label className="form-check-label" htmlFor={`service-${service.serviceId}`}>
-                          {service.serviceName} - {service.basePrice?.toLocaleString('vi-VN')} VNĐ
-                        </label>
+                  <div className="row">
+                    {/* Cột trái */}
+                    <div className="col-md-6">
+                      {/* Vehicle Selection */}
+                      <h5 className="mb-3" style={{ fontWeight: 600 }}>Chọn xe</h5>
+                      <div className="mb-4">
+                        <select className="form-select" id="vehicle" required disabled={loading || vehicles.length === 0}>
+                          <option value="">Chọn xe ({vehicles.length} xe)</option>
+                          {vehicles.map(vehicle => (
+                            <option key={vehicle.vehicleId} value={vehicle.vehicleId}>
+                              {vehicle.licensePlate} - {vehicle.modelName}
+                            </option>
+                          ))}
+                        </select>
+                        {vehicles.length === 0 && !loading && (
+                          <small className="text-danger">
+                            Bạn chưa đăng ký xe. Vui lòng <Link to="/register-vehicle">đăng ký xe</Link> trước.
+                          </small>
+                        )}
                       </div>
-                    ))}
-                    {services.length === 0 && !loading && (
-                      <small className="text-danger">Không có dịch vụ khả dụng</small>
-                    )}
+
+                      {/* Service Center Selection */}
+                      <h5 className="mb-3" style={{ fontWeight: 600 }}>Trung tâm dịch vụ</h5>
+                      <div className="mb-4">
+                        <select
+                          className="form-select"
+                          id="service-center"
+                          required
+                          disabled={loading || serviceCenters.length === 0}
+                          onChange={(e) => {
+                            setSelectedCenter(e.target.value);
+                            if (selectedDate) {
+                              handleCenterOrDateChange(e.target.value, selectedDate);
+                            }
+                          }}
+                        >
+                          <option value="">Chọn trung tâm dịch vụ ({serviceCenters.length} trung tâm)</option>
+                          {serviceCenters.map(center => (
+                            <option key={center.centerId} value={center.centerId}>
+                              {center.centerName} - {center.address}
+                            </option>
+                          ))}
+                        </select>
+                        {serviceCenters.length === 0 && !loading && (
+                          <small className="text-danger">Không có trung tâm dịch vụ khả dụng</small>
+                        )}
+                      </div>
+
+                      {/* Date Selection */}
+                      <h5 className="mb-3" style={{ fontWeight: 600 }}>Chọn ngày & giờ</h5>
+                      <div className="mb-4">
+                        <input
+                          type="date"
+                          className="form-control"
+                          id="date"
+                          required
+                          min={new Date().toISOString().split('T')[0]}
+                          onChange={(e) => {
+                            setSelectedDate(e.target.value);
+                            if (selectedCenter) {
+                              handleCenterOrDateChange(selectedCenter, e.target.value);
+                            }
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Cột phải */}
+                    <div className="col-md-6">
+                      {/* Time Slot Selection */}
+                      <h5 className="mb-3" style={{ fontWeight: 600 }}>Khung giờ</h5>
+                      <div className="mb-4">
+                        {!selectedCenter || !selectedDate ? (
+                          <div className="text-center py-4 text-muted">
+                            <i className="bi bi-clock-history" style={{ fontSize: '2rem' }}></i>
+                            <p className="mt-2 mb-0">Vui lòng chọn trung tâm và ngày để xem khung giờ</p>
+                          </div>
+                        ) : timeSlots.length === 0 && !loading ? (
+                          <div className="text-center py-4 text-warning">
+                            <i className="bi bi-exclamation-triangle" style={{ fontSize: '2rem' }}></i>
+                            <p className="mt-2 mb-0">Không có khung giờ trống cho ngày này</p>
+                          </div>
+                        ) : (
+                          <div className="row g-2" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                            {timeSlots.map(slot => {
+                              const isSelected = selectedSlot?.slotId === slot.slotId;
+
+                              // BE trả về: remainingCapacity, maxBookings, currentBookings
+                              const totalSlots = slot.maxBookings || slot.maxCapacity || 10;
+                              const availableSlots = slot.remainingCapacity ?? (totalSlots - (slot.currentBookings || 0));
+                              const availablePercent = totalSlots > 0 ? (availableSlots / totalSlots) * 100 : 0;
+
+                              console.log(`✅ Slot ${slot.slotId}: ${slot.startTime}-${slot.endTime} | available=${availableSlots}/${totalSlots} (${availablePercent.toFixed(0)}%)`);
+
+                              const getSlotColor = () => {
+                                if (availableSlots === 0) return 'danger';
+                                if (availablePercent <= 30) return 'warning';
+                                return 'success';
+                              };
+
+                              return (
+                                <div key={slot.slotId} className="col-6">
+                                  <div
+                                    className={`card h-100 ${isSelected ? 'border-primary shadow' : ''} ${availableSlots === 0 ? 'opacity-50' : ''}`}
+                                    style={{
+                                      cursor: availableSlots > 0 ? 'pointer' : 'not-allowed',
+                                      transition: 'all 0.2s',
+                                      border: isSelected ? '2px solid #0d6efd' : '1px solid #dee2e6'
+                                    }}
+                                    onClick={() => {
+                                      if (availableSlots > 0) {
+                                        setSelectedSlot(slot);
+                                      }
+                                    }}
+                                  >
+                                    <div className="card-body p-3">
+                                      <div className="d-flex justify-content-between align-items-start mb-2">
+                                        <div>
+                                          <h6 className="mb-1" style={{ fontWeight: 600, fontSize: '0.95rem' }}>
+                                            <i className="bi bi-clock me-1"></i>
+                                            {slot.startTime} - {slot.endTime}
+                                          </h6>
+                                        </div>
+                                        {isSelected && (
+                                          <i className="bi bi-check-circle-fill text-primary"></i>
+                                        )}
+                                      </div>
+                                      <div className="d-flex justify-content-between align-items-center">
+                                        <span className={`badge bg-${getSlotColor()} badge-sm`}>
+                                          {availableSlots > 0 ? `${availableSlots} còn trống` : 'Hết chỗ'}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                        {selectedSlot && (
+                          <div className="alert alert-info mt-2 mb-0 py-2">
+                            <small>
+                              <i className="bi bi-info-circle me-1"></i>
+                              Đã chọn: <strong>{selectedSlot.startTime} - {selectedSlot.endTime}</strong>
+                            </small>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Service Selection */}
+                      <h5 className="mb-3" style={{ fontWeight: 600 }}>Chọn dịch vụ</h5>
+                      <div className="mb-4" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                        {services.map(service => (
+                          <div key={service.serviceId} className="form-check">
+                            <input
+                              className="form-check-input"
+                              type="checkbox"
+                              name="service-type"
+                              id={`service-${service.serviceId}`}
+                              value={service.serviceId}
+                            />
+                            <label className="form-check-label" htmlFor={`service-${service.serviceId}`}>
+                              {service.serviceName} - {service.basePrice?.toLocaleString('vi-VN')} VNĐ
+                            </label>
+                          </div>
+                        ))}
+                        {services.length === 0 && !loading && (
+                          <small className="text-danger">Không có dịch vụ khả dụng</small>
+                        )}
+                      </div>
+
+                      {/* Notes */}
+                      <h5 className="mb-3" style={{ fontWeight: 600 }}>Ghi chú</h5>
+                      <div className="mb-4">
+                        <textarea
+                          className="form-control"
+                          id="notes"
+                          rows="3"
+                          placeholder="Ghi chú thêm về yêu cầu của bạn..."
+                        ></textarea>
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Notes */}
-                  <div className="mb-3">
-                    <label htmlFor="notes" className="form-label">Ghi chú (tùy chọn)</label>
-                    <textarea
-                      className="form-control"
-                      id="notes"
-                      rows="3"
-                      placeholder="Ghi chú thêm về yêu cầu của bạn..."
-                    ></textarea>
+                  <div className="d-flex justify-content-center mt-3">
+                    <FancyButton
+                      type="submit"
+                      variant="dark"
+                      style={{ minWidth: '180px' }}
+                      disabled={loading || vehicles.length === 0 || !ageValidation.isValid}
+                    >
+                      {loading ? 'Đang xử lý...' : 'Đặt lịch ngay'}
+                    </FancyButton>
                   </div>
-
-                  <button
-                    type="submit"
-                    className="btn btn-submit w-100"
-                    disabled={loading || vehicles.length === 0}
-                  >
-                    {loading ? 'Đang xử lý...' : 'Đặt lịch'}
-                  </button>
                 </form>
                 {bookingMessage && (
                   <p id="booking-message" className="text-center" style={{ marginTop: '1rem', fontWeight: 500, color: 'red' }}>
@@ -397,14 +656,16 @@ const ScheduleService = () => {
                   </p>
                 )}
                 {showPayButton && (
-                  <a
-                    href="#"
-                    id="pay-button"
-                    className="btn btn-pay w-100 mt-3"
-                    style={{ display: 'block', background: '#dc3545', color: 'white' }}
-                  >
-                    Thanh toán dịch vụ
-                  </a>
+                  <div className="d-flex justify-content-center mt-3">
+                    <FancyButton
+                      id="pay-button"
+                      variant="dark"
+                      style={{ minWidth: '250px' }}
+                      onClick={(e) => e.preventDefault()}
+                    >
+                      Thanh toán dịch vụ
+                    </FancyButton>
+                  </div>
                 )}
               </div>
             </div>

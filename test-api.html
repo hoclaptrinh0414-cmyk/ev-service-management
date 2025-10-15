@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Vehicle API</title>
+</head>
+<body>
+    <h1>Test Vehicle API</h1>
+    <button onclick="testAPI()">Test Get Vehicles</button>
+    <pre id="result"></pre>
+
+    <script>
+        async function testAPI() {
+            const token = localStorage.getItem('token');
+            const apiUrl = 'https://77dbe58798d9.ngrok-free.app/api';
+
+            const endpoints = [
+                '/customer/profile/my-vehicles',
+                '/customer-vehicles/my-vehicles',
+                '/customer-vehicles',
+                '/vehicles/my-vehicles',
+                '/my-vehicles'
+            ];
+
+            document.getElementById('result').textContent = 'Testing...\n\n';
+            document.getElementById('result').textContent += 'Token: ' + (token ? 'exists' : 'MISSING!') + '\n\n';
+
+            for (const endpoint of endpoints) {
+                try {
+                    const response = await fetch(apiUrl + endpoint, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json',
+                            'ngrok-skip-browser-warning': 'true'
+                        }
+                    });
+
+                    const data = await response.json();
+
+                    document.getElementById('result').textContent +=
+                        `✅ ${endpoint}\n` +
+                        `Status: ${response.status}\n` +
+                        `Data: ${JSON.stringify(data, null, 2)}\n\n`;
+
+                    if (response.ok) {
+                        document.getElementById('result').textContent += '✅✅✅ SUCCESS! Use this endpoint!\n\n';
+                        break;
+                    }
+                } catch (error) {
+                    document.getElementById('result').textContent +=
+                        `❌ ${endpoint}\n` +
+                        `Error: ${error.message}\n\n`;
+                }
+            }
+        }
+    </script>
+</body>
+</html>

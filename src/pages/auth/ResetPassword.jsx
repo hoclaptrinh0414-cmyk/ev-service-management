@@ -1,71 +1,32 @@
-// src/pages/auth/ResetPassword.jsx - Complete Version
-import React, { useState, useEffect } from "react";
-import { useSearchParams, useNavigate, Link } from "react-router-dom";
-import { accountRecoveryService, handleApiError } from "../../services/api";
+// src/pages/auth/ResetPassword.jsx
+import React, { useState } from "react";
+import { useNavigate, useLocation, Link } from "react-router-dom";
+import authService from "../../services/authService";
+import { useToast } from "../../contexts/ToastContext";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
 const ResetPassword = () => {
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const toast = useToast();
+
+  // Get email from location state (passed from ForgotPassword)
+  const emailFromState = location.state?.email || "";
 
   const [formData, setFormData] = useState({
+    email: emailFromState,
+    otp: "",
     newPassword: "",
     confirmPassword: "",
   });
 
   const [loading, setLoading] = useState(false);
-  const [validating, setValidating] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [isValidToken, setIsValidToken] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState("");
-
-  const token = searchParams.get("token");
-  const email = searchParams.get("email");
-
-  // Validate token on component mount
-  useEffect(() => {
-    if (!token || !email) {
-      setError("Link đặt lại mật khẩu không hợp lệ. Vui lòng yêu cầu link mới.");
-      setValidating(false);
-      return;
-    }
-
-    validateToken();
-  }, [token, email]);
-
-  const validateToken = async () => {
-    console.log("🔍 Validating reset token for:", email);
-    
-    try {
-      const response = await accountRecoveryService.validateResetToken(token, email);
-      console.log("✅ Token validation response:", response);
-
-      if (response.success) {
-        setIsValidToken(true);
-        setError("");
-        console.log("✅ Token is valid, showing reset form");
-      } else {
-        setError(response.message || "Link đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.");
-        setIsValidToken(false);
-        console.log("❌ Token validation failed:", response.message);
-      }
-    } catch (error) {
-      console.error("❌ Token validation error:", error);
-
-      if (error.response?.data?.errorCode === "INVALID_TOKEN") {
-        setError("Link đặt lại mật khẩu không hợp lệ hoặc đã hết hạn. Vui lòng yêu cầu link mới.");
-      } else {
-        setError(handleApiError(error));
-      }
-      setIsValidToken(false);
-    } finally {
-      setValidating(false);
-    }
-  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -121,6 +82,16 @@ const ResetPassword = () => {
   };
 
   const validateForm = () => {
+    if (!formData.email) {
+      setError("Vui lòng nhập email");
+      return false;
+    }
+
+    if (!formData.otp) {
+      setError("Vui lòng nhập mã OTP");
+      return false;
+    }
+
     if (!formData.newPassword) {
       setError("Vui lòng nhập mật khẩu mới");
       return false;
@@ -143,29 +114,30 @@ const ResetPassword = () => {
     e.preventDefault();
 
     if (!validateForm()) return;
-    if (!isValidToken) return;
 
     setLoading(true);
     setError("");
 
     try {
-      console.log("🔄 Submitting password reset...");
-      
-      const resetData = {
-        token,
-        email,
-        newPassword: formData.newPassword,
-        confirmPassword: formData.confirmPassword,
-      };
+      console.log("🔄 Submitting password reset with OTP...");
 
-      const response = await accountRecoveryService.resetPassword(resetData);
+      const response = await authService.resetPassword(
+        formData.email,
+        formData.otp,
+        formData.newPassword,
+        formData.confirmPassword
+      );
+
       console.log("✅ Reset password response:", response);
 
       if (response.success) {
         setSuccess("🎉 Mật khẩu đã được đặt lại thành công! Bạn sẽ được chuyển đến trang đăng nhập.");
-        
+        toast.success("Đặt lại mật khẩu thành công!");
+
         // Clear form
         setFormData({
+          email: "",
+          otp: "",
           newPassword: "",
           confirmPassword: "",
         });
@@ -180,7 +152,16 @@ const ResetPassword = () => {
       }
     } catch (error) {
       console.error("❌ Reset password error:", error);
-      setError(handleApiError(error));
+
+      if (error.response?.data?.message) {
+        setError(error.response.data.message);
+      } else if (error.message === 'Network error - Cannot connect to server') {
+        setError('Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.');
+      } else if (error.message === 'Request timeout') {
+        setError('Kết nối bị timeout. Vui lòng thử lại.');
+      } else {
+        setError(error.message || "Không thể đặt lại mật khẩu. Vui lòng thử lại.");
+      }
     } finally {
       setLoading(false);
     }
@@ -216,21 +197,6 @@ const ResetPassword = () => {
     }
   };
 
-  // Loading state
-  if (validating) {
-    return (
-      <div className="container-fluid d-flex align-items-center justify-content-center h-100">
-        <div className="text-center">
-          <div className="spinner-border text-primary mb-3" style={{ width: '3rem', height: '3rem' }} role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
-          <h4 className="mb-2">Đang xác thực link...</h4>
-          <p className="text-muted">Vui lòng đợi trong giây lát</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <>
       <div className="container-fluid p-0 h-100">
@@ -245,31 +211,21 @@ const ResetPassword = () => {
             </div>
             <div className="col col-md-4 d-flex align-items-center justify-content-center">
               <div className="card-body text-center" style={{ maxWidth: "450px", width: "100%" }}>
-                
+
                 {/* Header */}
                 <div className="mb-4">
                   <i
-                    className={`bi ${
-                      isValidToken
-                        ? "bi-shield-lock-fill text-success"
-                        : "bi-shield-x-fill text-danger"
-                    }`}
+                    className="bi bi-shield-lock-fill text-success"
                     style={{ fontSize: "3rem" }}
                   ></i>
                   <h3 className="mt-3 mb-2" style={{
                     fontFamily: "'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif",
                   }}>
-                    {isValidToken ? "Đặt lại mật khẩu" : "Link không hợp lệ"}
+                    Đặt lại mật khẩu
                   </h3>
-                  {isValidToken ? (
-                    <p className="text-muted">
-                      Nhập mật khẩu mới cho tài khoản: <strong>{email}</strong>
-                    </p>
-                  ) : (
-                    <p className="text-muted">
-                      Link đặt lại mật khẩu không hợp lệ hoặc đã hết hạn
-                    </p>
-                  )}
+                  <p className="text-muted">
+                    Nhập mã OTP đã gửi đến email và mật khẩu mới của bạn
+                  </p>
                 </div>
 
                 {/* Alerts */}
@@ -288,9 +244,44 @@ const ResetPassword = () => {
                 )}
 
                 {/* Content */}
-                {isValidToken && !success ? (
+                {!success ? (
                   // Reset Password Form
                   <form onSubmit={handleSubmit}>
+                    {/* Email */}
+                    <div className="input-group mb-3">
+                      <span className="input-group-text">
+                        <i className="bi bi-envelope"></i>
+                      </span>
+                      <input
+                        type="email"
+                        className="form-control"
+                        name="email"
+                        placeholder="Email của bạn"
+                        value={formData.email}
+                        onChange={handleChange}
+                        required
+                        disabled={loading}
+                      />
+                    </div>
+
+                    {/* OTP */}
+                    <div className="input-group mb-3">
+                      <span className="input-group-text">
+                        <i className="bi bi-key"></i>
+                      </span>
+                      <input
+                        type="text"
+                        className="form-control"
+                        name="otp"
+                        placeholder="Mã OTP (kiểm tra email)"
+                        value={formData.otp}
+                        onChange={handleChange}
+                        required
+                        disabled={loading}
+                        maxLength="6"
+                      />
+                    </div>
+
                     {/* New Password */}
                     <div className="input-group mb-2">
                       <span className="input-group-text">
@@ -376,14 +367,6 @@ const ResetPassword = () => {
                       )}
                     </button>
                   </form>
-                ) : !isValidToken ? (
-                  // Invalid Token State
-                  <div className="d-grid gap-2">
-                    <Link to="/forgot-password" className="btn btn-primary">
-                      <i className="bi bi-envelope me-2"></i>
-                      Yêu cầu link mới
-                    </Link>
-                  </div>
                 ) : (
                   // Success State
                   <div className="text-center">

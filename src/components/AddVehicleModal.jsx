@@ -20,9 +20,9 @@ const AddVehicleModal = ({ show, onHide }) => {
     color: '',
     purchaseDate: '',
     mileage: 0,
-    insuranceNumber: '',        // ✅ THÊM MỚI
-    insuranceExpiry: '',        // ✅ THÊM MỚI
-    registrationExpiry: ''      // ✅ THÊM MỚI
+    insuranceNumber: '',        
+    insuranceExpiry: '',        
+    registrationExpiry: ''      
   });
 
   const [selectedBrand, setSelectedBrand] = useState('');
@@ -423,7 +423,7 @@ const AddVehicleModal = ({ show, onHide }) => {
                   ) : (
                     <>
                       <i className="bi bi-check-circle me-2"></i>
-                      Đăng ký
+                      Đăng ký ngay
                     </>
                   )}
                 </button>
