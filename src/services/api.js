@@ -772,6 +772,60 @@ class UnifiedAPIService {
   }
 }
 
+// Helper utilities for query string generation
+const toPascalCase = (key) => {
+  if (!key) {
+    return '';
+  }
+  return String(key)
+    .replace(/[_-]+/g, ' ')
+    .split(' ')
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join('')
+    .replace(/\s+/g, '');
+};
+
+const serializeQueryValue = (value) => {
+  if (value instanceof Date) {
+    return value.toISOString().split('T')[0];
+  }
+  if (typeof value === 'boolean') {
+    return value ? 'true' : 'false';
+  }
+  return String(value);
+};
+
+const buildQueryString = (params = {}) => {
+  if (!params || typeof params !== 'object') {
+    return '';
+  }
+
+  const searchParams = new URLSearchParams();
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === '') {
+      return;
+    }
+
+    const normalizedKey = toPascalCase(key);
+
+    if (Array.isArray(value)) {
+      value.forEach((item) => {
+        if (item === undefined || item === null || item === '') {
+          return;
+        }
+        searchParams.append(normalizedKey, serializeQueryValue(item));
+      });
+      return;
+    }
+
+    searchParams.append(normalizedKey, serializeQueryValue(value));
+  });
+
+  const query = searchParams.toString();
+  return query ? `?${query}` : '';
+};
+
 // Tạo instance
 const apiService = new UnifiedAPIService();
 
@@ -818,6 +872,103 @@ export const usersAPI = {
   getUser: (userId) => apiService.getUser(userId),
   updateUser: (userId, userData) => apiService.updateUser(userId, userData),
   deleteUser: (userId) => apiService.deleteUser(userId)
+};
+
+// ============ ADMIN CUSTOMERS API ============
+export const customersAPI = {
+  getCustomers: (params = {}) => {
+    const queryString = buildQueryString(params);
+    return apiService.request(`/customers${queryString}`);
+  },
+  getById: (customerId, params = {}) => {
+    if (customerId === undefined || customerId === null) {
+      throw new Error('Customer ID is required');
+    }
+    const queryString = buildQueryString(params);
+    return apiService.request(`/customers/${customerId}${queryString}`);
+  },
+  create: (customerData) =>
+    apiService.request('/customers', {
+      method: 'POST',
+      body: JSON.stringify(customerData)
+    }),
+  update: (customerId, customerData) => {
+    if (customerId === undefined || customerId === null) {
+      throw new Error('Customer ID is required');
+    }
+    return apiService.request(`/customers/${customerId}`, {
+      method: 'PUT',
+      body: JSON.stringify(customerData)
+    });
+  },
+  remove: (customerId) => {
+    if (customerId === undefined || customerId === null) {
+      throw new Error('Customer ID is required');
+    }
+    return apiService.request(`/customers/${customerId}`, {
+      method: 'DELETE'
+    });
+  },
+  getStatistics: (params = {}) => {
+    const queryString = buildQueryString(params);
+    return apiService.request(`/customers/statistics${queryString}`);
+  },
+  getMaintenanceDue: (params = {}) => {
+    const queryString = buildQueryString(params);
+    return apiService.request(`/customers/maintenance-due${queryString}`);
+  },
+  getActive: (params = {}) => {
+    const queryString = buildQueryString(params);
+    return apiService.request(`/customers/active${queryString}`);
+  }
+};
+
+// ============ CUSTOMER TYPES API ============
+export const customerTypesAPI = {
+  getAll: (params = {}) => {
+    const queryString = buildQueryString(params);
+    return apiService.request(`/customer-types${queryString}`);
+  },
+  getActive: (params = {}) => {
+    const defaults = {
+      page: 1,
+      pageSize: 50,
+      includeStats: false,
+      ...params,
+      isActive: true
+    };
+    const queryString = buildQueryString(defaults);
+    return apiService.request(`/customer-types${queryString}`);
+  },
+  getById: (typeId, params = {}) => {
+    if (typeId === undefined || typeId === null) {
+      throw new Error('Customer type ID is required');
+    }
+    const queryString = buildQueryString(params);
+    return apiService.request(`/customer-types/${typeId}${queryString}`);
+  },
+  create: (typeData) =>
+    apiService.request('/customer-types', {
+      method: 'POST',
+      body: JSON.stringify(typeData)
+    }),
+  update: (typeId, typeData) => {
+    if (typeId === undefined || typeId === null) {
+      throw new Error('Customer type ID is required');
+    }
+    return apiService.request(`/customer-types/${typeId}`, {
+      method: 'PUT',
+      body: JSON.stringify(typeData)
+    });
+  },
+  remove: (typeId) => {
+    if (typeId === undefined || typeId === null) {
+      throw new Error('Customer type ID is required');
+    }
+    return apiService.request(`/customer-types/${typeId}`, {
+      method: 'DELETE'
+    });
+  }
 };
 
 // ============ CAR BRANDS & MODELS API - NEW ============
