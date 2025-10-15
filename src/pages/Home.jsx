@@ -1,5 +1,6 @@
 // src/pages/Home.jsx - UPDATED WITH USER MENU
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import UserMenu from '../components/UserMenu';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
@@ -55,9 +56,9 @@ const Home = () => {
               </button>
             </form>
 
-            <a style={{ fontSize: '2rem' }} className="navbar-brand" href="#">
+            <Link style={{ fontSize: '2rem' }} className="navbar-brand" to="/home">
               Tesla
-            </a>
+            </Link>
 
             <div className="nav-icons d-flex align-items-center">
               <UserMenu />
@@ -77,16 +78,16 @@ const Home = () => {
             <div className="collapse navbar-collapse" id="navbarNav">
               <ul className="navbar-nav w-100 justify-content-center">
                 <li className="nav-item">
-                  <a className="nav-link move" href="#">TRANG CHỦ</a>
+                  <Link className="nav-link move" to="/home">TRANG CHỦ</Link>
                 </li>
                 <li className="nav-item dropdown">
                   <a className="nav-link dropdown-toggle move" href="#" role="button" data-bs-toggle="dropdown">
-                    BỘ SƯU TẬP
+                    DỊCH VỤ
                   </a>
                   <ul className="dropdown-menu">
-                    <li><a className="dropdown-item" href="#">Xe đạp thể thao</a></li>
-                    <li><a className="dropdown-item" href="#">Xe đạp địa hình</a></li>
-                    <li><a className="dropdown-item" href="#">Xe đạp đường phố</a></li>
+                    <li><Link className="dropdown-item" to="/track-reminder">Theo dõi & Nhắc nhở</Link></li>
+                    <li><Link className="dropdown-item" to="/schedule-service">Đặt lịch dịch vụ</Link></li>
+                    <li><a className="dropdown-item" href="#">Quản lý chi phí</a></li>
                   </ul>
                 </li>
                 <li className="nav-item">
@@ -143,53 +144,70 @@ const Home = () => {
       <section className="product-section">
         <div className="container">
           <div className="row align-items-stretch">
+            {/* Bên trái: 2 card xếp dọc */}
             <div className="col-md-6 d-flex flex-column">
               <div className="product-card mb-3">
                 <img
-                  style={{ borderRadius: '3%' }}
-                  src="https://etimg.etb2bimg.com/photo/121247133.cms"
-                  alt="Product 1"
+                  style={{ borderRadius: '3%', height: '15rem' }}
+                  src="https://www.shutterstock.com/shutterstock/videos/1040823482/thumb/1.jpg?ip=x480"
+                  alt="Theo dõi & Nhắc nhở"
                   className="img-fluid"
                 />
                 <div className="card-body text-center mt-3">
-                  <h5 className="product-title mb-3">Cybertruck</h5>
-                  <a href="#" className="btn btn-buy">Choose</a>
+                  <h5 style={{ fontWeight: 600 }} className="product-title mb-3">Theo dõi & Nhắc nhở</h5>
+                  <p style={{ fontWeight: 400 }}>
+                    Nhắc nhở bảo dưỡng định kỳ theo km hoặc thời gian
+                    và thanh toán gói bảo dưỡng định kỳ hoặc gia hạn gói dịch vụ.
+                  </p>
+                  <Link to="/track-reminder" className="btn btn-buy">Đặt lịch ngay</Link>
                 </div>
               </div>
               <div className="product-card">
                 <img
                   style={{ borderRadius: '3%' }}
-                  src="https://static.automotor.vn/images/upload/2024/06/09/tesla-trung-quoc-vneconomyautomotive3.jpg"
-                  alt="Product 1"
+                  src="https://t3.ftcdn.net/jpg/14/86/38/84/360_F_1486388425_sXVqCwK96IDhdu0XEnG0IXF5lzSSfWfr.jpg"
+                  alt="Đặt lịch dịch vụ"
                   className="img-fluid"
                 />
                 <div className="card-body text-center mt-3">
-                  <h5 className="product-title mb-3">Tesla Model 3</h5>
-                  <a href="#" className="btn btn-buy">Choose</a>
+                  <h5 className="product-title mb-3" style={{ fontSize: 600 }}>Đặt lịch dịch vụ</h5>
+                  <p style={{ marginTop: '7%', marginBottom: '10%', fontWeight: 400 }}>
+                    Nhanh chóng - Tiện lợi - Uy tín
+                  </p>
+                  <Link to="/schedule-service" className="btn btn-buy">Đặt lịch</Link>
                 </div>
               </div>
             </div>
 
+            {/* Bên phải: 1 card */}
             <div className="col-md-6 d-flex">
               <div className="product-card w-100">
                 <img
                   style={{ borderRadius: '3%' }}
                   src="https://www.tesla-mag.com/wp-content/uploads/sites/2/2024/07/Next-gen-Model-S.jpeg"
-                  alt="Product 2"
+                  alt="Quản lý hồ sơ & chi phí"
                   className="img-fluid"
                 />
-                <div className="card-body text-center">
-                  <h5 className="card-title mt-4">Tesla Model S</h5>
+                <div className="card-body text-center" style={{ margin: '25% 0' }}>
+                  <h5 className="card-title mt-4">Quản lý hồ sơ & chi phí</h5>
                   <p style={{
                     marginTop: '7%',
                     marginBottom: '10%',
                     fontFamily: "'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif",
                   }}>
-                    The Tesla Model S is a premium all-electric sedan that combines cutting-edge performance, advanced
-                    technology, and timeless design. Known for its impressive acceleration and long driving range, the
-                    Model S redefines what a luxury electric vehicle can be.
+                    <ul style={{ listStyle: 'none' }}>
+                      <li style={{ fontWeight: 400 }}>
+                        Lưu lịch sử bảo dưỡng xe điện.
+                      </li>
+                      <li style={{ fontWeight: 400 }}>
+                        Quản lý chi phí bảo dưỡng & sửa chữa theo từng lần.
+                      </li>
+                      <li style={{ fontWeight: 400 }}>
+                        Thanh toán online (e-wallet, banking, ...).
+                      </li>
+                    </ul>
                   </p>
-                  <a href="#" className="btn btn-buy">Choose</a>
+                  <a style={{ marginTop: '20%' }} href="#" className="btn btn-buy">Xem tất cả dịch vụ</a>
                 </div>
               </div>
             </div>
