@@ -1,0 +1,39 @@
+/* src/pages/admin/ServiceSchedule.css */
+
+.rbc-event {
+  border: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  font-size: 0.8rem;
+}
+
+.rbc-event.rbc-selected {
+  background-color: #2563eb; /* blue-600 */
+}
+
+.rbc-slot-select {
+    background-color: rgba(59, 130, 246, 0.3); /* blue-500 with opacity */
+}
+
+.rbc-toolbar button {
+    background-color: #fff;
+    border: 1px solid #d1d5db; /* gray-300 */
+    color: #374151; /* gray-700 */
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem; /* rounded-md */
+    transition: background-color 0.2s;
+}
+
+.rbc-toolbar button:hover, .rbc-toolbar button:focus {
+    background-color: #f3f4f6; /* gray-100 */
+    outline: none;
+}
+
+.rbc-toolbar button.rbc-active {
+    background-color: #3b82f6; /* blue-500 */
+    color: #fff;
+    border-color: #3b82f6; /* blue-500 */
+}
+
+.rbc-today {
+    background-color: #eff6ff; /* blue-50 */
+}
