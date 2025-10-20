@@ -5,39 +5,37 @@ const Toolbar = ({ view, onViewChange, onNewAppointment }) => {
   const technicians = ['Tech 1', 'Tech 2', 'Tech 3'];
 
   return (
-    <div className="bg-white p-4 rounded-lg shadow-md mb-6 flex flex-wrap items-center justify-between gap-4">
-      {/* Left: Primary action */}
-      <div className="flex items-center gap-3">
+    <div className="bg-white p-6 rounded-lg shadow-md mb-6 max-w-3xl mx-auto flex flex-col gap-3 items-stretch">
+      {/* Primary action centered */}
+      <div className="flex justify-center">
         <button
           onClick={onNewAppointment}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-3 rounded-lg flex items-center gap-2 whitespace-nowrap"
+          className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg"
         >
-          <i className="bi bi-plus-circle"></i>
-          <span>Tạo lịch hẹn mới</span>
+          Tạo lịch hẹn mới
         </button>
       </div>
 
-      {/* Right: Filters + View switcher */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <i className="bi bi-filter text-gray-600"></i>
-        <select className="px-3 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md min-w-[200px]">
-          <option value="">Tất cả Trạng thái</option>
-          {statuses.map((status) => (
-            <option key={status} value={status}>
-              {status}
-            </option>
-          ))}
-        </select>
-        <select className="px-3 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md min-w-[200px]">
-          <option value="">Tất cả Kỹ thuật viên</option>
-          {technicians.map((tech) => (
-            <option key={tech} value={tech}>
-              {tech}
-            </option>
-          ))}
-        </select>
+      {/* Filters - full width stacked */}
+      <select className="w-full px-3 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md">
+        <option value="">Tất cả Trạng thái</option>
+        {statuses.map((status) => (
+          <option key={status} value={status}>
+            {status}
+          </option>
+        ))}
+      </select>
+      <select className="w-full px-3 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md">
+        <option value="">Tất cả Kỹ thuật viên</option>
+        {technicians.map((tech) => (
+          <option key={tech} value={tech}>
+            {tech}
+          </option>
+        ))}
+      </select>
 
-        {/* View Switcher */}
+      {/* View switcher aligned right */}
+      <div className="flex items-center justify-end">
         <div className="flex items-center border border-gray-300 rounded-lg p-1">
           <button
             onClick={() => onViewChange('month')}
@@ -46,7 +44,6 @@ const Toolbar = ({ view, onViewChange, onNewAppointment }) => {
             }`}
             aria-label="Xem lịch"
           >
-            <i className="bi bi-calendar-month mr-2"></i>
             Lịch
           </button>
           <button
@@ -56,7 +53,6 @@ const Toolbar = ({ view, onViewChange, onNewAppointment }) => {
             }`}
             aria-label="Xem danh sách"
           >
-            <i className="bi bi-list-ul mr-2"></i>
             Danh sách
           </button>
         </div>
@@ -66,4 +62,3 @@ const Toolbar = ({ view, onViewChange, onNewAppointment }) => {
 };
 
 export default Toolbar;
-
