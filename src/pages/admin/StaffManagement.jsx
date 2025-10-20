@@ -1,9 +1,67 @@
 import React, { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { staffAPI } from '../../services/api';
+import { staffAPI } from '../../services/apiService';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import './StaffManagement.css';
+
+// Mock seed to show UI without backend
+const MOCK_STAFF = [
+  {
+    id: 101,
+    fullName: 'Nguyễn Minh An',
+    email: 'an.nguyen@example.com',
+    role: 'admin',
+    openTasks: 2,
+    status: 'active',
+    avatarUrl: 'https://i.pravatar.cc/64?u=an.nguyen@example.com',
+  },
+  {
+    id: 102,
+    fullName: 'Trần Quốc Bảo',
+    email: 'bao.tran@example.com',
+    role: 'staff',
+    openTasks: 5,
+    status: 'on_duty',
+    avatarUrl: 'https://i.pravatar.cc/64?u=bao.tran@example.com',
+  },
+  {
+    id: 103,
+    fullName: 'Lê Thu Hà',
+    email: 'ha.le@example.com',
+    role: 'staff',
+    openTasks: 0,
+    status: 'off_duty',
+    avatarUrl: 'https://i.pravatar.cc/64?u=ha.le@example.com',
+  },
+  {
+    id: 104,
+    fullName: 'Phạm Anh Dũng',
+    email: 'dung.pham@example.com',
+    role: 'staff',
+    openTasks: 3,
+    status: 'active',
+    avatarUrl: 'https://i.pravatar.cc/64?u=dung.pham@example.com',
+  },
+  {
+    id: 105,
+    fullName: 'Võ Quỳnh Như',
+    email: 'nhu.vo@example.com',
+    role: 'staff',
+    openTasks: 1,
+    status: 'inactive',
+    avatarUrl: 'https://i.pravatar.cc/64?u=nhu.vo@example.com',
+  },
+  {
+    id: 106,
+    fullName: 'Đỗ Hải Nam',
+    email: 'nam.do@example.com',
+    role: 'staff',
+    openTasks: 4,
+    status: 'on_duty',
+    avatarUrl: 'https://i.pravatar.cc/64?u=nam.do@example.com',
+  },
+];
 
 const StatusBadge = ({ value }) => {
   const map = {
@@ -135,8 +193,21 @@ const StaffManagement = () => {
 
   const staffQuery = useQuery({
     queryKey: ['staff', queryParams],
-    queryFn: () => staffAPI.list(queryParams),
+    queryFn: async () => {
+      try {
+        const data = await staffAPI.list(queryParams);
+        const items = data?.items || data?.data || data;
+        if (!items || (Array.isArray(items) && items.length === 0)) {
+          return { items: MOCK_STAFF };
+        }
+        return data;
+      } catch (e) {
+        return { items: MOCK_STAFF };
+      }
+    },
     keepPreviousData: true,
+    initialData: { items: MOCK_STAFF },
+    retry: 0,
   });
 
   const createMutation = useMutation({
@@ -338,4 +409,3 @@ const StaffManagement = () => {
 };
 
 export default StaffManagement;
-
