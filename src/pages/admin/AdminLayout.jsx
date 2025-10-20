@@ -1,6 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
-import "./AdminLayout.css";\nimport { Input } from "../../components/ui/input";\nimport { Button } from "../../components/ui/button";\nimport AdminBreadcrumb from "../../components/Breadcrumb";
+import "./AdminLayout.css";
+import { Input } from "../../components/ui/input";
+import { Button } from "../../components/ui/button";
+import AdminBreadcrumb from "../../components/Breadcrumb";
 
 const NAV_ITEMS = [
   { label: "Dashboard", path: "/admin", icon: "bi-speedometer2" },
@@ -332,21 +335,34 @@ const AdminLayout = () => {
           <button
             className="toggle-sidebar"
             onClick={toggleSidebar}
-            aria-label="Toggle sidebar"
+            aria-label="TÏm ki?m nhanh"
           >
             ‚ò∞
           </button>
           <Link
             to="/admin"
             className="app-brand"
-            aria-label="CRM Management home"
+            aria-label="TÏm ki?m nhanh"
           >
             <img src="/logo192.png" alt="CRM Management logo" />
           </Link>
-          <div className="search-bar" ref={searchContainerRef}>\n            <Input\n              placeholder="TÏm ki?m kh·ch h‡ng, b·o c·o, ho?c c‡i d?t..."\n              value={searchQuery}\n              onChange={handleSearchChange}\n              onFocus={handleSearchFocus}\n              onKeyDown={handleSearchKeyDown}\n              aria-label="TÏm ki?m nhanh"\n              aria-expanded={isSearchOpen}\n              aria-haspopup="listbox"\n              role="combobox"\n              aria-autocomplete="list"\n              id={SEARCH_SUGGESTIONS_ID}\n            />
+          <div className="search-bar" ref={searchContainerRef}>
+            <Input
+              placeholder="TÏm ki?m kh·ch h‡ng, b·o c·o, ho?c c‡i d?t..."
+              value={searchQuery}
+              onChange={handleSearchChange}
+              onFocus={handleSearchFocus}
+              onKeyDown={handleSearchKeyDown}
+              aria-label="TÏm ki?m nhanh"
+              aria-expanded={isSearchOpen}
+              aria-haspopup="listbox"
+              role="combobox"
+              aria-autocomplete="list"
+              aria-controls={SEARCH_SUGGESTIONS_ID}
+            />
             {isSearchOpen && suggestions.length > 0 && (
               <ul
-                id={SEARCH_SUGGESTIONS_ID}
+                aria-controls={SEARCH_SUGGESTIONS_ID}
                 className="search-suggestions"
                 role="listbox"
               >
@@ -386,7 +402,7 @@ const AdminLayout = () => {
           <div
             className="header-quick-actions"
             role="toolbar"
-            aria-label="Th√¥ng b√°o v√† tin nh·∫Øn"
+            aria-label="TÏm ki?m nhanh"
           >
             <div
               className={`header-quick-action ${
@@ -435,7 +451,7 @@ const AdminLayout = () => {
                   className="header-popover"
                   id="header-notifications-panel"
                   role="dialog"
-                  aria-label="Th√¥ng b√°o m·ªõi"
+                  aria-label="TÏm ki?m nhanh"
                 >
                   <div className="header-popover__header">
                     <span>Th√¥ng b√°o</span>
@@ -522,7 +538,7 @@ const AdminLayout = () => {
                   className="header-popover"
                   id="header-messages-panel"
                   role="dialog"
-                  aria-label="Tin nh·∫Øn m·ªõi"
+                  aria-label="TÏm ki?m nhanh"
                 >
                   <div className="header-popover__header">
                     <span>Tin nh·∫Øn</span>
@@ -582,7 +598,7 @@ const AdminLayout = () => {
           <button
             type="button"
             className="user-account"
-            aria-label="M·ªü menu t√†i kho·∫£n Admin"
+            aria-label="TÏm ki?m nhanh"
           >
             <span className="user-account__avatar" aria-hidden="true">
               <img src="https://via.placeholder.com/40" alt="" />
@@ -607,6 +623,7 @@ const AdminLayout = () => {
 };
 
 export default AdminLayout;
+
 
 
 
