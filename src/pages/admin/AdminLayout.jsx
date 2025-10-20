@@ -57,23 +57,23 @@ const AdminLayout = () => {
     () => [
       {
         id: 1,
-        title: "LÃ¡Â»â€¹ch hÃ¡ÂºÂ¹n mÃ¡Â»â€ºi",
-        description: "NguyÃ¡Â»â€¦n An vÃ¡Â»Â«a Ã„â€˜Ã¡ÂºÂ·t lÃ¡Â»â€¹ch bÃ¡ÂºÂ£o dÃ†Â°Ã¡Â»Â¡ng Tesla Model 3.",
-        time: "3 phÃƒÂºt trÃ†Â°Ã¡Â»â€ºc",
+        title: "LÃƒÂ¡Ã‚Â»Ã¢â‚¬Â¹ch hÃƒÂ¡Ã‚ÂºÃ‚Â¹n mÃƒÂ¡Ã‚Â»Ã¢â‚¬Âºi",
+        description: "NguyÃƒÂ¡Ã‚Â»Ã¢â‚¬Â¦n An vÃƒÂ¡Ã‚Â»Ã‚Â«a Ãƒâ€žÃ¢â‚¬ËœÃƒÂ¡Ã‚ÂºÃ‚Â·t lÃƒÂ¡Ã‚Â»Ã¢â‚¬Â¹ch bÃƒÂ¡Ã‚ÂºÃ‚Â£o dÃƒâ€ Ã‚Â°ÃƒÂ¡Ã‚Â»Ã‚Â¡ng Tesla Model 3.",
+        time: "3 phÃƒÆ’Ã‚Âºt trÃƒâ€ Ã‚Â°ÃƒÂ¡Ã‚Â»Ã¢â‚¬Âºc",
         icon: "bi-calendar-event",
       },
       {
         id: 2,
-        title: "Xe hoÃƒÂ n tÃ¡ÂºÂ¥t",
-        description: "Volkswagen ID.4 Ã„â€˜ÃƒÂ£ hoÃƒÂ n thÃƒÂ nh quy trÃƒÂ¬nh kiÃ¡Â»Æ’m tra.",
-        time: "1 giÃ¡Â»Â trÃ†Â°Ã¡Â»â€ºc",
+        title: "Xe hoÃƒÆ’Ã‚Â n tÃƒÂ¡Ã‚ÂºÃ‚Â¥t",
+        description: "Volkswagen ID.4 Ãƒâ€žÃ¢â‚¬ËœÃƒÆ’Ã‚Â£ hoÃƒÆ’Ã‚Â n thÃƒÆ’Ã‚Â nh quy trÃƒÆ’Ã‚Â¬nh kiÃƒÂ¡Ã‚Â»Ã†â€™m tra.",
+        time: "1 giÃƒÂ¡Ã‚Â»Ã‚Â trÃƒâ€ Ã‚Â°ÃƒÂ¡Ã‚Â»Ã¢â‚¬Âºc",
         icon: "bi-check-circle",
       },
       {
         id: 3,
-        title: "Kho linh kiÃ¡Â»â€¡n thÃ¡ÂºÂ¥p",
-        description: "MÃƒÂ´-Ã„â€˜un pin Panasonic trong kho cÃƒÂ²n dÃ†Â°Ã¡Â»â€ºi 5 Ã„â€˜Ã†Â¡n vÃ¡Â»â€¹.",
-        time: "2 giÃ¡Â»Â trÃ†Â°Ã¡Â»â€ºc",
+        title: "Kho linh kiÃƒÂ¡Ã‚Â»Ã¢â‚¬Â¡n thÃƒÂ¡Ã‚ÂºÃ‚Â¥p",
+        description: "MÃƒÆ’Ã‚Â´-Ãƒâ€žÃ¢â‚¬Ëœun pin Panasonic trong kho cÃƒÆ’Ã‚Â²n dÃƒâ€ Ã‚Â°ÃƒÂ¡Ã‚Â»Ã¢â‚¬Âºi 5 Ãƒâ€žÃ¢â‚¬ËœÃƒâ€ Ã‚Â¡n vÃƒÂ¡Ã‚Â»Ã¢â‚¬Â¹.",
+        time: "2 giÃƒÂ¡Ã‚Â»Ã‚Â trÃƒâ€ Ã‚Â°ÃƒÂ¡Ã‚Â»Ã¢â‚¬Âºc",
         icon: "bi-exclamation-triangle",
       },
     ],
@@ -84,16 +84,16 @@ const AdminLayout = () => {
     () => [
       {
         id: 1,
-        sender: "LÃƒÂª Minh",
-        excerpt: "NhÃ¡Â»Â anh xÃƒÂ¡c nhÃ¡ÂºÂ­n lÃ¡Â»â€¹ch bÃ¡ÂºÂ£o dÃ†Â°Ã¡Â»Â¡ng lÃ¡ÂºÂ¡i giÃƒÂºp em nhÃƒÂ©?",
-        time: "5 phÃƒÂºt trÃ†Â°Ã¡Â»â€ºc",
+        sender: "LÃƒÆ’Ã‚Âª Minh",
+        excerpt: "NhÃƒÂ¡Ã‚Â»Ã‚Â anh xÃƒÆ’Ã‚Â¡c nhÃƒÂ¡Ã‚ÂºÃ‚Â­n lÃƒÂ¡Ã‚Â»Ã¢â‚¬Â¹ch bÃƒÂ¡Ã‚ÂºÃ‚Â£o dÃƒâ€ Ã‚Â°ÃƒÂ¡Ã‚Â»Ã‚Â¡ng lÃƒÂ¡Ã‚ÂºÃ‚Â¡i giÃƒÆ’Ã‚Âºp em nhÃƒÆ’Ã‚Â©?",
+        time: "5 phÃƒÆ’Ã‚Âºt trÃƒâ€ Ã‚Â°ÃƒÂ¡Ã‚Â»Ã¢â‚¬Âºc",
         icon: "bi-chat-left-text",
       },
       {
         id: 2,
-        sender: "TrÃ¡ÂºÂ¡m HÃƒÂ  NÃ¡Â»â„¢i",
-        excerpt: "Ã„ÂÃƒÂ£ cÃ¡ÂºÂ­p nhÃ¡ÂºÂ­t bÃ¡ÂºÂ£ng giÃƒÂ¡ phÃ¡Â»Â¥ tÃƒÂ¹ng tuÃ¡ÂºÂ§n nÃƒÂ y.",
-        time: "30 phÃƒÂºt trÃ†Â°Ã¡Â»â€ºc",
+        sender: "TrÃƒÂ¡Ã‚ÂºÃ‚Â¡m HÃƒÆ’Ã‚Â  NÃƒÂ¡Ã‚Â»Ã¢â€žÂ¢i",
+        excerpt: "Ãƒâ€žÃ‚ÂÃƒÆ’Ã‚Â£ cÃƒÂ¡Ã‚ÂºÃ‚Â­p nhÃƒÂ¡Ã‚ÂºÃ‚Â­t bÃƒÂ¡Ã‚ÂºÃ‚Â£ng giÃƒÆ’Ã‚Â¡ phÃƒÂ¡Ã‚Â»Ã‚Â¥ tÃƒÆ’Ã‚Â¹ng tuÃƒÂ¡Ã‚ÂºÃ‚Â§n nÃƒÆ’Ã‚Â y.",
+        time: "30 phÃƒÆ’Ã‚Âºt trÃƒâ€ Ã‚Â°ÃƒÂ¡Ã‚Â»Ã¢â‚¬Âºc",
         icon: "bi-building",
       },
     ],
@@ -333,12 +333,7 @@ const AdminLayout = () => {
       <div className={`header ${sidebarCollapsed ? "full-width" : ""}`}>
         <div className="left-controls">
           <button
-            className="toggle-sidebar"
-            onClick={toggleSidebar}
-              aria-label="Tim kiem nhanh"
-          >
-            Ã¢ËœÂ°
-          </button>
+            className="toggle-sidebar"\n            onClick={toggleSidebar}\n            aria-label="Toggle sidebar"\n          >\n            ≡\n          </button>
           <Link
             to="/admin"
             className="app-brand"
@@ -388,7 +383,7 @@ const AdminLayout = () => {
                         {item.path}
                       </span>
                     </div>
-                    <span className="search-suggestion__hint">Enter Ã¢â€ Âµ</span>
+                    <span className="search-suggestion__hint">Enter</span>
                   </li>
                 ))}
               </ul>
@@ -417,13 +412,13 @@ const AdminLayout = () => {
                 }`}
               aria-label="Tim kiem nhanh"
                   notificationCount > 0
-                    ? `CÃƒÂ³ ${notificationCount} thÃƒÂ´ng bÃƒÂ¡o mÃ¡Â»â€ºi`
-                    : "Xem thÃƒÂ´ng bÃƒÂ¡o"
+                    ? `CÃƒÆ’Ã‚Â³ ${notificationCount} thÃƒÆ’Ã‚Â´ng bÃƒÆ’Ã‚Â¡o mÃƒÂ¡Ã‚Â»Ã¢â‚¬Âºi`
+                    : "Xem thÃƒÆ’Ã‚Â´ng bÃƒÆ’Ã‚Â¡o"
                 }
                 title={
                   notificationCount > 0
-                    ? `${notificationCount} thÃƒÂ´ng bÃƒÂ¡o chÃ†Â°a Ã„â€˜Ã¡Â»Âc`
-                    : "KhÃƒÂ´ng cÃƒÂ³ thÃƒÂ´ng bÃƒÂ¡o mÃ¡Â»â€ºi"
+                    ? `${notificationCount} thÃƒÆ’Ã‚Â´ng bÃƒÆ’Ã‚Â¡o chÃƒâ€ Ã‚Â°a Ãƒâ€žÃ¢â‚¬ËœÃƒÂ¡Ã‚Â»Ã‚Âc`
+                    : "KhÃƒÆ’Ã‚Â´ng cÃƒÆ’Ã‚Â³ thÃƒÆ’Ã‚Â´ng bÃƒÆ’Ã‚Â¡o mÃƒÂ¡Ã‚Â»Ã¢â‚¬Âºi"
                 }
                 aria-haspopup="dialog"
                 aria-expanded={isNotificationOpen}
@@ -454,10 +449,10 @@ const AdminLayout = () => {
               aria-label="Tim kiem nhanh"
                 >
                   <div className="header-popover__header">
-                    <span>ThÃƒÂ´ng bÃƒÂ¡o</span>
+                    <span>ThÃƒÆ’Ã‚Â´ng bÃƒÆ’Ã‚Â¡o</span>
                     {notificationCount > 0 && (
                       <span className="header-popover__badge">
-                        {notificationCount} mÃ¡Â»â€ºi
+                        {notificationCount} mÃƒÂ¡Ã‚Â»Ã¢â‚¬Âºi
                       </span>
                     )}
                   </div>
@@ -485,7 +480,7 @@ const AdminLayout = () => {
                     </ul>
                   ) : (
                     <div className="header-popover__empty">
-                      KhÃƒÂ´ng cÃƒÂ³ thÃƒÂ´ng bÃƒÂ¡o mÃ¡Â»â€ºi
+                      KhÃƒÆ’Ã‚Â´ng cÃƒÆ’Ã‚Â³ thÃƒÆ’Ã‚Â´ng bÃƒÆ’Ã‚Â¡o mÃƒÂ¡Ã‚Â»Ã¢â‚¬Âºi
                     </div>
                   )}
                 </div>
@@ -504,13 +499,13 @@ const AdminLayout = () => {
                 }`}
               aria-label="Tim kiem nhanh"
                   messageCount > 0
-                    ? `CÃƒÂ³ ${messageCount} tin nhÃ¡ÂºÂ¯n mÃ¡Â»â€ºi`
-                    : "Xem tin nhÃ¡ÂºÂ¯n"
+                    ? `CÃƒÆ’Ã‚Â³ ${messageCount} tin nhÃƒÂ¡Ã‚ÂºÃ‚Â¯n mÃƒÂ¡Ã‚Â»Ã¢â‚¬Âºi`
+                    : "Xem tin nhÃƒÂ¡Ã‚ÂºÃ‚Â¯n"
                 }
                 title={
                   messageCount > 0
-                    ? `${messageCount} tin nhÃ¡ÂºÂ¯n chÃ†Â°a Ã„â€˜Ã¡Â»Âc`
-                    : "KhÃƒÂ´ng cÃƒÂ³ tin nhÃ¡ÂºÂ¯n mÃ¡Â»â€ºi"
+                    ? `${messageCount} tin nhÃƒÂ¡Ã‚ÂºÃ‚Â¯n chÃƒâ€ Ã‚Â°a Ãƒâ€žÃ¢â‚¬ËœÃƒÂ¡Ã‚Â»Ã‚Âc`
+                    : "KhÃƒÆ’Ã‚Â´ng cÃƒÆ’Ã‚Â³ tin nhÃƒÂ¡Ã‚ÂºÃ‚Â¯n mÃƒÂ¡Ã‚Â»Ã¢â‚¬Âºi"
                 }
                 aria-haspopup="dialog"
                 aria-expanded={isMessageOpen}
@@ -541,10 +536,10 @@ const AdminLayout = () => {
               aria-label="Tim kiem nhanh"
                 >
                   <div className="header-popover__header">
-                    <span>Tin nhÃ¡ÂºÂ¯n</span>
+                    <span>Tin nhÃƒÂ¡Ã‚ÂºÃ‚Â¯n</span>
                     {messageCount > 0 && (
                       <span className="header-popover__badge">
-                        {messageCount} chÃ†Â°a Ã„â€˜Ã¡Â»Âc
+                        {messageCount} chÃƒâ€ Ã‚Â°a Ãƒâ€žÃ¢â‚¬ËœÃƒÂ¡Ã‚Â»Ã‚Âc
                       </span>
                     )}
                   </div>
@@ -572,7 +567,7 @@ const AdminLayout = () => {
                     </ul>
                   ) : (
                     <div className="header-popover__empty">
-                      KhÃƒÂ´ng cÃƒÂ³ tin nhÃ¡ÂºÂ¯n mÃ¡Â»â€ºi
+                      KhÃƒÆ’Ã‚Â´ng cÃƒÆ’Ã‚Â³ tin nhÃƒÂ¡Ã‚ÂºÃ‚Â¯n mÃƒÂ¡Ã‚Â»Ã¢â‚¬Âºi
                     </div>
                   )}
                 </div>
