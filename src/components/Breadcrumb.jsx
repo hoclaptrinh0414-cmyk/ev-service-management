@@ -1,27 +1,29 @@
 import React from 'react';
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbPage } from './ui/breadcrumb';
 import { Link } from 'react-router-dom';
 
-const AdminBreadcrumb = ({ items }) => {
-  if (!items || !items.length) return null;
+const Crumb = ({ to, children, last }) => (
+  <span className="page-trail__segment">
+    {!last && <></>}
+    {last ? (
+      <span className="page-trail__current">{children}</span>
+    ) : (
+      <Link to={to} className="page-trail__link">
+        {children}
+      </Link>
+    )}
+  </span>
+);
+
+const AdminBreadcrumb = ({ items = [] }) => {
+  if (!items.length) return null;
   return (
-    <Breadcrumb>
-      {items.map((item, idx) => {
-        const isLast = idx === items.length - 1;
-        return (
-          <BreadcrumbItem key={item.path || idx}>
-            {idx > 0 && <BreadcrumbSeparator />}
-            {isLast ? (
-              <BreadcrumbPage>{item.label}</BreadcrumbPage>
-            ) : (
-              <BreadcrumbLink asChild>
-                <Link to={item.path}>{item.label}</Link>
-              </BreadcrumbLink>
-            )}
-          </BreadcrumbItem>
-        );
-      })}
-    </Breadcrumb>
+    <nav className="page-trail" aria-label="Breadcrumb">
+      {items.map((item, index) => (
+        <Crumb key={item.path || index} to={item.path} last={index === items.length - 1}>
+          {item.label}
+        </Crumb>
+      ))}
+    </nav>
   );
 };
 
