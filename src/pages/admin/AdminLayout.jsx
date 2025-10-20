@@ -57,23 +57,23 @@ const AdminLayout = () => {
     () => [
       {
         id: 1,
-        title: "Lịch hẹn mới",
-        description: "Nguyễn An vừa đặt lịch bảo dưỡng Tesla Model 3.",
-        time: "3 phút trước",
+        title: "LÃ¡Â»â€¹ch hÃ¡ÂºÂ¹n mÃ¡Â»â€ºi",
+        description: "NguyÃ¡Â»â€¦n An vÃ¡Â»Â«a Ã„â€˜Ã¡ÂºÂ·t lÃ¡Â»â€¹ch bÃ¡ÂºÂ£o dÃ†Â°Ã¡Â»Â¡ng Tesla Model 3.",
+        time: "3 phÃƒÂºt trÃ†Â°Ã¡Â»â€ºc",
         icon: "bi-calendar-event",
       },
       {
         id: 2,
-        title: "Xe hoàn tất",
-        description: "Volkswagen ID.4 đã hoàn thành quy trình kiểm tra.",
-        time: "1 giờ trước",
+        title: "Xe hoÃƒÂ n tÃ¡ÂºÂ¥t",
+        description: "Volkswagen ID.4 Ã„â€˜ÃƒÂ£ hoÃƒÂ n thÃƒÂ nh quy trÃƒÂ¬nh kiÃ¡Â»Æ’m tra.",
+        time: "1 giÃ¡Â»Â trÃ†Â°Ã¡Â»â€ºc",
         icon: "bi-check-circle",
       },
       {
         id: 3,
-        title: "Kho linh kiện thấp",
-        description: "Mô-đun pin Panasonic trong kho còn dưới 5 đơn vị.",
-        time: "2 giờ trước",
+        title: "Kho linh kiÃ¡Â»â€¡n thÃ¡ÂºÂ¥p",
+        description: "MÃƒÂ´-Ã„â€˜un pin Panasonic trong kho cÃƒÂ²n dÃ†Â°Ã¡Â»â€ºi 5 Ã„â€˜Ã†Â¡n vÃ¡Â»â€¹.",
+        time: "2 giÃ¡Â»Â trÃ†Â°Ã¡Â»â€ºc",
         icon: "bi-exclamation-triangle",
       },
     ],
@@ -84,16 +84,16 @@ const AdminLayout = () => {
     () => [
       {
         id: 1,
-        sender: "Lê Minh",
-        excerpt: "Nhờ anh xác nhận lịch bảo dưỡng lại giúp em nhé?",
-        time: "5 phút trước",
+        sender: "LÃƒÂª Minh",
+        excerpt: "NhÃ¡Â»Â anh xÃƒÂ¡c nhÃ¡ÂºÂ­n lÃ¡Â»â€¹ch bÃ¡ÂºÂ£o dÃ†Â°Ã¡Â»Â¡ng lÃ¡ÂºÂ¡i giÃƒÂºp em nhÃƒÂ©?",
+        time: "5 phÃƒÂºt trÃ†Â°Ã¡Â»â€ºc",
         icon: "bi-chat-left-text",
       },
       {
         id: 2,
-        sender: "Trạm Hà Nội",
-        excerpt: "Đã cập nhật bảng giá phụ tùng tuần này.",
-        time: "30 phút trước",
+        sender: "TrÃ¡ÂºÂ¡m HÃƒÂ  NÃ¡Â»â„¢i",
+        excerpt: "Ã„ÂÃƒÂ£ cÃ¡ÂºÂ­p nhÃ¡ÂºÂ­t bÃ¡ÂºÂ£ng giÃƒÂ¡ phÃ¡Â»Â¥ tÃƒÂ¹ng tuÃ¡ÂºÂ§n nÃƒÂ y.",
+        time: "30 phÃƒÂºt trÃ†Â°Ã¡Â»â€ºc",
         icon: "bi-building",
       },
     ],
@@ -335,25 +335,25 @@ const AdminLayout = () => {
           <button
             className="toggle-sidebar"
             onClick={toggleSidebar}
-            aria-label="T�m ki?m nhanh"
+              aria-label="Tim kiem nhanh"
           >
-            ☰
+            Ã¢ËœÂ°
           </button>
           <Link
             to="/admin"
             className="app-brand"
-            aria-label="T�m ki?m nhanh"
+              aria-label="Tim kiem nhanh"
           >
             <img src="/logo192.png" alt="CRM Management logo" />
           </Link>
           <div className="search-bar" ref={searchContainerRef}>
             <Input
-              placeholder="T�m ki?m kh�ch h�ng, b�o c�o, ho?c c�i d?t..."
+              placeholder="Tim kiem khach hang, bao cao, hoac cai dat..."
               value={searchQuery}
               onChange={handleSearchChange}
               onFocus={handleSearchFocus}
               onKeyDown={handleSearchKeyDown}
-              aria-label="T�m ki?m nhanh"
+              aria-label="Tim kiem nhanh"
               aria-expanded={isSearchOpen}
               aria-haspopup="listbox"
               role="combobox"
@@ -362,7 +362,7 @@ const AdminLayout = () => {
             />
             {isSearchOpen && suggestions.length > 0 && (
               <ul
-                aria-controls={SEARCH_SUGGESTIONS_ID}
+                id={SEARCH_SUGGESTIONS_ID}
                 className="search-suggestions"
                 role="listbox"
               >
@@ -388,7 +388,7 @@ const AdminLayout = () => {
                         {item.path}
                       </span>
                     </div>
-                    <span className="search-suggestion__hint">Enter ↵</span>
+                    <span className="search-suggestion__hint">Enter Ã¢â€ Âµ</span>
                   </li>
                 ))}
               </ul>
@@ -402,7 +402,7 @@ const AdminLayout = () => {
           <div
             className="header-quick-actions"
             role="toolbar"
-            aria-label="T�m ki?m nhanh"
+              aria-label="Tim kiem nhanh"
           >
             <div
               className={`header-quick-action ${
@@ -415,15 +415,15 @@ const AdminLayout = () => {
                 className={`header-quick-action-btn ${
                   isNotificationOpen ? "active" : ""
                 }`}
-                aria-label={
+              aria-label="Tim kiem nhanh"
                   notificationCount > 0
-                    ? `Có ${notificationCount} thông báo mới`
-                    : "Xem thông báo"
+                    ? `CÃƒÂ³ ${notificationCount} thÃƒÂ´ng bÃƒÂ¡o mÃ¡Â»â€ºi`
+                    : "Xem thÃƒÂ´ng bÃƒÂ¡o"
                 }
                 title={
                   notificationCount > 0
-                    ? `${notificationCount} thông báo chưa đọc`
-                    : "Không có thông báo mới"
+                    ? `${notificationCount} thÃƒÂ´ng bÃƒÂ¡o chÃ†Â°a Ã„â€˜Ã¡Â»Âc`
+                    : "KhÃƒÂ´ng cÃƒÂ³ thÃƒÂ´ng bÃƒÂ¡o mÃ¡Â»â€ºi"
                 }
                 aria-haspopup="dialog"
                 aria-expanded={isNotificationOpen}
@@ -451,13 +451,13 @@ const AdminLayout = () => {
                   className="header-popover"
                   id="header-notifications-panel"
                   role="dialog"
-                  aria-label="T�m ki?m nhanh"
+              aria-label="Tim kiem nhanh"
                 >
                   <div className="header-popover__header">
-                    <span>Thông báo</span>
+                    <span>ThÃƒÂ´ng bÃƒÂ¡o</span>
                     {notificationCount > 0 && (
                       <span className="header-popover__badge">
-                        {notificationCount} mới
+                        {notificationCount} mÃ¡Â»â€ºi
                       </span>
                     )}
                   </div>
@@ -485,7 +485,7 @@ const AdminLayout = () => {
                     </ul>
                   ) : (
                     <div className="header-popover__empty">
-                      Không có thông báo mới
+                      KhÃƒÂ´ng cÃƒÂ³ thÃƒÂ´ng bÃƒÂ¡o mÃ¡Â»â€ºi
                     </div>
                   )}
                 </div>
@@ -502,15 +502,15 @@ const AdminLayout = () => {
                 className={`header-quick-action-btn ${
                   isMessageOpen ? "active" : ""
                 }`}
-                aria-label={
+              aria-label="Tim kiem nhanh"
                   messageCount > 0
-                    ? `Có ${messageCount} tin nhắn mới`
-                    : "Xem tin nhắn"
+                    ? `CÃƒÂ³ ${messageCount} tin nhÃ¡ÂºÂ¯n mÃ¡Â»â€ºi`
+                    : "Xem tin nhÃ¡ÂºÂ¯n"
                 }
                 title={
                   messageCount > 0
-                    ? `${messageCount} tin nhắn chưa đọc`
-                    : "Không có tin nhắn mới"
+                    ? `${messageCount} tin nhÃ¡ÂºÂ¯n chÃ†Â°a Ã„â€˜Ã¡Â»Âc`
+                    : "KhÃƒÂ´ng cÃƒÂ³ tin nhÃ¡ÂºÂ¯n mÃ¡Â»â€ºi"
                 }
                 aria-haspopup="dialog"
                 aria-expanded={isMessageOpen}
@@ -538,13 +538,13 @@ const AdminLayout = () => {
                   className="header-popover"
                   id="header-messages-panel"
                   role="dialog"
-                  aria-label="T�m ki?m nhanh"
+              aria-label="Tim kiem nhanh"
                 >
                   <div className="header-popover__header">
-                    <span>Tin nhắn</span>
+                    <span>Tin nhÃ¡ÂºÂ¯n</span>
                     {messageCount > 0 && (
                       <span className="header-popover__badge">
-                        {messageCount} chưa đọc
+                        {messageCount} chÃ†Â°a Ã„â€˜Ã¡Â»Âc
                       </span>
                     )}
                   </div>
@@ -572,7 +572,7 @@ const AdminLayout = () => {
                     </ul>
                   ) : (
                     <div className="header-popover__empty">
-                      Không có tin nhắn mới
+                      KhÃƒÂ´ng cÃƒÂ³ tin nhÃ¡ÂºÂ¯n mÃ¡Â»â€ºi
                     </div>
                   )}
                 </div>
@@ -583,22 +583,22 @@ const AdminLayout = () => {
             className="btn btn-sm btn-outline-secondary theme-toggle"
             onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
             type="button"
-            aria-label={
+              aria-label="Tim kiem nhanh"
               theme === "dark"
-                ? "Chuyển sang giao diện sáng"
-                : "Chuyển sang giao diện tối"
+                ? "ChuyÃ¡Â»Æ’n sang giao diÃ¡Â»â€¡n sÃƒÂ¡ng"
+                : "ChuyÃ¡Â»Æ’n sang giao diÃ¡Â»â€¡n tÃ¡Â»â€˜i"
             }
           >
             <i
               className={`bi ${theme === "dark" ? "bi-sun" : "bi-moon"}`}
               aria-hidden="true"
             ></i>
-            <span>{theme === "dark" ? "Sáng" : "Tối"}</span>
+            <span>{theme === "dark" ? "SÃƒÂ¡ng" : "TÃ¡Â»â€˜i"}</span>
           </button>
           <button
             type="button"
             className="user-account"
-            aria-label="T�m ki?m nhanh"
+              aria-label="Tim kiem nhanh"
           >
             <span className="user-account__avatar" aria-hidden="true">
               <img src="https://via.placeholder.com/40" alt="" />
@@ -623,6 +623,7 @@ const AdminLayout = () => {
 };
 
 export default AdminLayout;
+
 
 
 
