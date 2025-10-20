@@ -583,17 +583,17 @@ const AdminLayout = () => {
             className="btn btn-sm btn-outline-secondary theme-toggle"
             onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
             type="button"
-              aria-label="Tim kiem nhanh"
+            aria-label={
               theme === "dark"
-                ? "ChuyÃ¡Â»Æ’n sang giao diÃ¡Â»â€¡n sÃƒÂ¡ng"
-                : "ChuyÃ¡Â»Æ’n sang giao diÃ¡Â»â€¡n tÃ¡Â»â€˜i"
+                ? "Chuyen sang giao dien sang"
+                : "Chuyen sang giao dien toi"
             }
           >
             <i
               className={`bi ${theme === "dark" ? "bi-sun" : "bi-moon"}`}
               aria-hidden="true"
             ></i>
-            <span>{theme === "dark" ? "SÃƒÂ¡ng" : "TÃ¡Â»â€˜i"}</span>
+            <span>{theme === "dark" ? "Sang" : "Toi"}</span>
           </button>
           <button
             type="button"
