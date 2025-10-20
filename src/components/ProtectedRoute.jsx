@@ -28,11 +28,16 @@ const ProtectedRoute = ({ children, requireRole = null }) => {
     return <Navigate to="/login" replace />;
   }
 
-  // If specific role is required, check for it
-  if (requireRole && !hasRole(requireRole)) {
-    console.log(`User does not have required role: ${requireRole} - redirecting to home`);
-    console.log('=== END PROTECTED ROUTE CHECK ===');
-    return <Navigate to="/home" replace />;
+  // If specific role(s) is required, check for it
+  if (requireRole) {
+    const allowed = Array.isArray(requireRole)
+      ? requireRole.some((r) => hasRole(r))
+      : hasRole(requireRole);
+    if (!allowed) {
+      console.log(`User lacks required role(s): ${requireRole} - redirecting to home`);
+      console.log('=== END PROTECTED ROUTE CHECK ===');
+      return <Navigate to="/home" replace />;
+    }
   }
 
   console.log('Access granted');
