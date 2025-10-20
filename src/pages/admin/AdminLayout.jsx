@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
-import "./AdminLayout.css";
+import "./AdminLayout.css";\nimport { Input } from "../../components/ui/input";\nimport { Button } from "../../components/ui/button";\nimport AdminBreadcrumb from "../../components/Breadcrumb";
 
 const NAV_ITEMS = [
   { label: "Dashboard", path: "/admin", icon: "bi-speedometer2" },
@@ -343,21 +343,7 @@ const AdminLayout = () => {
           >
             <img src="/logo192.png" alt="CRM Management logo" />
           </Link>
-          <div className="search-bar" ref={searchContainerRef}>
-            <input
-              type="text"
-              placeholder="TÃ¬m kiáº¿m khÃ¡ch hÃ ng, bÃ¡o cÃ¡o, hoáº·c cÃ i Ä‘áº·t..."
-              value={searchQuery}
-              onChange={handleSearchChange}
-              onFocus={handleSearchFocus}
-              onKeyDown={handleSearchKeyDown}
-              aria-label="TÃ¬m kiáº¿m nhanh"
-              aria-expanded={isSearchOpen}
-              aria-haspopup="listbox"
-              role="combobox"
-              aria-autocomplete="list"
-              aria-controls={SEARCH_SUGGESTIONS_ID}
-            />
+          <div className="search-bar" ref={searchContainerRef}>\n            <Input\n              placeholder="Tìm ki?m khách hàng, báo cáo, ho?c cài d?t..."\n              value={searchQuery}\n              onChange={handleSearchChange}\n              onFocus={handleSearchFocus}\n              onKeyDown={handleSearchKeyDown}\n              aria-label="Tìm ki?m nhanh"\n              aria-expanded={isSearchOpen}\n              aria-haspopup="listbox"\n              role="combobox"\n              aria-autocomplete="list"\n              id={SEARCH_SUGGESTIONS_ID}\n            />
             {isSearchOpen && suggestions.length > 0 && (
               <ul
                 id={SEARCH_SUGGESTIONS_ID}
@@ -394,25 +380,7 @@ const AdminLayout = () => {
           </div>
         </div>
         <div className="header-center">
-          <nav className="page-trail" aria-label="Breadcrumb">
-            {breadcrumbItems.map((item, index) => {
-              const isLast = index === breadcrumbItems.length - 1;
-              return (
-                <span key={item.path} className="page-trail__segment">
-                  {index > 0 && (
-                    <i className="bi bi-chevron-right" aria-hidden="true"></i>
-                  )}
-                  {isLast ? (
-                    <span className="page-trail__current">{item.label}</span>
-                  ) : (
-                    <Link to={item.path} className="page-trail__link">
-                      {item.label}
-                    </Link>
-                  )}
-                </span>
-              );
-            })}
-          </nav>
+          <AdminBreadcrumb items={breadcrumbItems} />
         </div>
         <div className="user-profile">
           <div
@@ -639,3 +607,6 @@ const AdminLayout = () => {
 };
 
 export default AdminLayout;
+
+
+
