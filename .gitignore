@@ -3,3 +3,6 @@ node_modules/
 build/ 
 
 .early.coverage
+# ignore reserved Windows filename residue
+CON
+
