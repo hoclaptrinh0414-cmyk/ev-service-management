@@ -164,15 +164,15 @@ const ServiceSchedule = () => {
             eventPropGetter={eventPropGetter}
             messages={{
                 next: "Sau",
-                previous: "Trước",
-                today: "Hôm nay",
-                month: "Tháng",
-                week: "Tuần",
-                day: "Ngày",
-                agenda: "Lịch trình",
-                date: "Ngày",
-                time: "Thời gian",
-                event: "Sự kiện",
+                previous: "Tru?c",
+                today: "Ng�y",
+                month: "Th�ng",
+                week: "Tu?n",
+                day: "Ng�y",
+                agenda: "L?ch tr�nh",
+                date: "Ng�y",
+                time: "Th?i gian",
+                event: "S? ki?n",
             }}
             />
         </div>
@@ -193,3 +193,4 @@ const ServiceSchedule = () => {
 };
 
 export default ServiceSchedule;
+
