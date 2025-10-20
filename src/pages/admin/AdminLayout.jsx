@@ -55,47 +55,17 @@ const AdminLayout = () => {
 
   const notifications = useMemo(
     () => [
-      {
-        id: 1,
-        title: "LÃƒÂ¡Ã‚Â»Ã¢â‚¬Â¹ch hÃƒÂ¡Ã‚ÂºÃ‚Â¹n mÃƒÂ¡Ã‚Â»Ã¢â‚¬Âºi",
-        description: "NguyÃƒÂ¡Ã‚Â»Ã¢â‚¬Â¦n An vÃƒÂ¡Ã‚Â»Ã‚Â«a Ãƒâ€žÃ¢â‚¬ËœÃƒÂ¡Ã‚ÂºÃ‚Â·t lÃƒÂ¡Ã‚Â»Ã¢â‚¬Â¹ch bÃƒÂ¡Ã‚ÂºÃ‚Â£o dÃƒâ€ Ã‚Â°ÃƒÂ¡Ã‚Â»Ã‚Â¡ng Tesla Model 3.",
-        time: "3 phÃƒÆ’Ã‚Âºt trÃƒâ€ Ã‚Â°ÃƒÂ¡Ã‚Â»Ã¢â‚¬Âºc",
-        icon: "bi-calendar-event",
-      },
-      {
-        id: 2,
-        title: "Xe hoÃƒÆ’Ã‚Â n tÃƒÂ¡Ã‚ÂºÃ‚Â¥t",
-        description: "Volkswagen ID.4 Ãƒâ€žÃ¢â‚¬ËœÃƒÆ’Ã‚Â£ hoÃƒÆ’Ã‚Â n thÃƒÆ’Ã‚Â nh quy trÃƒÆ’Ã‚Â¬nh kiÃƒÂ¡Ã‚Â»Ã†â€™m tra.",
-        time: "1 giÃƒÂ¡Ã‚Â»Ã‚Â trÃƒâ€ Ã‚Â°ÃƒÂ¡Ã‚Â»Ã¢â‚¬Âºc",
-        icon: "bi-check-circle",
-      },
-      {
-        id: 3,
-        title: "Kho linh kiÃƒÂ¡Ã‚Â»Ã¢â‚¬Â¡n thÃƒÂ¡Ã‚ÂºÃ‚Â¥p",
-        description: "MÃƒÆ’Ã‚Â´-Ãƒâ€žÃ¢â‚¬Ëœun pin Panasonic trong kho cÃƒÆ’Ã‚Â²n dÃƒâ€ Ã‚Â°ÃƒÂ¡Ã‚Â»Ã¢â‚¬Âºi 5 Ãƒâ€žÃ¢â‚¬ËœÃƒâ€ Ã‚Â¡n vÃƒÂ¡Ã‚Â»Ã¢â‚¬Â¹.",
-        time: "2 giÃƒÂ¡Ã‚Â»Ã‚Â trÃƒâ€ Ã‚Â°ÃƒÂ¡Ã‚Â»Ã¢â‚¬Âºc",
-        icon: "bi-exclamation-triangle",
-      },
+      { id: 1, title: "Lich hen moi", description: "Nguyen An vua dat lich bao duong Tesla Model 3.", time: "3 phut truoc", icon: "bi-calendar-event" },
+      { id: 2, title: "Xe hoan tat", description: "Volkswagen ID.4 da hoan thanh quy trinh kiem tra.", time: "1 gio truoc", icon: "bi-check-circle" },
+      { id: 3, title: "Kho linh kien thap", description: "Module pin Panasonic con duoi 5 don vi.", time: "2 gio truoc", icon: "bi-exclamation-triangle" },
     ],
     []
   );
 
   const messages = useMemo(
     () => [
-      {
-        id: 1,
-        sender: "LÃƒÆ’Ã‚Âª Minh",
-        excerpt: "NhÃƒÂ¡Ã‚Â»Ã‚Â anh xÃƒÆ’Ã‚Â¡c nhÃƒÂ¡Ã‚ÂºÃ‚Â­n lÃƒÂ¡Ã‚Â»Ã¢â‚¬Â¹ch bÃƒÂ¡Ã‚ÂºÃ‚Â£o dÃƒâ€ Ã‚Â°ÃƒÂ¡Ã‚Â»Ã‚Â¡ng lÃƒÂ¡Ã‚ÂºÃ‚Â¡i giÃƒÆ’Ã‚Âºp em nhÃƒÆ’Ã‚Â©?",
-        time: "5 phÃƒÆ’Ã‚Âºt trÃƒâ€ Ã‚Â°ÃƒÂ¡Ã‚Â»Ã¢â‚¬Âºc",
-        icon: "bi-chat-left-text",
-      },
-      {
-        id: 2,
-        sender: "TrÃƒÂ¡Ã‚ÂºÃ‚Â¡m HÃƒÆ’Ã‚Â  NÃƒÂ¡Ã‚Â»Ã¢â€žÂ¢i",
-        excerpt: "Ãƒâ€žÃ‚ÂÃƒÆ’Ã‚Â£ cÃƒÂ¡Ã‚ÂºÃ‚Â­p nhÃƒÂ¡Ã‚ÂºÃ‚Â­t bÃƒÂ¡Ã‚ÂºÃ‚Â£ng giÃƒÆ’Ã‚Â¡ phÃƒÂ¡Ã‚Â»Ã‚Â¥ tÃƒÆ’Ã‚Â¹ng tuÃƒÂ¡Ã‚ÂºÃ‚Â§n nÃƒÆ’Ã‚Â y.",
-        time: "30 phÃƒÆ’Ã‚Âºt trÃƒâ€ Ã‚Â°ÃƒÂ¡Ã‚Â»Ã¢â‚¬Âºc",
-        icon: "bi-building",
-      },
+      { id: 1, sender: "Le Minh", excerpt: "Nho anh xac nhan lich bao duong lai giup em nhe?", time: "5 phut truoc", icon: "bi-chat-left-text" },
+      { id: 2, sender: "Tram Ha Noi", excerpt: "Da cap nhat bang gia phu tung tuan nay.", time: "30 phut truoc", icon: "bi-building" },
     ],
     []
   );
@@ -333,7 +303,7 @@ const AdminLayout = () => {
       <div className={`header ${sidebarCollapsed ? "full-width" : ""}`}>
         <div className="left-controls">
           <button
-            className="toggle-sidebar"\n            onClick={toggleSidebar}\n            aria-label="Toggle sidebar"\n          >\n            ≡\n          </button>
+            className="toggle-sidebar"\n            onClick={toggleSidebar}\n            aria-label="Toggle sidebar"\n          >\n            Ã¢â€°Â¡\n          </button>
           <Link
             to="/admin"
             className="app-brand"
@@ -412,14 +382,10 @@ const AdminLayout = () => {
                 }`}
               aria-label="Tim kiem nhanh"
                   notificationCount > 0
-                    ? `CÃƒÆ’Ã‚Â³ ${notificationCount} thÃƒÆ’Ã‚Â´ng bÃƒÆ’Ã‚Â¡o mÃƒÂ¡Ã‚Â»Ã¢â‚¬Âºi`
-                    : "Xem thÃƒÆ’Ã‚Â´ng bÃƒÆ’Ã‚Â¡o"
+                    ? `CÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³ ${notificationCount} thÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â´ng bÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡o mÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â»ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Âºi`
+                    : "Xem thÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â´ng bÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡o"
                 }
-                title={
-                  notificationCount > 0
-                    ? `${notificationCount} thÃƒÆ’Ã‚Â´ng bÃƒÆ’Ã‚Â¡o chÃƒâ€ Ã‚Â°a Ãƒâ€žÃ¢â‚¬ËœÃƒÂ¡Ã‚Â»Ã‚Âc`
-                    : "KhÃƒÆ’Ã‚Â´ng cÃƒÆ’Ã‚Â³ thÃƒÆ’Ã‚Â´ng bÃƒÆ’Ã‚Â¡o mÃƒÂ¡Ã‚Â»Ã¢â‚¬Âºi"
-                }
+                title={ messageCount > 0 ? `${messageCount} tin nhan chua doc` : "Khong co tin nhan moi" }
                 aria-haspopup="dialog"
                 aria-expanded={isNotificationOpen}
                 aria-controls="header-notifications-panel"
@@ -449,10 +415,10 @@ const AdminLayout = () => {
               aria-label="Tim kiem nhanh"
                 >
                   <div className="header-popover__header">
-                    <span>ThÃƒÆ’Ã‚Â´ng bÃƒÆ’Ã‚Â¡o</span>
+                    <span>Thong bao</span>
                     {notificationCount > 0 && (
                       <span className="header-popover__badge">
-                        {notificationCount} mÃƒÂ¡Ã‚Â»Ã¢â‚¬Âºi
+                        {notificationCount} moi
                       </span>
                     )}
                   </div>
@@ -480,7 +446,7 @@ const AdminLayout = () => {
                     </ul>
                   ) : (
                     <div className="header-popover__empty">
-                      KhÃƒÆ’Ã‚Â´ng cÃƒÆ’Ã‚Â³ thÃƒÆ’Ã‚Â´ng bÃƒÆ’Ã‚Â¡o mÃƒÂ¡Ã‚Â»Ã¢â‚¬Âºi
+                      Khong co thong bao moi
                     </div>
                   )}
                 </div>
@@ -499,14 +465,10 @@ const AdminLayout = () => {
                 }`}
               aria-label="Tim kiem nhanh"
                   messageCount > 0
-                    ? `CÃƒÆ’Ã‚Â³ ${messageCount} tin nhÃƒÂ¡Ã‚ÂºÃ‚Â¯n mÃƒÂ¡Ã‚Â»Ã¢â‚¬Âºi`
-                    : "Xem tin nhÃƒÂ¡Ã‚ÂºÃ‚Â¯n"
+                    ? `CÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³ ${messageCount} tin nhÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂºÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¯n mÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â»ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Âºi`
+                    : "Xem tin nhÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂºÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¯n"
                 }
-                title={
-                  messageCount > 0
-                    ? `${messageCount} tin nhÃƒÂ¡Ã‚ÂºÃ‚Â¯n chÃƒâ€ Ã‚Â°a Ãƒâ€žÃ¢â‚¬ËœÃƒÂ¡Ã‚Â»Ã‚Âc`
-                    : "KhÃƒÆ’Ã‚Â´ng cÃƒÆ’Ã‚Â³ tin nhÃƒÂ¡Ã‚ÂºÃ‚Â¯n mÃƒÂ¡Ã‚Â»Ã¢â‚¬Âºi"
-                }
+                title={ messageCount > 0 ? `${messageCount} tin nhan chua doc` : "Khong co tin nhan moi" }
                 aria-haspopup="dialog"
                 aria-expanded={isMessageOpen}
                 aria-controls="header-messages-panel"
@@ -536,10 +498,10 @@ const AdminLayout = () => {
               aria-label="Tim kiem nhanh"
                 >
                   <div className="header-popover__header">
-                    <span>Tin nhÃƒÂ¡Ã‚ÂºÃ‚Â¯n</span>
+                    <span>Tin nhÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂºÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¯n</span>
                     {messageCount > 0 && (
                       <span className="header-popover__badge">
-                        {messageCount} chÃƒâ€ Ã‚Â°a Ãƒâ€žÃ¢â‚¬ËœÃƒÂ¡Ã‚Â»Ã‚Âc
+                        {messageCount} chÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â°a ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¹Ã…â€œÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â»ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âc
                       </span>
                     )}
                   </div>
@@ -567,7 +529,7 @@ const AdminLayout = () => {
                     </ul>
                   ) : (
                     <div className="header-popover__empty">
-                      KhÃƒÆ’Ã‚Â´ng cÃƒÆ’Ã‚Â³ tin nhÃƒÂ¡Ã‚ÂºÃ‚Â¯n mÃƒÂ¡Ã‚Â»Ã¢â‚¬Âºi
+                      KhÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â´ng cÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³ tin nhÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂºÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¯n mÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â»ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Âºi
                     </div>
                   )}
                 </div>
@@ -578,11 +540,7 @@ const AdminLayout = () => {
             className="btn btn-sm btn-outline-secondary theme-toggle"
             onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
             type="button"
-            aria-label={
-              theme === "dark"
-                ? "Chuyen sang giao dien sang"
-                : "Chuyen sang giao dien toi"
-            }
+            aria-label={ messageCount > 0 ? `Co ${messageCount} tin nhan moi` : "Xem tin nhan" }
           >
             <i
               className={`bi ${theme === "dark" ? "bi-sun" : "bi-moon"}`}
