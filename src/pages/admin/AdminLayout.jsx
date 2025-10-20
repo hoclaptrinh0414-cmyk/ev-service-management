@@ -312,85 +312,8 @@ const AdminLayout = () => {
           <Link
             to="/admin"
             className="app-brand"
-            aria-label="Tim kiem nhanh"
-          >
-            <img src="/logo192.png" alt="CRM Management logo" />
-          </Link>
-          <div className="search-bar" ref={searchContainerRef}>
-            <Input
-              placeholder="Tim kiem khach hang, bao cao, hoac cai dat..."
-              value={searchQuery}
-              onChange={handleSearchChange}
-              onFocus={handleSearchFocus}
-              onKeyDown={handleSearchKeyDown}
-              aria-label="Tim kiem nhanh"
-              aria-expanded={isSearchOpen}
-              aria-haspopup="listbox"
-              role="combobox"
-              aria-autocomplete="list"
-              aria-controls={SEARCH_SUGGESTIONS_ID}
-            />
-            {isSearchOpen && suggestions.length > 0 && (
-              <ul
-                id={SEARCH_SUGGESTIONS_ID}
-                className="search-suggestions"
-                role="listbox"
-              >
-                {suggestions.map((item, index) => (
-                  <li
-                    key={item.path}
-                    role="option"
-                    className={`search-suggestion ${
-                      index === activeSuggestion ? "active" : ""
-                    }`}
-                    aria-selected={index === activeSuggestion}
-                    onMouseDown={(event) => {
-                      event.preventDefault();
-                      handleSuggestionSelect(item);
-                    }}
-                  >
-                    <i className={`bi ${item.icon}`} aria-hidden="true"></i>
-                    <div className="search-suggestion__content">
-                      <span className="search-suggestion__label">
-                        {highlightLabel(item.label)}
-                      </span>
-                      <span className="search-suggestion__path">
-                        {item.path}
-                      </span>
-                    </div>
-                    <span className="search-suggestion__hint">Enter</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
-        <div className="header-center">
-          <AdminBreadcrumb items={breadcrumbItems} />
-        </div>
-        <div className="user-profile">
-          <div
-            className="header-quick-actions"
-            role="toolbar"
-              aria-label="Tim kiem nhanh"
-          >
-            <div
-              className={`header-quick-action ${
-                isNotificationOpen ? "is-open" : ""
-              }`}
-              ref={notificationRef}
-            >
-              <button
-                type="button"
-                className={`header-quick-action-btn ${
-                  isNotificationOpen ? "active" : ""
-                }`}
-              aria-label="Tim kiem nhanh"
-                  notificationCount > 0
-                    ? `CÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³ ${notificationCount} thÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â´ng bÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡o mÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â»ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Âºi`
-                    : "Xem thÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â´ng bÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡o"
-                }
-                title={ messageCount > 0 ? `${messageCount} tin nhan chua doc` : "Khong co tin nhan moi" }
+            aria-label={ notificationCount > 0 ? `Co ${notificationCount} thong bao moi` : "Xem thong bao" }
+                title={ notificationCount > 0 ? `${notificationCount} thong bao chua doc` : "Khong co thong bao moi" } tin nhan chua doc` : "Khong co tin nhan moi" }
                 aria-haspopup="dialog"
                 aria-expanded={isNotificationOpen}
                 aria-controls="header-notifications-panel"
@@ -417,63 +340,8 @@ const AdminLayout = () => {
                   className="header-popover"
                   id="header-notifications-panel"
                   role="dialog"
-              aria-label="Tim kiem nhanh"
-                >
-                  <div className="header-popover__header">
-                    <span>Thong bao</span>
-                    {notificationCount > 0 && (
-                      <span className="header-popover__badge">
-                        {notificationCount} moi
-                      </span>
-                    )}
-                  </div>
-                  {notificationCount > 0 ? (
-                    <ul className="header-popover__list">
-                      {notifications.map((item) => (
-                        <li key={item.id} className="header-popover__item">
-                          <i
-                            className={`bi ${item.icon}`}
-                            aria-hidden="true"
-                          ></i>
-                          <div className="header-popover__item-body">
-                            <span className="header-popover__item-title">
-                              {item.title}
-                            </span>
-                            <span className="header-popover__item-desc">
-                              {item.description}
-                            </span>
-                            <time className="header-popover__item-meta">
-                              {item.time}
-                            </time>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <div className="header-popover__empty">
-                      Khong co thong bao moi
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-            <div
-              className={`header-quick-action ${
-                isMessageOpen ? "is-open" : ""
-              }`}
-              ref={messageRef}
-            >
-              <button
-                type="button"
-                className={`header-quick-action-btn ${
-                  isMessageOpen ? "active" : ""
-                }`}
-              aria-label="Tim kiem nhanh"
-                  messageCount > 0
-                    ? `CÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³ ${messageCount} tin nhÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂºÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¯n mÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â»ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Âºi`
-                    : "Xem tin nhÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂºÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¯n"
-                }
-                title={ messageCount > 0 ? `${messageCount} tin nhan chua doc` : "Khong co tin nhan moi" }
+              aria-label={ notificationCount > 0 ? `Co ${notificationCount} thong bao moi` : "Xem thong bao" }
+                title={ notificationCount > 0 ? `${notificationCount} thong bao chua doc` : "Khong co thong bao moi" } tin nhan chua doc` : "Khong co tin nhan moi" }
                 aria-haspopup="dialog"
                 aria-expanded={isMessageOpen}
                 aria-controls="header-messages-panel"
@@ -498,18 +366,7 @@ const AdminLayout = () => {
               {isMessageOpen && (
                 <div
                   className="header-popover"
-                  id="header-messages-panel"
-                  role="dialog"
-              aria-label="Tim kiem nhanh"
-                >
-                  <div className="header-popover__header">
-                    <span>Tin nhÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂºÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¯n</span>
-                    {messageCount > 0 && (
-                      <span className="header-popover__badge">
-                        {messageCount} chÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â°a ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¹Ã…â€œÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â»ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âc
-                      </span>
-                    )}
-                  </div>
+                  id="header-messages-panel"\n                  role="dialog"\n              aria-label="Tim kiem nhanh"\n                >\n                  <div className="header-popover__header">\n                    <span>Tin nhan</span>\n                    {messageCount > 0 && (\n                      <span className="header-popover__badge">\n                        {messageCount} chua doc\n                      </span>\n                    )}\n                  </div>
                   {messageCount > 0 ? (
                     <ul className="header-popover__list">
                       {messages.map((item) => (
@@ -534,7 +391,7 @@ const AdminLayout = () => {
                     </ul>
                   ) : (
                     <div className="header-popover__empty">
-                      KhÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â´ng cÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³ tin nhÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂºÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¯n mÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â»ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Âºi
+                      KhÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â´ng cÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³ tin nhÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂºÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¯n mÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â»ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âºi
                     </div>
                   )}
                 </div>
