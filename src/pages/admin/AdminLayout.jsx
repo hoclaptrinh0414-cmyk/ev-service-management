@@ -303,11 +303,16 @@ const AdminLayout = () => {
       <div className={`header ${sidebarCollapsed ? "full-width" : ""}`}>
         <div className="left-controls">
           <button
-            className="toggle-sidebar"\n            onClick={toggleSidebar}\n            aria-label="Toggle sidebar"\n          >\n            Ã¢â€°Â¡\n          </button>
+            className="toggle-sidebar"
+            onClick={toggleSidebar}
+            aria-label="Toggle sidebar"
+          >
+            |||
+          </button>
           <Link
             to="/admin"
             className="app-brand"
-              aria-label="Tim kiem nhanh"
+            aria-label="Tim kiem nhanh"
           >
             <img src="/logo192.png" alt="CRM Management logo" />
           </Link>
