@@ -20,7 +20,9 @@ const NAV_ITEMS = [
     path: "/admin/maintenance",
     icon: "bi-tools",
   },
-  { label: "Parts Inventory", path: "/admin/parts", icon: "bi-box-seam" },
+  { label: "Parts Inventory", 
+    path: "/admin/parts", 
+    icon: "bi-box-seam" },
   { label: "Staff Management", path: "/admin/staff", icon: "bi-person-badge" },
   {
     label: "Financial Report",
@@ -176,9 +178,12 @@ const AdminLayout = () => {
   const isActive = (path) => {
     if (!path) return "";
     const currentPath = location.pathname;
-    return currentPath === path || currentPath.startsWith(`${path}/`)
-      ? "active"
-      : "";
+    // Dashboard should be active only on exact '/admin'
+    if (path === "/admin") {
+      return currentPath === "/admin" ? "active" : "";
+    }
+    // Other items active on exact match or nested routes
+    return currentPath === path || currentPath.startsWith(`${path}/`) ? "active" : "";
   };
 
   const suggestions = useMemo(() => {
