@@ -44,6 +44,7 @@ import VehicleManagement from "./pages/admin/VehicleManagement";
 import CustomerManagement from "./pages/admin/CustomerManagement";
 import ServiceSchedule from "./pages/admin/ServiceSchedule";
 import MaintenanceProgress from "./pages/admin/MaintenanceProgress";
+import PartsInventory from "./pages/admin/PartsInventory";
 
 // Create React Query client
 const queryClient = new QueryClient({
@@ -175,12 +176,7 @@ function App() {
             <Route path="customers" element={<CustomerManagement />} />
             <Route path="schedule" element={<ServiceSchedule />} />
             <Route path="maintenance" element={<MaintenanceProgress />} />
-            <Route
-              path="parts"
-              element={
-                <div className="placeholder">Parts Inventory - Coming Soon</div>
-              }
-            />
+            <Route path="parts" element={<PartsInventory />} />
             <Route
               path="staff"
               element={
