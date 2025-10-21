@@ -257,11 +257,11 @@ export const authService = {
    * 1.8. Đặt lại mật khẩu (với OTP)
    * POST /api/account/reset-password
    */
-  async resetPassword(email, otp, newPassword, confirmPassword) {
+  async resetPassword(email, token, newPassword, confirmPassword) {
     try {
       const response = await accountRecoveryService.resetPassword({
         email,
-        otp,
+        token,
         newPassword,
         confirmPassword
       });

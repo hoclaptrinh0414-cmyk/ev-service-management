@@ -84,9 +84,19 @@ body {
 }
 
 .sidebar-header {
-       padding: 24px;
+       padding: 24px 0;
        border-bottom: 1px solid var(--sidebar-border);
        color: var(--sidebar-text);
+       display: flex;
+       align-items: center;
+       justify-content: center;
+       text-align: center;
+}
+
+.sidebar-title {
+       margin: 0;
+       width: 100%;
+       text-align: center;
 }
 
 .sidebar.collapsed .sidebar-header h2 {

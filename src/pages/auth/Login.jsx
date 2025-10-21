@@ -1,9 +1,10 @@
 // src/pages/auth/Login.jsx - HOÀN CHỈNH - COPY FILE NÀY VÀO PROJECT
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { authUtils } from '../../services/api';
+import { authUtils } from '../../services/apiService';
 import authService from '../../services/authService';
 import { useToast } from '../../contexts/ToastContext';
+import { useAuth } from '../../contexts/AuthContext';
 import EmailVerificationModal from '../../components/EmailVerificationModal';
 import GoogleLoginButton from '../../components/GoogleLoginButton';
 import FacebookLoginButton from '../../components/FacebookLoginButton';
@@ -22,6 +23,7 @@ const Login = () => {
   const [userEmail, setUserEmail] = useState('');
   const navigate = useNavigate();
   const toast = useToast();
+  const { refreshUser } = useAuth();
 
   const handleChange = (e) => {
     setFormData({
@@ -130,6 +132,7 @@ const Login = () => {
       // Sử dụng authService.login() để tự động lấy full profile
       const result = await authService.login(formData.username, formData.password);
 
+      await refreshUser();
       // authService.login() đã tự động lưu token và full profile vào localStorage
       // Chỉ cần redirect dựa vào role
       const user = authUtils.getUser();

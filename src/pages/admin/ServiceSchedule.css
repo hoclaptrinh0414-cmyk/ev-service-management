@@ -1,0 +1,85 @@
+.schedule-shell .rbc-calendar {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.schedule-shell .rbc-toolbar {
+  display: none;
+}
+
+.schedule-shell .rbc-event {
+  border: none;
+  padding: 6px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+
+.schedule-shell .rbc-event.rbc-selected {
+  outline: 2px solid rgba(59, 130, 246, 0.4);
+  outline-offset: 2px;
+}
+
+.schedule-shell .rbc-event-label {
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.schedule-shell .rbc-time-slot,
+.schedule-shell .rbc-day-bg {
+  transition: background-color 0.2s ease;
+}
+
+.schedule-shell .rbc-day-bg:hover {
+  background-color: rgba(59, 130, 246, 0.06);
+}
+
+.schedule-shell .rbc-today {
+  background-color: rgba(37, 99, 235, 0.06);
+}
+
+.schedule-shell .rbc-off-range-bg {
+  background-color: #f1f5f9;
+}
+
+.schedule-shell .rbc-header {
+  padding: 12px 0;
+  font-weight: 600;
+  color: #1f2937;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.schedule-shell .rbc-time-header {
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.schedule-shell .rbc-time-slot {
+  border-top: 1px dashed rgba(148, 163, 184, 0.4);
+}
+
+.schedule-shell .rbc-time-view .rbc-allday-cell {
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.schedule-shell .rbc-time-view .rbc-time-column {
+  border-right: 1px solid #e5e7eb;
+}
+
+.schedule-shell .rbc-month-view,
+.schedule-shell .rbc-time-view {
+  border-radius: 18px;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+}
+
+.schedule-shell .rbc-agenda-table {
+  border: none;
+}
+
+.schedule-shell .rbc-agenda-table tbody > tr > td {
+  padding: 16px 12px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.schedule-shell .rbc-agenda-time-cell {
+  width: 160px;
+}

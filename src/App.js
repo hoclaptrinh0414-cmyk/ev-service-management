@@ -24,6 +24,7 @@ import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import ResetPassword from "./pages/auth/ResetPassword";
+import ResetPasswordSuccess from "./pages/auth/ResetPasswordSuccess";
 import EmailVerificationPage from "./pages/auth/EmailVerificationPage";
 import ResendVerification from "./pages/auth/ResendVerification";
 import CustomerDashboard from "./pages/customer/Dashboard";
@@ -42,6 +43,10 @@ import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/Dashboard";
 import VehicleManagement from "./pages/admin/VehicleManagement";
 import CustomerManagement from "./pages/admin/CustomerManagement";
+import ServiceSchedule from "./pages/admin/ServiceSchedule";
+import MaintenanceProgress from "./pages/admin/MaintenanceProgress";
+import PartsInventory from "./pages/admin/PartsInventory";
+import StaffManagement from "./pages/admin/StaffManagement";
 
 // Create React Query client
 const queryClient = new QueryClient({
@@ -70,6 +75,7 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/reset-password-success" element={<ResetPasswordSuccess />} />
           <Route path="/verify-email" element={<EmailVerificationPage />} />
           <Route path="/resend-verification" element={<ResendVerification />} />
 
@@ -163,7 +169,7 @@ function App() {
           <Route
             path="/admin"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute requireRole={["admin", "staff"]}>
                 <AdminLayout />
               </ProtectedRoute>
             }
@@ -171,36 +177,10 @@ function App() {
             <Route index element={<AdminDashboard />} />
             <Route path="vehicles" element={<VehicleManagement />} />
             <Route path="customers" element={<CustomerManagement />} />
-            <Route
-              path="schedule"
-              element={
-                <div className="placeholder">
-                  Service Schedule - Coming Soon
-                </div>
-              }
-            />
-            <Route
-              path="maintenance"
-              element={
-                <div className="placeholder">
-                  Maintenance Progress - Coming Soon
-                </div>
-              }
-            />
-            <Route
-              path="parts"
-              element={
-                <div className="placeholder">Parts Inventory - Coming Soon</div>
-              }
-            />
-            <Route
-              path="staff"
-              element={
-                <div className="placeholder">
-                  Staff Management - Coming Soon
-                </div>
-              }
-            />
+            <Route path="schedule" element={<ServiceSchedule />} />
+            <Route path="maintenance" element={<MaintenanceProgress />} />
+            <Route path="parts" element={<PartsInventory />} />
+            <Route path="staff" element={<StaffManagement />} />
             <Route
               path="finance"
               element={

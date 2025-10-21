@@ -2,7 +2,7 @@
 // Tạo file này để test các API calls
 
 import React, { useState } from 'react';
-import { authAPI, accountRecoveryService, handleApiError } from '../services/api';
+import { authAPI, accountRecoveryService, handleApiError } from '../services/apiService';
 
 const PasswordResetTest = () => {
   const [testResults, setTestResults] = useState([]);

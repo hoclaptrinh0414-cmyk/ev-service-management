@@ -3,7 +3,7 @@ import {
   customersAPI,
   customerTypesAPI,
   handleApiError,
-} from "../../services/api";
+} from "../../services/apiService";
 
 const DEFAULT_PAGINATION = {
   page: 1,

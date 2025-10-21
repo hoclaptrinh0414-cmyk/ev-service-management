@@ -1116,6 +1116,48 @@ export const orderAPI = {
   getOrder: (id) => apiService.getOrder(id),
 };
 
+// ============ STAFF MANAGEMENT API ============
+// Generic REST wrapper matching required endpoints
+export const staffAPI = {
+  // GET /api/staff?search=&role=&status=&page=&pageSize=
+  list: (params = {}) => {
+    const queryString = buildQueryString(params);
+    return apiService.request(`/staff${queryString}`);
+  },
+  // GET /api/staff/:id
+  getById: (id) => {
+    if (id === undefined || id === null) throw new Error("Staff ID is required");
+    return apiService.request(`/staff/${id}`);
+  },
+  // POST /api/staff
+  create: (data) =>
+    apiService.request(`/staff`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  // PUT /api/staff/:id
+  update: (id, data) => {
+    if (id === undefined || id === null) throw new Error("Staff ID is required");
+    return apiService.request(`/staff/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
+  // DELETE /api/staff/:id
+  remove: (id) => {
+    if (id === undefined || id === null) throw new Error("Staff ID is required");
+    return apiService.request(`/staff/${id}`, { method: "DELETE" });
+  },
+  // PATCH /api/staff/:id/status
+  updateStatus: (id, status) => {
+    if (id === undefined || id === null) throw new Error("Staff ID is required");
+    return apiService.request(`/staff/${id}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    });
+  },
+};
+
 export const authUtils = {
   isAuthenticated: () => apiService.isAuthenticated(),
   getToken: () => apiService.getToken(),

@@ -15,13 +15,13 @@ const APIDebug = () => {
     setApiUrl(envUrl || 'NOT LOADED');
     
     addLog('info', '🔧 Environment Variables Check', {
-      'REACT_APP_API_URL': envUrl || '❌ NOT FOUND',
+      'REACT_APP_API_URL': envUrl || ' NOT FOUND',
       'REACT_APP_APP_URL': process.env.REACT_APP_APP_URL || 'NOT SET',
       'NODE_ENV': process.env.NODE_ENV
     });
 
     if (!envUrl || envUrl === 'NOT LOADED') {
-      addLog('error', '❌ .env FILE NOT LOADED!', {
+      addLog('error', ' .env FILE NOT LOADED!', {
         problem: '.env file không được load',
         solution: [
           '1. Đảm bảo .env ở cùng cấp package.json',
@@ -42,13 +42,13 @@ const APIDebug = () => {
     };
     setLogs(prev => [log, ...prev]);
     
-    const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️';
+    const icon = type === 'success' ? '' : type === 'error' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️';
     console.log(`${icon} [${log.timestamp}] ${message}`, data || '');
   };
 
   const testNgrokConnection = async () => {
     setLoading(true);
-    addLog('info', '🧪 TEST 1: Kiểm tra kết nối ngrok...');
+    addLog('info', ' TEST 1: Kiểm tra kết nối...');
 
     try {
       const baseUrl = apiUrl.replace('/api', '');
@@ -68,7 +68,7 @@ const APIDebug = () => {
       });
 
     } catch (error) {
-      addLog('error', '❌ KHÔNG THỂ KẾT NỐI NGROK!', {
+      addLog('error', 'KHÔNG THỂ KẾT NỐI NGROK!', {
         error: error.message,
         possibleReasons: [
           '1. Ngrok đã hết hạn (URL thay đổi mỗi lần restart)',
@@ -108,16 +108,16 @@ const APIDebug = () => {
       };
 
       if (corsHeaders['Access-Control-Allow-Origin']) {
-        addLog('success', '✅ CORS được cấu hình đúng!', corsHeaders);
+        addLog('success', ' CORS được cấu hình đúng!', corsHeaders);
       } else {
-        addLog('warning', '⚠️ CORS chưa config', {
+        addLog('warning', ' CORS chưa config', {
           headers: corsHeaders,
           note: 'Backend cần enable CORS'
         });
       }
 
     } catch (error) {
-      addLog('error', '❌ CORS test failed', error.message);
+      addLog('error', ' CORS test failed', error.message);
     } finally {
       setLoading(false);
     }
@@ -125,7 +125,7 @@ const APIDebug = () => {
 
   const testLoginDirect = async () => {
     setLoading(true);
-    addLog('info', '🧪 TEST 3: Test login endpoint TRỰC TIẾP...');
+    addLog('info', ' TEST 3: Test login endpoint TRỰC TIẾP...');
     addLog('info', `Username: ${testUsername}, Password: ${testPassword}`);
 
     const loginUrl = `${apiUrl}/auth/login`;
@@ -164,14 +164,14 @@ const APIDebug = () => {
       }
 
       if (response.ok) {
-        addLog('success', '✅ LOGIN THÀNH CÔNG!', {
+        addLog('success', ' LOGIN THÀNH CÔNG!', {
           status: response.status,
           hasToken: !!(responseData.token || responseData.data?.token),
           hasUser: !!(responseData.user || responseData.data?.user),
           data: responseData
         });
       } else {
-        addLog('error', '❌ Login failed', {
+        addLog('error', ' Login failed', {
           status: response.status,
           message: responseData.message || 'Unknown error',
           data: responseData
@@ -179,7 +179,7 @@ const APIDebug = () => {
       }
 
     } catch (error) {
-      addLog('error', '❌ REQUEST KHÔNG GỬI ĐI!', {
+      addLog('error', ' REQUEST KHÔNG GỬI ĐI!', {
         error: error.message,
         name: error.name,
         diagnosis: error.message === 'Failed to fetch' ? 
@@ -193,20 +193,20 @@ const APIDebug = () => {
 
   const testLoginWithService = async () => {
     setLoading(true);
-    addLog('info', '🧪 TEST 4: Test login QUA API SERVICE...');
+    addLog('info', ' TEST 4: Test login QUA API SERVICE...');
 
     try {
-      const { authAPI } = await import('../services/api');
+      const { authAPI } = await import('../services/apiService');
       
       const result = await authAPI.login({
         username: testUsername,
         password: testPassword
       });
 
-      addLog('success', '✅ API SERVICE hoạt động!', result);
+      addLog('success', ' API SERVICE hoạt động!', result);
 
     } catch (error) {
-      addLog('error', '❌ API SERVICE lỗi', {
+      addLog('error', ' API SERVICE lỗi', {
         message: error.message,
         response: error.response?.data
       });
@@ -226,7 +226,7 @@ const APIDebug = () => {
     ).join('\n\n');
     
     navigator.clipboard.writeText(logsText);
-    addLog('success', '📋 Logs copied!');
+    addLog('success', ' Logs copied!');
   };
 
   return (
@@ -307,7 +307,7 @@ const APIDebug = () => {
                     onClick={testCORS}
                     disabled={loading}
                   >
-                    🔒 Test 2: CORS
+                
                   </button>
                 </div>
                 <div className="col-md-3">
@@ -316,7 +316,7 @@ const APIDebug = () => {
                     onClick={testLoginDirect}
                     disabled={loading}
                   >
-                    🎯 Test 3: Direct Login
+                    
                   </button>
                 </div>
                 <div className="col-md-3">
@@ -325,7 +325,7 @@ const APIDebug = () => {
                     onClick={testLoginWithService}
                     disabled={loading}
                   >
-                    ⚙️ Test 4: API Service
+                  
                   </button>
                 </div>
               </div>
@@ -343,7 +343,7 @@ const APIDebug = () => {
 
           <div className="card shadow-sm">
             <div className="card-header bg-secondary text-white">
-              <h5 className="mb-0">📊 Debug Logs ({logs.length})</h5>
+              <h5 className="mb-0"> Debug Logs ({logs.length})</h5>
             </div>
             <div className="card-body p-0">
               <div style={{ maxHeight: '600px', overflowY: 'auto' }}>

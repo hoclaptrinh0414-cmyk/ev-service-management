@@ -1,7 +1,7 @@
 // src/contexts/AuthContext.jsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import authService from '../services/authService';
-import { authUtils } from '../services/api';
+import { authUtils } from '../services/apiService';
 
 const AuthContext = createContext(null);
 
@@ -180,6 +180,10 @@ export const AuthProvider = ({ children }) => {
         // If user has full profile data, just refresh from localStorage
         const freshUser = authUtils.getUser();
         setUser(freshUser);
+        try {
+          const token = authUtils.getToken();
+          setIsAuthenticated(Boolean(token && freshUser));
+        } catch {}
         console.log('✅ User data refreshed from localStorage');
       }
     } catch (error) {
@@ -189,12 +193,33 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Check if user has specific role
+  // Normalize role names to a small set
+  const normalizeRoleName = (name) => {
+    if (!name) return '';
+    const n = String(name).toLowerCase();
+    if (['admin', 'administrator', 'superadmin', 'super admin'].includes(n)) return 'admin';
+    if (['staff', 'tech', 'technician', 'employee'].includes(n)) return 'staff';
+    if (['customer', 'user', 'client'].includes(n)) return 'customer';
+    return n;
+  };
+
+  // Check if user has specific role (by name or id)
   const hasRole = (roleName) => {
     if (!user) return false;
 
-    const userRole = user.role || user.Role || user.roleName || user.RoleName;
-    return userRole?.toLowerCase() === roleName.toLowerCase();
+    const role = user.role || user.Role || user.roleName || user.RoleName;
+    const roleId = user.roleId || user.RoleId;
+    const want = normalizeRoleName(roleName);
+    const mine = normalizeRoleName(role);
+
+    if (want === 'admin') return mine === 'admin' || roleId === 1;
+    if (want === 'staff') return mine === 'staff' || roleId === 2;
+    if (want === 'customer') return mine === 'customer' || roleId === 3;
+    return mine === want; // fallback strict name check
+  };
+
+  const hasAnyRole = (roleList = []) => {
+    return Array.isArray(roleList) && roleList.some((r) => hasRole(r));
   };
 
   // Check if user is admin or staff
@@ -243,6 +268,7 @@ export const AuthProvider = ({ children }) => {
 
     // Utility methods
     hasRole,
+    hasAnyRole,
     isAdminOrStaff,
     isCustomer,
   };
