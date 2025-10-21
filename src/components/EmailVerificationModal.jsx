@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { emailVerificationAPI } from '../services/api';
+import { emailVerificationAPI } from '../services/apiService';
 
 const EmailVerificationModal = ({ show, onHide, email }) => {
   const [resendLoading, setResendLoading] = useState(false);

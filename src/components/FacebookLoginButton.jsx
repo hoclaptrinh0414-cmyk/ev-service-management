@@ -1,7 +1,7 @@
 // src/components/FacebookLoginButton.jsx
 import React, { useState } from 'react';
 import FacebookLogin from 'react-facebook-login';
-import { authUtils } from '../services/api';
+import { authUtils } from '../services/apiService';
 
 // Thay đổi giá trị này thành Facebook App ID thật của bạn
 const FACEBOOK_APP_ID = process.env.REACT_APP_FACEBOOK_APP_ID || "YOUR_FACEBOOK_APP_ID";
@@ -14,7 +14,7 @@ const FacebookLoginButton = ({ onSuccess, onError }) => {
       setLoading(true);
       try {
         // Import API service
-        const { default: apiService } = await import('../services/api');
+        const { default: apiService } = await import('../services/apiService');
         
         // Call backend Facebook login API
         const result = await apiService.facebookLogin(response.accessToken);

@@ -1,6 +1,6 @@
 // src/hooks/useAuth.js - COMPLETE FILE - CREATE THIS NEW FILE
 import { useState, useEffect } from 'react';
-import { authUtils } from '../services/api';
+import { authUtils } from '../services/apiService';
 
 export const useAuth = () => {
   const [user, setUser] = useState(null);

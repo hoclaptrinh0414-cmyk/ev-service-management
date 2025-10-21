@@ -1,7 +1,7 @@
        // src/components/GoogleLoginButton.jsx
        import React, { useState } from 'react';
        import { GoogleLogin } from '@react-oauth/google';
-       import { authUtils } from '../services/api';
+       import { authUtils } from '../services/apiService';
 
        const GoogleLoginButton = ({ onSuccess, onError }) => {
        const [loading, setLoading] = useState(false);
@@ -10,7 +10,7 @@
        setLoading(true);
        try {
        // Import API service
-       const { default: apiService } = await import('../services/api');
+       const { default: apiService } = await import('../services/apiService');
        
        // Call backend Google login API
        const result = await apiService.googleLogin(credentialResponse.credential);

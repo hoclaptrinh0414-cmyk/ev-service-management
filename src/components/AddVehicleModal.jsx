@@ -1,6 +1,6 @@
 // src/components/AddVehicleModal.jsx
 import React, { useState, useEffect } from 'react';
-import { vehicleAPI, carBrandAPI, carModelAPI } from '../services/api';
+import { vehicleAPI, carBrandAPI, carModelAPI } from '../services/apiService';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 

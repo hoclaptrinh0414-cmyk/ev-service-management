@@ -5,7 +5,7 @@ import UserMenu from '../../components/UserMenu';
 import NotificationDropdown from '../../components/NotificationDropdown';
 import useNotifications from '../../hooks/useNotifications';
 import FancyButton from '../../components/FancyButton';
-import { accountAPI } from '../../services/api';
+import { accountAPI } from '../../services/apiService';
 import { customerProfileService } from '../../services/customerProfileService';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast, ToastContainer } from 'react-toastify';

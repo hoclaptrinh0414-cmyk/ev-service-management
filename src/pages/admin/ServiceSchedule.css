@@ -1,39 +1,85 @@
-/* src/pages/admin/ServiceSchedule.css */
+.schedule-shell .rbc-calendar {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
 
-.rbc-event {
+.schedule-shell .rbc-toolbar {
+  display: none;
+}
+
+.schedule-shell .rbc-event {
   border: none;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  font-size: 0.8rem;
+  padding: 6px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
 }
 
-.rbc-event.rbc-selected {
-  background-color: #2563eb; /* blue-600 */
+.schedule-shell .rbc-event.rbc-selected {
+  outline: 2px solid rgba(59, 130, 246, 0.4);
+  outline-offset: 2px;
 }
 
-.rbc-slot-select {
-    background-color: rgba(59, 130, 246, 0.3); /* blue-500 with opacity */
+.schedule-shell .rbc-event-label {
+  font-weight: 500;
+  margin-bottom: 4px;
 }
 
-.rbc-toolbar button {
-    background-color: #fff;
-    border: 1px solid #d1d5db; /* gray-300 */
-    color: #374151; /* gray-700 */
-    padding: 0.5rem 1rem;
-    border-radius: 0.375rem; /* rounded-md */
-    transition: background-color 0.2s;
+.schedule-shell .rbc-time-slot,
+.schedule-shell .rbc-day-bg {
+  transition: background-color 0.2s ease;
 }
 
-.rbc-toolbar button:hover, .rbc-toolbar button:focus {
-    background-color: #f3f4f6; /* gray-100 */
-    outline: none;
+.schedule-shell .rbc-day-bg:hover {
+  background-color: rgba(59, 130, 246, 0.06);
 }
 
-.rbc-toolbar button.rbc-active {
-    background-color: #3b82f6; /* blue-500 */
-    color: #fff;
-    border-color: #3b82f6; /* blue-500 */
+.schedule-shell .rbc-today {
+  background-color: rgba(37, 99, 235, 0.06);
 }
 
-.rbc-today {
-    background-color: #eff6ff; /* blue-50 */
+.schedule-shell .rbc-off-range-bg {
+  background-color: #f1f5f9;
+}
+
+.schedule-shell .rbc-header {
+  padding: 12px 0;
+  font-weight: 600;
+  color: #1f2937;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.schedule-shell .rbc-time-header {
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.schedule-shell .rbc-time-slot {
+  border-top: 1px dashed rgba(148, 163, 184, 0.4);
+}
+
+.schedule-shell .rbc-time-view .rbc-allday-cell {
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.schedule-shell .rbc-time-view .rbc-time-column {
+  border-right: 1px solid #e5e7eb;
+}
+
+.schedule-shell .rbc-month-view,
+.schedule-shell .rbc-time-view {
+  border-radius: 18px;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+}
+
+.schedule-shell .rbc-agenda-table {
+  border: none;
+}
+
+.schedule-shell .rbc-agenda-table tbody > tr > td {
+  padding: 16px 12px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.schedule-shell .rbc-agenda-time-cell {
+  width: 160px;
 }

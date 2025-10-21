@@ -1,7 +1,7 @@
 // src/pages/customer/RegisterVehicle.jsx - TRANG ĐĂNG KÝ XE MỚI
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { vehicleAPI, carBrandAPI, carModelAPI } from '../../services/api';
+import { vehicleAPI, carBrandAPI, carModelAPI } from '../../services/apiService';
 import UserMenu from '../../components/UserMenu';
 import NotificationDropdown from '../../components/NotificationDropdown';
 import useNotifications from '../../hooks/useNotifications';

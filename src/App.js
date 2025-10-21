@@ -24,6 +24,7 @@ import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import ResetPassword from "./pages/auth/ResetPassword";
+import ResetPasswordSuccess from "./pages/auth/ResetPasswordSuccess";
 import EmailVerificationPage from "./pages/auth/EmailVerificationPage";
 import ResendVerification from "./pages/auth/ResendVerification";
 import CustomerDashboard from "./pages/customer/Dashboard";
@@ -74,6 +75,7 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/reset-password-success" element={<ResetPasswordSuccess />} />
           <Route path="/verify-email" element={<EmailVerificationPage />} />
           <Route path="/resend-verification" element={<ResendVerification />} />
 
