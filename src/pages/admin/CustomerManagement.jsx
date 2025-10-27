@@ -1083,7 +1083,7 @@ const CustomerManagement = () => {
             onClick={resetFilters}
             title="Đặt lại bộ lọc"
           >
-            <i className="bi bi-arrow-counterclockwise" aria-hidden="true" />
+            <div className="bi bi-arrow-counterclockwise" aria-hidden="true" />
             <span>Đặt lại</span>
           </button>
         </div>

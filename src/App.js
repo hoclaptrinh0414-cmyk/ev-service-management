@@ -47,6 +47,7 @@ import ServiceSchedule from "./pages/admin/ServiceSchedule";
 import MaintenanceProgress from "./pages/admin/MaintenanceProgress";
 import PartsInventory from "./pages/admin/PartsInventory";
 import StaffManagement from "./pages/admin/StaffManagement";
+import TechnicianPortal from "./pages/technician/TechnicianPortal";
 
 // Create React Query client
 const queryClient = new QueryClient({
@@ -161,6 +162,15 @@ function App() {
             element={
               <ProtectedRoute>
                 <Packages />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/technician"
+            element={
+              <ProtectedRoute requireRole={["technician", "staff", "admin"]}>
+                <TechnicianPortal />
               </ProtectedRoute>
             }
           />

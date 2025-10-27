@@ -48,19 +48,19 @@ const AddVehicleModal = ({ show, onHide }) => {
     setLoadingBrands(true);
     setError('');
     try {
-      console.log('🚗 Fetching car brands...');
+      console.log(' Fetching car brands...');
       const result = await carBrandAPI.getActiveBrands();
-      console.log('✅ Brands response:', result);
+      console.log(' Brands response:', result);
 
       const brandList = result.data || [];
       setBrands(brandList);
 
       if (brandList.length === 0) {
-        setError('⚠️ Chưa có hãng xe nào. Vui lòng liên hệ admin để thêm hãng xe.');
+        setError(' Chưa có hãng xe nào. Vui lòng liên hệ admin để thêm hãng xe.');
       }
     } catch (error) {
-      console.error('❌ Error fetching brands:', error);
-      setError('⚠️ Không thể tải danh sách hãng xe. Vui lòng thử lại sau hoặc liên hệ admin.');
+      console.error(' Error fetching brands:', error);
+      setError(' Không thể tải danh sách hãng xe. Vui lòng thử lại sau hoặc liên hệ admin.');
       // Set empty array để form vẫn hiển thị
       setBrands([]);
     } finally {
@@ -72,9 +72,9 @@ const AddVehicleModal = ({ show, onHide }) => {
     setLoadingModels(true);
     setError('');
     try {
-      console.log('🚗 Fetching models for brand:', brandId);
+      console.log(' Fetching models for brand:', brandId);
       const result = await carModelAPI.getModelsByBrand(brandId);
-      console.log('✅ Models response:', result);
+      console.log(' Models response:', result);
 
       const modelList = result.data || [];
       setModels(modelList);
@@ -83,8 +83,8 @@ const AddVehicleModal = ({ show, onHide }) => {
         setError('⚠️ Hãng xe này chưa có mẫu xe nào. Vui lòng chọn hãng khác.');
       }
     } catch (error) {
-      console.error('❌ Error fetching models:', error);
-      setError('⚠️ Không thể tải danh sách mẫu xe. Vui lòng thử lại.');
+      console.error(' Error fetching models:', error);
+      setError(' Không thể tải danh sách mẫu xe. Vui lòng thử lại.');
       setModels([]);
     } finally {
       setLoadingModels(false);
@@ -119,13 +119,13 @@ const AddVehicleModal = ({ show, onHide }) => {
     }
 
     try {
-      console.log('📤 Submitting vehicle data:', formData);
+      console.log(' Submitting vehicle data:', formData);
 
       // Lấy customerId từ user trong localStorage
       const user = JSON.parse(localStorage.getItem('user'));
       const customerId = user?.customerId || user?.id;
 
-      // ✅ PAYLOAD MỚI theo BE (bỏ customerId, batteryHealthPercent, notes, isActive)
+      //  PAYLOAD MỚI theo BE (bỏ customerId, batteryHealthPercent, notes, isActive)
       const vehicleData = {
         modelId: parseInt(formData.modelId),
         licensePlate: formData.licensePlate.trim().toUpperCase(),
@@ -138,10 +138,10 @@ const AddVehicleModal = ({ show, onHide }) => {
         registrationExpiry: formData.registrationExpiry || null
       };
 
-      console.log('📦 Final vehicle payload:', vehicleData);
+      console.log(' Final vehicle payload:', vehicleData);
 
       const result = await vehicleAPI.addVehicle(vehicleData);
-      console.log('✅ Vehicle added successfully:', result);
+      console.log(' Vehicle added successfully:', result);
 
       setSuccess('Đăng ký xe thành công!');
 
@@ -167,7 +167,7 @@ const AddVehicleModal = ({ show, onHide }) => {
       }, 1500);
 
     } catch (error) {
-      console.error('❌ Error adding vehicle:', error);
+      console.error(' Error adding vehicle:', error);
       setError(error.response?.data?.message || error.message || 'Không thể đăng ký xe. Vui lòng thử lại.');
     } finally {
       setLoading(false);
