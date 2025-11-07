@@ -1,7 +1,7 @@
 // src/services/api.js - COMPLETE FILE - COPY TOÀN BỘ FILE NÀY
 const API_CONFIG = {
   baseURL:
-    process.env.REACT_APP_API_URL || "https://57013b70a404.ngrok-free.app/api",
+    process.env.REACT_APP_API_URL || "https://6d5c1854bdbb.ngrok-free.app/api",
   timeout: 15000,
   headers: {
     "Content-Type": "application/json",
@@ -394,8 +394,38 @@ class UnifiedAPIService {
     return response;
   }
 
+  // ============ ADMIN VEHICLE METHODS ============
+  // GET /api/customer-vehicles - Lấy danh sách tất cả xe (Admin/Staff)
+  async getAllVehicles(params = {}) {
+    const queryParams = new URLSearchParams();
+    
+    if (params.page) queryParams.append('Page', params.page);
+    if (params.pageSize) queryParams.append('PageSize', params.pageSize);
+    if (params.searchTerm) queryParams.append('SearchTerm', params.searchTerm);
+    if (params.customerId) queryParams.append('CustomerId', params.customerId);
+    if (params.modelId) queryParams.append('ModelId', params.modelId);
+    if (params.brandId) queryParams.append('BrandId', params.brandId);
+    if (params.isActive !== undefined) queryParams.append('IsActive', params.isActive);
+    if (params.maintenanceDue !== undefined) queryParams.append('MaintenanceDue', params.maintenanceDue);
+    if (params.insuranceExpiring !== undefined) queryParams.append('InsuranceExpiring', params.insuranceExpiring);
+    if (params.sortBy) queryParams.append('SortBy', params.sortBy);
+    if (params.sortOrder) queryParams.append('SortOrder', params.sortOrder);
+    if (params.includeCustomer !== undefined) queryParams.append('IncludeCustomer', params.includeCustomer);
+    if (params.includeModel !== undefined) queryParams.append('IncludeModel', params.includeModel);
+    if (params.includeStats !== undefined) queryParams.append('IncludeStats', params.includeStats);
+    
+    const endpoint = `/customer-vehicles${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+    const response = await this.request(endpoint);
+    return response;
+  }
+
   // Legacy methods for backward compatibility
   async getCustomerVehicles(params = {}) {
+    // Nếu có params phức tạp -> gọi API admin
+    if (params.page || params.searchTerm || params.customerId) {
+      return this.getAllVehicles(params);
+    }
+    // Không có params -> gọi API customer (my vehicles)
     return this.getMyVehicles();
   }
 

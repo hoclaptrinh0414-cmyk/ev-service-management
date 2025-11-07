@@ -39,23 +39,42 @@ const Login = () => {
   const redirectBasedOnRole = (user) => {
     console.log('🔍 User from API:', user);
 
-    // ✅ BE trả về PascalCase: RoleName, RoleId
-    const role = user.RoleName || user.roleName || user.Role || user.role;
-    const roleId = user.RoleId || user.roleId;
+    // ✅ BE trả về lowercase từ api.js: roleName, roleId
+    const role = user.roleName || user.RoleName || user.Role || user.role;
+    const roleId = user.roleId || user.RoleId;
 
     console.log('📋 Role info:', { role, roleId });
 
-    // Admin/Staff -> /admin, Customer -> /home
-    if (
-      role?.toLowerCase() === 'admin' ||
-      role?.toLowerCase() === 'staff' ||
-      roleId === 1 ||
-      roleId === 2
-    ) {
-      console.log('✅ Redirect to /admin');
+    // ✅ CORRECT Role mapping based on backend:
+    // RoleId 1 = Admin      → /admin
+    // RoleId 2 = Staff      → /admin  
+    // RoleId 3 = Technician → /technician
+    // RoleId 4 = Customer   → /home
+    
+    if (roleId === 1 || role?.toLowerCase() === 'admin') {
+      console.log('✅ Redirect Admin to /admin');
       navigate('/admin');
+    } else if (roleId === 2 || role?.toLowerCase() === 'staff') {
+      console.log('✅ Redirect Staff to /admin');
+      navigate('/admin');
+    } else if (roleId === 3 || role?.toLowerCase() === 'technician') {
+      console.log('✅ Redirect Technician to /technician');
+      // Copy token to technician-specific storage for backward compatibility
+      const token = authUtils.getToken();
+      if (token) {
+        localStorage.setItem('technician_access_token', token);
+        localStorage.setItem('technician_user_id', String(user.userId || user.UserId));
+        localStorage.setItem('technician_full_name', user.fullName || user.FullName);
+        localStorage.setItem('technician_role', role);
+      }
+      navigate('/technician');
+    } else if (roleId === 4 || role?.toLowerCase() === 'customer') {
+      // Customer
+      console.log('✅ Redirect Customer to /home');
+      navigate('/home');
     } else {
-      console.log('✅ Redirect to /home');
+      // Default fallback
+      console.log('⚠️ Unknown role, redirect to /home');
       navigate('/home');
     }
   };

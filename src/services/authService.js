@@ -44,60 +44,97 @@ export const authService = {
       const response = await apiService.login({ username, password });
       console.log('🔍 Raw login response:', response);
 
-      // ✅ BE trả về: { Success, Data: { User, Customer, Token } }
-      // api.js đã convert về lowercase: { success, data }
-      const success = response.Success || response.success;
-      const data = response.Data || response.data;
+      // Check success flag
+      const success = response.success || response.Success;
+      
+      if (!success) {
+        throw new Error('Login failed');
+      }
 
-      if (success && data) {
-        const Token = data.Token || data.token;
-        const User = data.User || data.user;
-        const Customer = data.Customer || data.customer;
+      // Extract data object
+      const data = response.data || response.Data;
+      
+      if (!data) {
+        console.error('❌ No data object in response');
+        throw new Error('Invalid login response - no data');
+      }
 
-        console.log('🔍 Extracted data:', { Token, User, Customer });
+      console.log('🔍 Data object:', data);
 
-        if (!Token || !User) {
-          console.error('❌ Missing Token or User in response');
-          throw new Error('Invalid login response');
-        }
-
-        // Lưu token và user data cơ bản trước
-        const basicUserData = {
-          ...User,
-          ...Customer  // Merge customer data if exists
-        };
-
-        authUtils.setAuth(Token, basicUserData);
-        console.log('✅ Login success with basic data:', basicUserData);
-
-        // Gọi thêm API GET customer profile để lấy thông tin đầy đủ
-        // (Chỉ gọi nếu là Customer role)
-        const roleId = User.RoleId || User.roleId;
-        if (roleId === 3) {  // Customer role
-          try {
-            console.log('📥 Fetching full customer profile...');
-            const profileResponse = await apiService.getCustomerProfile();
-            console.log('🔍 Profile response:', profileResponse);
-
-            // ✅ BE TRẢ VỀ LOWERCASE (theo CUSTOMER_API_ENDPOINTS.md)
-            const profileSuccess = profileResponse.success;
-            const profileData = profileResponse.data;
-
-            if (profileSuccess && profileData) {
-              // ✅ Merge full profile data (lowercase từ BE)
-              const fullUserData = {
-                ...basicUserData,
-                ...profileData
-              };
-
-              // Cập nhật lại localStorage với thông tin đầy đủ
-              authUtils.setAuth(Token, fullUserData);
-              console.log('✅ Full profile loaded:', fullUserData);
-            }
-          } catch (profileError) {
-            console.warn('⚠️ Could not fetch full profile, using basic info:', profileError);
-            // Vẫn cho phép login thành công ngay cả khi không lấy được full profile
+      // Token is IN data object: data.accessToken or data.token
+      let token = data.accessToken || data.access_token || data.token || data.Token;
+      
+      // Fallback: check root level with dynamic field name (backward compatible)
+      if (!token) {
+        for (const key in response) {
+          if (key.toLowerCase().includes('token') || 
+              key.toLowerCase().includes('jwt') || 
+              key.startsWith('my')) {
+            token = response[key];
+            console.log(`🔍 Found token in root field: ${key}`);
+            break;
           }
+        }
+      } else {
+        console.log('🔍 Found token in data.accessToken');
+      }
+
+      if (!token) {
+        console.error('❌ Missing token in response');
+        console.error('❌ Full response:', JSON.stringify(response, null, 2));
+        throw new Error('Invalid login response - missing token');
+      }
+
+      // User data can be:
+      // 1. Nested: data.user (object)
+      // 2. Flat: data (direct fields like userId, username, etc.)
+      let userData = null;
+      
+      if (data.user && typeof data.user === 'object') {
+        // Nested structure: { data: { user: {...} } }
+        console.log('🔍 Found nested user object');
+        userData = {
+          ...data.user,
+          // Also merge customer if exists
+          ...(data.customer || response.customer || response.Customer || {})
+        };
+      } else {
+        // Flat structure: { data: { userId, username, ... } }
+        console.log('🔍 Using flat data structure');
+        userData = {
+          ...data,
+          ...(response.customer || response.Customer || {})
+        };
+      }
+
+      console.log('🔍 User data:', userData);
+
+      // Save auth
+      authUtils.setAuth(token, userData);
+      console.log('✅ Login success with user data');
+
+      // Fetch customer profile only for Customer role (roleId === 4)
+      const roleId = userData.roleId || userData.RoleId;
+      if (roleId === 4) {  // Customer role
+        try {
+          console.log('📥 Fetching full customer profile...');
+          const profileResponse = await apiService.getCustomerProfile();
+          console.log('🔍 Profile response:', profileResponse);
+
+          const profileSuccess = profileResponse.success;
+          const profileData = profileResponse.data;
+
+          if (profileSuccess && profileData) {
+            const fullUserData = {
+              ...userData,
+              ...profileData
+            };
+
+            authUtils.setAuth(token, fullUserData);
+            console.log('✅ Full profile loaded:', fullUserData);
+          }
+        } catch (profileError) {
+          console.warn('⚠️ Could not fetch full profile, using basic info:', profileError);
         }
       }
 

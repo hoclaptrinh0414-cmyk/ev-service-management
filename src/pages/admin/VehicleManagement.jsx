@@ -20,10 +20,12 @@ const VehicleManagement = () => {
     try {
       console.log('Fetching vehicles from API...');
       
-      // Tạo params cho API
+      // Tạo params cho API Admin
       const params = {
         page: currentPage,
         pageSize: pageSize,
+        includeCustomer: true,  // Bao gồm thông tin khách hàng
+        includeModel: true,     // Bao gồm thông tin model xe
       };
 
       // Thêm search term nếu có
@@ -31,14 +33,16 @@ const VehicleManagement = () => {
         params.searchTerm = searchTerm.trim();
       }
 
-      // Thêm filter nếu không phải 'all'
-      if (filterStatus !== 'all') {
-        params.maintenanceStatus = filterStatus;
+      // Thêm filter maintenance status
+      if (filterStatus === 'due') {
+        params.maintenanceDue = true;
+      } else if (filterStatus === 'expiring') {
+        params.insuranceExpiring = true;
       }
 
       console.log('Request params:', params);
 
-      // GỌI API THẬT
+      // GỌI API ADMIN - /api/customer-vehicles
       const response = await vehicleAPI.getCustomerVehicles(params);
       console.log('API Response:', response);
       

@@ -4,6 +4,7 @@ import {
   customerTypesAPI,
   handleApiError,
 } from "../../services/apiService";
+import adminService from "../../services/adminService";
 
 const DEFAULT_PAGINATION = {
   page: 1,
@@ -554,7 +555,8 @@ const CustomerManagement = () => {
     setDeleteError("");
 
     try {
-      const response = await customersAPI.remove(customerId);
+      // Use adminService for delete operation
+      const response = await adminService.deleteCustomer(customerId);
       const message = resolveApiMessage(
         response,
         "Xóa khách hàng thành công."

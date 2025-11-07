@@ -12,7 +12,6 @@ const NAV_ITEMS = [
   { to: "/admin/parts", label: "Parts", icon: "bi-boxes" },
   { to: "/admin/staff", label: "Staff", icon: "bi-person-badge" },
   { to: "/admin/finance", label: "Finance", icon: "bi-graph-up" },
-  { to: "/admin/settings", label: "Settings", icon: "bi-gear" },
 ];
 
 const SEARCH_ENTRIES = [
