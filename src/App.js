@@ -47,7 +47,15 @@ import ServiceSchedule from "./pages/admin/ServiceSchedule";
 import MaintenanceProgress from "./pages/admin/MaintenanceProgress";
 import PartsInventory from "./pages/admin/PartsInventory";
 import StaffManagement from "./pages/admin/StaffManagement";
-import TechnicianPortal from "./pages/technician/TechnicianPortal";
+import TechnicianLayout from "./pages/technician/TechnicianLayout";
+import TechnicianDashboard from "./pages/technician/TechnicianDashboard";
+import TechnicianAttendance from "./pages/technician/Attendance";
+import TechnicianWorkOrders from "./pages/technician/WorkOrders";
+import TechnicianWorkOrderDetail from "./pages/technician/WorkOrderDetail";
+import AttendanceHistory from "./pages/technician/AttendanceHistory";
+import MySchedule from "./pages/technician/MySchedule";
+import MyPerformance from "./pages/technician/MyPerformance";
+import APITester from "./pages/technician/APITester";
 
 // Create React Query client
 const queryClient = new QueryClient({
@@ -65,7 +73,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
         <AuthProvider>
-          <Router>
+          <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <div className="App">
               <Routes>
           {/* Redirect root to login */}
@@ -170,10 +178,20 @@ function App() {
             path="/technician"
             element={
               <ProtectedRoute requireRole={["technician", "staff", "admin"]}>
-                <TechnicianPortal />
+                <TechnicianLayout />
               </ProtectedRoute>
             }
-          />
+          >
+            <Route index element={<TechnicianDashboard />} />
+            <Route path="dashboard" element={<TechnicianDashboard />} />
+            <Route path="work-orders" element={<TechnicianWorkOrders />} />
+            <Route path="work-orders/:id" element={<TechnicianWorkOrderDetail />} />
+            <Route path="attendance" element={<TechnicianAttendance />} />
+            <Route path="attendance/history" element={<AttendanceHistory />} />
+            <Route path="schedule" element={<MySchedule />} />
+            <Route path="performance" element={<MyPerformance />} />
+            <Route path="api-tester" element={<APITester />} />
+          </Route>
 
           {/* Admin routes */}
           <Route

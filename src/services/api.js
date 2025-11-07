@@ -1,7 +1,7 @@
 // src/services/api.js - COMPLETE FILE - COPY TOÀN BỘ FILE NÀY
 const API_CONFIG = {
   baseURL:
-    process.env.REACT_APP_API_URL || "https://6d5c1854bdbb.ngrok-free.app/api",
+    process.env.REACT_APP_API_URL || "https://f50b08451bd5.ngrok-free.app/api",
   timeout: 15000,
   headers: {
     "Content-Type": "application/json",
@@ -33,27 +33,43 @@ class UnifiedAPIService {
     return headers;
   }
 
-  async request(endpoint, options = {}) {
+  async request(endpointOrOptions, options = {}) {
+    // Support both signatures:
+    // 1. request('/endpoint', { method: 'GET' })
+    // 2. request({ endpoint: '/endpoint', method: 'GET' })
+    let endpoint, config;
+    
+    if (typeof endpointOrOptions === 'string') {
+      // Legacy signature: request(endpoint, options)
+      endpoint = endpointOrOptions;
+      config = options;
+    } else {
+      // New signature: request({ endpoint, method, ... })
+      const { endpoint: ep, ...rest } = endpointOrOptions;
+      endpoint = ep;
+      config = rest;
+    }
+
     const url = `${this.baseURL}${endpoint}`;
-    const config = {
+    const requestConfig = {
       method: "GET",
-      headers: this.getHeaders(options.auth !== false),
-      ...options,
+      headers: this.getHeaders(config.auth !== false),
+      ...config,
     };
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
-    config.signal = controller.signal;
+    requestConfig.signal = controller.signal;
 
     try {
-      console.log(`🌐 API Request: ${config.method} ${url}`);
+      console.log(`🌐 API Request: ${requestConfig.method} ${url}`);
       console.log("📋 Request config:", {
-        method: config.method,
-        headers: config.headers,
-        body: config.body ? JSON.parse(config.body) : undefined,
+        method: requestConfig.method,
+        headers: requestConfig.headers,
+        body: requestConfig.body ? JSON.parse(requestConfig.body) : undefined,
       });
 
-      const response = await fetch(url, config);
+      const response = await fetch(url, requestConfig);
       clearTimeout(timeoutId);
 
       console.log(`📡 API Response Status: ${response.status}`, {
@@ -84,7 +100,7 @@ class UnifiedAPIService {
       clearTimeout(timeoutId);
       console.error("❌ API request failed:", {
         url,
-        method: config.method,
+        method: requestConfig.method,
         error: error.message,
         stack: error.stack,
       });
@@ -421,8 +437,8 @@ class UnifiedAPIService {
 
   // Legacy methods for backward compatibility
   async getCustomerVehicles(params = {}) {
-    // Nếu có params phức tạp -> gọi API admin
-    if (params.page || params.searchTerm || params.customerId) {
+    // Nếu có bất kỳ params nào -> gọi API admin (getAllVehicles)
+    if (params && Object.keys(params).length > 0) {
       return this.getAllVehicles(params);
     }
     // Không có params -> gọi API customer (my vehicles)
@@ -763,7 +779,7 @@ class UnifiedAPIService {
     return localStorage.getItem("token");
   }
 
-  getUser() {
+  getCurrentAuthUser() {
     const user = localStorage.getItem("user");
     try {
       return user ? JSON.parse(user) : null;
@@ -774,7 +790,7 @@ class UnifiedAPIService {
   }
 
   getStoredUser() {
-    return this.getUser();
+    return this.getCurrentAuthUser();
   }
 
   clearAuth() {
@@ -1191,7 +1207,8 @@ export const staffAPI = {
 export const authUtils = {
   isAuthenticated: () => apiService.isAuthenticated(),
   getToken: () => apiService.getToken(),
-  getUser: () => apiService.getUser(),
+  getUser: () => apiService.getCurrentAuthUser(),
+  getCurrentAuthUser: () => apiService.getCurrentAuthUser(),
   getStoredUser: () => apiService.getStoredUser(),
   clearAuth: () => apiService.clearAuth(),
   setAuth: (token, user) => apiService.setAuth(token, user),

@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { authUtils } from '../../services/apiService';
 import authService from '../../services/authService';
-import { useToast } from '../../contexts/ToastContext';
 import { useAuth } from '../../contexts/AuthContext';
 import EmailVerificationModal from '../../components/EmailVerificationModal';
 import GoogleLoginButton from '../../components/GoogleLoginButton';
@@ -22,7 +21,6 @@ const Login = () => {
   const [showModal, setShowModal] = useState(false);
   const [userEmail, setUserEmail] = useState('');
   const navigate = useNavigate();
-  const toast = useToast();
   const { refreshUser } = useAuth();
 
   const handleChange = (e) => {
@@ -149,7 +147,7 @@ const Login = () => {
     try {
       console.log('Attempting login with:', { username: formData.username });
       // Sử dụng authService.login() để tự động lấy full profile
-      const result = await authService.login(formData.username, formData.password);
+      await authService.login(formData.username, formData.password);
 
       await refreshUser();
       // authService.login() đã tự động lưu token và full profile vào localStorage
@@ -267,6 +265,8 @@ const Login = () => {
               </Link>
 
               {/* ICON ĐƠN GIẢN - HOẠT ĐỘNG */}
+              {/* Social Login - Tạm thời tắt cho đến khi cấu hình Google Cloud Console */}
+              {false && (
               <div className="d-flex justify-content-center gap-3 mb-3">
                 <div style={{ position: 'relative', width: '50px', height: '50px' }}>
                   <i
@@ -312,6 +312,7 @@ const Login = () => {
                   </div>
                 </div>
               </div>
+              )}
 
               <p className="text-muted">
                 New user?{' '}
