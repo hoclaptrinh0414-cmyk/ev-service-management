@@ -1,0 +1,963 @@
+/* ScheduleServiceNew.css - Clean White Background Design (Like Services Page) */
+
+/* Main Page Container - White Background Like Services */
+.schedule-service-page {
+  min-height: 100vh;
+  background: #ffffff !important;
+  padding-top: 140px;
+  padding-bottom: 80px;
+}
+
+.schedule-service-page .container {
+  position: relative;
+  z-index: 10;
+}
+
+/* Schedule Card - Glass Effect on White */
+.schedule-card {
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15);
+  border-radius: 16px;
+  padding: 1.3rem;
+}
+
+/* Header */
+.schedule-header {
+  text-align: center;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+  padding-bottom: 1.5rem;
+  margin-bottom: 2.5rem;
+}
+
+.schedule-title {
+  color: #1f2937 !important;
+  font-weight: 700;
+  font-size: 2rem;
+  margin-bottom: 2rem !important;
+}
+
+/* Steps Indicator */
+.steps-indicator {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 700px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.steps-indicator::before {
+  content: '';
+  position: absolute;
+  top: 20px;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  background: rgba(0, 0, 0, 0.1);
+  z-index: 0;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+
+.step-number {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.05);
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.5);
+  transition: all 0.3s ease;
+}
+
+.step.active .step-number {
+  background: #4CAF50;
+  border-color: #4CAF50;
+  color: #fff;
+  box-shadow: 0 0 20px rgba(76, 175, 80, 0.5);
+}
+
+.step.completed .step-number {
+  background: rgba(76, 175, 80, 0.2);
+  border-color: #4CAF50;
+  color: #4CAF50;
+}
+
+.step-label {
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: rgba(0, 0, 0, 0.6);
+  font-weight: 500;
+}
+
+.step.active .step-label {
+  color: #1f2937;
+  font-weight: 600;
+}
+
+/* Step Content */
+.step-content {
+  animation: fadeSlideIn 0.4s ease-out;
+  padding: 1.5rem 0;
+}
+
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.step-content h4 {
+  color: #1f2937 !important;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+}
+
+/* Form Controls - Match RegisterVehicle Style */
+.schedule-card .form-label {
+  color: #1f2937 !important;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  display: block;
+  text-align: center;
+}
+
+.schedule-card .form-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.schedule-card .form-control,
+.schedule-card .form-select {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border: 1.5px solid #e5e7eb !important;
+  outline: none;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border-radius: 20px;
+  color: #1f2937 !important;
+  transition: all 0.2s ease;
+  max-width: 650px;
+  width: 100%;
+  height: auto;
+  line-height: 1.5;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  margin: 0 auto;
+  text-align: center;
+}
+
+.schedule-card .form-control::placeholder {
+  color: #9ca3af !important;
+  font-weight: 400;
+}
+
+.schedule-card .form-control:focus,
+.schedule-card .form-select:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+  background: #ffffff !important;
+  color: #1f2937 !important;
+  outline: none !important;
+}
+
+.schedule-card .form-control:hover:not(:disabled),
+.schedule-card .form-select:hover:not(:disabled) {
+  border-color: #d1d5db;
+}
+
+.schedule-card .form-control:disabled,
+.schedule-card .form-select:disabled {
+  background-color: #f9fafb !important;
+  cursor: not-allowed;
+  color: #6b7280 !important;
+  opacity: 1;
+  font-weight: 400;
+  border-color: #e5e7eb;
+}
+
+.schedule-card .form-select option {
+  background: #fff;
+  color: #000;
+}
+
+.schedule-card textarea.form-control {
+  resize: vertical;
+  min-height: 100px;
+  border-radius: 20px;
+  text-align: left;
+}
+
+/* Vehicle Grid */
+.vehicle-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.vehicle-card {
+  background: rgba(0, 0, 0, 0.02);
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  padding: 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.vehicle-card:hover {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.2);
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.vehicle-card.selected {
+  background: rgba(76, 175, 80, 0.1);
+  border-color: #4CAF50;
+  box-shadow: 0 0 20px rgba(76, 175, 80, 0.2);
+}
+
+.vehicle-icon {
+  font-size: 3rem;
+  color: rgba(0, 0, 0, 0.6);
+  margin-bottom: 1rem;
+}
+
+.vehicle-card.selected .vehicle-icon {
+  color: #4CAF50;
+}
+
+.vehicle-info h5 {
+  color: #1f2937 !important;
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+}
+
+.vehicle-info p {
+  color: rgba(0, 0, 0, 0.7) !important;
+  font-size: 0.95rem;
+}
+
+.vehicle-info .text-muted {
+  color: rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Time Slots Grid - 4 columns */
+.time-slots-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.time-slot {
+  background: rgba(0, 0, 0, 0.02);
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  color: rgba(0, 0, 0, 0.8);
+  text-align: center;
+}
+
+.time-slot:hover {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.time-slot.selected {
+  background: rgba(76, 175, 80, 0.15);
+  border-color: #4CAF50;
+  color: #4CAF50;
+  font-weight: 600;
+  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+}
+
+.time-slot i {
+  font-size: 1.1rem;
+}
+
+/* Responsive - 2 columns on mobile */
+@media (max-width: 768px) {
+  .time-slots-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Services List */
+.services-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.service-item {
+  background: rgba(0, 0, 0, 0.02);
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  padding: 1.25rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.service-item:hover {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.2);
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.service-item.selected {
+  background: rgba(76, 175, 80, 0.08);
+  border-color: #4CAF50;
+}
+
+.service-item.covered {
+  border-color: #FFC107;
+}
+
+.service-checkbox {
+  flex-shrink: 0;
+}
+
+.service-checkbox input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.service-details {
+  flex: 1;
+}
+
+.service-details h5 {
+  color: #1f2937 !important;
+  font-size: 1.05rem;
+  margin-bottom: 0.25rem;
+}
+
+.service-description {
+  color: rgba(0, 0, 0, 0.6) !important;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.service-price {
+  flex-shrink: 0;
+}
+
+.service-price .price {
+  color: #4CAF50;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.service-price .badge {
+  font-size: 0.85rem;
+  padding: 0.4rem 0.8rem;
+}
+
+/* Summary Card */
+.summary-card {
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  padding: 2rem;
+}
+
+.summary-section {
+  padding: 1.25rem 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.summary-section:last-child {
+  border-bottom: none;
+}
+
+.summary-section h6 {
+  color: rgba(0, 0, 0, 0.7) !important;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.75rem;
+}
+
+.summary-section p {
+  color: #1f2937 !important;
+  font-size: 1.05rem;
+  margin-bottom: 0.25rem;
+}
+
+.summary-section .text-muted {
+  color: rgba(0, 0, 0, 0.6) !important;
+  font-size: 0.9rem;
+}
+
+.services-summary-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.services-summary-list li {
+  color: #1f2937 !important;
+  padding: 0.5rem 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.total-section {
+  text-align: center;
+  padding: 1.5rem 0 0.5rem !important;
+}
+
+.total-section h5 {
+  color: rgba(0, 0, 0, 0.7) !important;
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.total-section h3 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 0.5rem 0;
+}
+
+.total-section .text-muted {
+  color: rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Alerts */
+.schedule-card .alert {
+  border-radius: 8px;
+}
+
+.schedule-card .alert-warning {
+  background-color: #fff3cd;
+  border-color: #ffc107;
+  color: #856404;
+  border-radius: 21px;
+}
+
+.schedule-card .alert-info {
+  background-color: #d1ecf1;
+  border-color: #17a2b8;
+  color: #0c5460;
+}
+
+.schedule-card .alert-success {
+  background-color: #d4edda;
+  border-color: #4CAF50;
+  color: #155724;
+}
+
+/* Buttons */
+.schedule-card .btn {
+  border-radius: 25px;
+  padding: 0.5rem 1.25rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  width: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.schedule-card .btn-light {
+  background-color: #000 !important;
+  border: 2px solid #000 !important;
+  color: #fff !important;
+}
+
+.schedule-card .btn-light:hover {
+  background-color: #333 !important;
+  border-color: #333 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.schedule-card .btn-outline-light {
+  background-color: transparent !important;
+  border: 2px solid rgba(0, 0, 0, 0.3) !important;
+  color: #1f2937 !important;
+}
+
+.schedule-card .btn-outline-light:hover {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+  border-color: #000 !important;
+  color: #000 !important;
+}
+
+.schedule-card .btn-success {
+  background-color: #4CAF50 !important;
+  border: 2px solid #4CAF50 !important;
+}
+
+.schedule-card .btn-success:hover {
+  background-color: #45a049 !important;
+  border-color: #45a049 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+/* Loading Spinner */
+.schedule-card .spinner-border {
+  color: #4CAF50 !important;
+}
+
+.schedule-card .spinner-border-sm {
+  width: 1rem;
+  height: 1rem;
+  border-width: 0.2em;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .schedule-service-page {
+    padding-top: 100px;
+    padding-bottom: 40px;
+  }
+
+  .schedule-card {
+    padding: 1.5rem;
+  }
+
+  .schedule-title {
+    font-size: 1.5rem;
+  }
+
+  .steps-indicator {
+    max-width: 100%;
+  }
+
+  .step-label {
+    font-size: 0.75rem;
+  }
+
+  .step-number {
+    width: 35px;
+    height: 35px;
+    font-size: 0.9rem;
+  }
+
+  .vehicle-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .time-slots-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .summary-card {
+    padding: 1.25rem;
+  }
+
+  .total-section h3 {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .schedule-card {
+    padding: 1rem;
+  }
+
+  .step-content {
+    padding: 1rem 0;
+  }
+}
+
+
+/* ========================================
+   STEP 3: SERVICE SELECTION
+   ======================================== */
+
+/* No Services Selected */
+.no-services-selected {
+  text-align: center;
+  padding: 3rem 2rem;
+}
+
+.empty-state {
+  margin-bottom: 2rem;
+}
+
+.empty-state i {
+  font-size: 4rem;
+  color: #ccc;
+  margin-bottom: 1rem;
+}
+
+.empty-state h5 {
+  color: #666;
+  margin-bottom: 0.5rem;
+}
+
+.empty-state p {
+  color: #999;
+  font-size: 0.95rem;
+}
+
+.btn-select-services {
+  background: #000;
+  color: #fff;
+  border: none;
+  padding: 1rem 3rem;
+  border-radius: 30px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.btn-select-services:hover {
+  background: #333;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Selected Services Display */
+.selected-services-display {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid #e0e0e0;
+}
+
+.services-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.services-header h6 {
+  margin: 0;
+  font-weight: 700;
+  color: #000;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-add-more {
+  background: #fff;
+  color: #000;
+  border: 2px solid #000;
+  padding: 0.5rem 1.25rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-add-more:hover {
+  background: #000;
+  color: #fff;
+}
+
+.cart-items-list {
+  margin-bottom: 1.5rem;
+}
+
+.cart-item-preview {
+  background: #fff;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid #e0e0e0;
+}
+
+.item-info {
+  flex: 1;
+}
+
+.item-name {
+  font-weight: 600;
+  color: #000;
+  margin-bottom: 0.25rem;
+  font-size: 0.95rem;
+}
+
+.package-badge {
+  display: inline-block;
+  background: #000;
+  color: #fff;
+  font-size: 0.7rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 10px;
+  margin-left: 0.5rem;
+  font-weight: 600;
+}
+
+.item-quantity {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.item-price {
+  font-weight: 700;
+  color: #000;
+  font-size: 1rem;
+}
+
+.total-preview {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: #fff;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.total-amount {
+  color: #000;
+  font-size: 1.3rem;
+}
+
+/* ============================================
+   STEP 5: PAYMENT STYLES
+   ============================================ */
+
+.payment-card {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.payment-summary {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 1.5rem;
+  border: 1px solid #e5e7eb;
+}
+
+.payment-summary h6 {
+  color: #1f2937;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.payment-summary .d-flex {
+  padding: 0.5rem 0;
+}
+
+.payment-summary hr {
+  margin: 1rem 0;
+  border-color: #d1d5db;
+}
+
+.payment-methods-selection h6 {
+  color: #1f2937;
+  font-weight: 600;
+}
+
+.payment-method-options {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+  align-items: center;
+}
+
+.payment-method-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.875rem 1.5rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: #fff;
+  flex: 1 1 0;
+  min-width: max-content;
+  max-width: 200px;
+  justify-content: center;
+}
+
+.payment-method-option:hover {
+  border-color: #9ca3af;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.payment-method-option input[type="radio"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #d1d5db;
+  border-radius: 50%;
+  outline: none;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.payment-method-option input[type="radio"]:checked {
+  border-color: #10b981;
+  background: #10b981;
+}
+
+.payment-method-option input[type="radio"]:checked::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  background: white;
+  border-radius: 50%;
+}
+
+.payment-method-option:has(input:checked) .payment-method-content {
+  font-weight: 600;
+}
+
+.payment-method-option:has(input:checked) .payment-method-content span {
+  color: #059669;
+}
+
+.payment-method-option:has(input:checked) {
+  border-color: #10b981;
+  background: #f0fdf4;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+  transform: scale(1.02);
+}
+
+.payment-method-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 0 1 auto;
+}
+
+.payment-method-content img,
+.payment-method-content svg {
+  width: 50px;
+  height: 28px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.payment-method-content span {
+  font-size: 0.95rem;
+  color: #374151;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.payment-actions {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.payment-actions .btn {
+  font-weight: 600;
+  padding: 0.875rem 2rem;
+  border-radius: 25px;
+  transition: all 0.3s ease;
+  width: auto;
+  min-width: fit-content;
+  white-space: nowrap;
+}
+
+.payment-actions .btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.payment-actions .btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Responsive Adjustments for Step 5 */
+@media (max-width: 768px) {
+  .payment-card {
+    padding: 1.5rem;
+  }
+
+  .payment-method-options {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .payment-method-option {
+    padding: 0.875rem 1.25rem;
+    width: 100%;
+  }
+
+  .payment-method-content {
+    gap: 0.75rem;
+  }
+
+  .payment-method-content img,
+  .payment-method-content svg {
+    width: 35px;
+    height: auto;
+  }
+
+  .payment-method-content span {
+    font-size: 0.9rem;
+  }
+}
+

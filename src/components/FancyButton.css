@@ -1,0 +1,120 @@
+/* FancyButton.css */
+.fancy-button {
+  border: none;
+  border-radius: 0;
+  box-sizing: border-box;
+  cursor: pointer;
+  display: inline-block;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin: 0;
+  outline: none;
+  overflow: visible;
+  padding: 0.7em 1.5em;
+  position: relative;
+  text-align: center;
+  text-decoration: none;
+  text-transform: none;
+  transition: all 0.3s ease-in-out;
+  user-select: none;
+  font-size: 13px;
+}
+
+/* Dark variant */
+.fancy-button-dark {
+  background-color: transparent;
+  color: #fff;
+}
+
+.fancy-button-dark::before {
+  content: " ";
+  width: 1.5625rem;
+  height: 2px;
+  background: #fff;
+  top: 50%;
+  left: 1.5em;
+  position: absolute;
+  transform: translateY(-50%);
+  transform-origin: center;
+  transition: background 0.3s linear, width 0.3s linear;
+}
+
+.fancy-button-dark:hover:not(:disabled) {
+  color: #000;
+  background: #fff;
+}
+
+.fancy-button-dark:hover:not(:disabled)::before {
+  width: 0.9375rem;
+  background: #000;
+}
+
+/* Light variant */
+.fancy-button-light {
+  background-color: #fff;
+  color: #007bff;
+}
+
+.fancy-button-light::before {
+  content: " ";
+  width: 1.5625rem;
+  height: 2px;
+  background: #007bff;
+  top: 50%;
+  left: 1.5em;
+  position: absolute;
+  transform: translateY(-50%);
+  transform-origin: center;
+  transition: background 0.3s linear, width 0.3s linear;
+}
+
+.fancy-button-light:hover:not(:disabled) {
+  color: white;
+  background: #007bff;
+}
+
+.fancy-button-light:hover:not(:disabled)::before {
+  width: 0.9375rem;
+  background: white;
+}
+
+/* Text styling */
+.fancy-button-text {
+  font-size: 1em;
+  line-height: 1.33333em;
+  padding-left: 2em;
+  display: block;
+  text-align: left;
+  transition: all 0.3s ease-in-out;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.fancy-button-dark .fancy-button-text {
+  color: #fff;
+}
+
+.fancy-button-light .fancy-button-text {
+  color: #007bff;
+}
+
+.fancy-button:hover:not(:disabled) .fancy-button-text {
+  padding-left: 1.5em;
+}
+
+.fancy-button-dark:hover:not(:disabled) .fancy-button-text {
+  color: #000;
+}
+
+.fancy-button-light:hover:not(:disabled) .fancy-button-text {
+  color: white;
+}
+
+/* Disabled state */
+.fancy-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
