@@ -24,7 +24,18 @@ const ProtectedRoute = ({ children, requireRole = null }) => {
   // Fallback auth check from localStorage in case context not updated yet
   const hasLsAuth = (() => {
     try {
-      return !!(localStorage.getItem('token') && localStorage.getItem('user'));
+      const hasToken = !!(
+        localStorage.getItem('token') || 
+        localStorage.getItem('accessToken')
+      );
+      const hasUser = !!localStorage.getItem('user');
+      console.log('📋 LocalStorage check:', { 
+        hasToken, 
+        hasUser,
+        token: localStorage.getItem('token')?.substring(0, 20),
+        accessToken: localStorage.getItem('accessToken')?.substring(0, 20)
+      });
+      return hasToken && hasUser;
     } catch {
       return false;
     }
@@ -52,7 +63,8 @@ const ProtectedRoute = ({ children, requireRole = null }) => {
           if (!name) return '';
           const n = String(name).toLowerCase();
           if (['admin', 'administrator', 'superadmin', 'super admin'].includes(n)) return 'admin';
-          if (['staff', 'tech', 'technician', 'employee'].includes(n)) return 'staff';
+          if (['staff', 'reception', 'receptionist'].includes(n)) return 'staff';
+          if (['technician', 'tech', 'mechanic', 'kỹ thuật'].includes(n)) return 'technician';
           if (['customer', 'user', 'client'].includes(n)) return 'customer';
           return n;
         };
@@ -64,7 +76,8 @@ const ProtectedRoute = ({ children, requireRole = null }) => {
           const want = normalize(r);
           if (want === 'admin') return mine === 'admin' || roleId === 1;
           if (want === 'staff') return mine === 'staff' || roleId === 2;
-          if (want === 'customer') return mine === 'customer' || roleId === 3;
+          if (want === 'technician') return mine === 'technician' || roleId === 3;
+          if (want === 'customer') return mine === 'customer' || roleId === 4;
           return mine === want;
         });
       } catch {}

@@ -45,7 +45,7 @@
 import axios from "axios";
 
 const API_BASE_URL =
-  process.env.REACT_APP_API_URL || "https://57013b70a404.ngrok-free.app/api";
+  process.env.REACT_APP_API_URL || "https://2bc85e2d7dea.ngrok-free.app/api";
 
 // Tạo axios instance
 const axiosInstance = axios.create({

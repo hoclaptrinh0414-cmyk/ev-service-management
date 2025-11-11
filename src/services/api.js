@@ -730,7 +730,8 @@ class UnifiedAPIService {
   }
 
   getToken() {
-    return localStorage.getItem("token");
+    // Ưu tiên accessToken (dùng trong axiosInterceptor), fallback về token
+    return localStorage.getItem("accessToken") || localStorage.getItem("token");
   }
 
   getUser() {

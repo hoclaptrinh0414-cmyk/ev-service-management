@@ -1,6 +1,5 @@
 /* FancyButton.css */
 .fancy-button {
-  border: none;
   border-radius: 0;
   box-sizing: border-box;
   cursor: pointer;
@@ -26,14 +25,15 @@
 /* Dark variant */
 .fancy-button-dark {
   background-color: transparent;
-  color: #fff;
+  border: 2px solid #000;
+  color: #000;
 }
 
 .fancy-button-dark::before {
   content: " ";
   width: 1.5625rem;
   height: 2px;
-  background: #fff;
+  background: #000;
   top: 50%;
   left: 1.5em;
   position: absolute;
@@ -43,18 +43,19 @@
 }
 
 .fancy-button-dark:hover:not(:disabled) {
-  color: #000;
-  background: #fff;
+  color: #fff;
+  background: #000;
 }
 
 .fancy-button-dark:hover:not(:disabled)::before {
   width: 0.9375rem;
-  background: #000;
+  background: white;
 }
 
 /* Light variant */
 .fancy-button-light {
   background-color: #fff;
+  border: 2px solid #007bff;
   color: #007bff;
 }
 
@@ -94,7 +95,7 @@
 }
 
 .fancy-button-dark .fancy-button-text {
-  color: #fff;
+  color: #000;
 }
 
 .fancy-button-light .fancy-button-text {
@@ -106,11 +107,74 @@
 }
 
 .fancy-button-dark:hover:not(:disabled) .fancy-button-text {
-  color: #000;
+  color: white;
 }
 
 .fancy-button-light:hover:not(:disabled) .fancy-button-text {
   color: white;
+}
+
+/* Key decorations */
+.fancy-button-top-key {
+  height: 2px;
+  width: 1.5625rem;
+  top: -2px;
+  left: 0.625rem;
+  position: absolute;
+  transition: width 0.5s ease-out, left 0.3s ease-out;
+}
+
+.fancy-button-dark .fancy-button-top-key {
+  background: #e8e8e8;
+}
+
+.fancy-button-light .fancy-button-top-key {
+  background: #007bff;
+}
+
+.fancy-button-bottom-key-1 {
+  height: 2px;
+  width: 1.5625rem;
+  right: 1.875rem;
+  bottom: -2px;
+  position: absolute;
+  transition: width 0.5s ease-out, right 0.3s ease-out;
+}
+
+.fancy-button-dark .fancy-button-bottom-key-1 {
+  background: #e8e8e8;
+}
+
+.fancy-button-light .fancy-button-bottom-key-1 {
+  background: #007bff;
+}
+
+.fancy-button-bottom-key-2 {
+  height: 2px;
+  width: 0.625rem;
+  right: 0.625rem;
+  bottom: -2px;
+  position: absolute;
+  transition: width 0.5s ease-out, right 0.3s ease-out;
+}
+
+.fancy-button-dark .fancy-button-bottom-key-2 {
+  background: #e8e8e8;
+}
+
+.fancy-button-light .fancy-button-bottom-key-2 {
+  background: #007bff;
+}
+
+.fancy-button:hover:not(:disabled) .fancy-button-top-key {
+  left: -2px;
+  width: 0;
+}
+
+.fancy-button:hover:not(:disabled) .fancy-button-bottom-key-1,
+.fancy-button:hover:not(:disabled) .fancy-button-bottom-key-2 {
+  right: 0;
+  width: 0;
 }
 
 /* Disabled state */
@@ -118,3 +182,4 @@
   cursor: not-allowed;
   opacity: 0.6;
 }
+

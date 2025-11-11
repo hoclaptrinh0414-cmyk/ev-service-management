@@ -45,17 +45,24 @@ const Login = () => {
 
     console.log('📋 Role info:', { role, roleId });
 
-    // Admin/Staff -> /admin, Customer -> /home
-    if (
-      role?.toLowerCase() === 'admin' ||
-      role?.toLowerCase() === 'staff' ||
-      roleId === 1 ||
-      roleId === 2
-    ) {
-      console.log('✅ Redirect to /admin');
+    // Admin (roleId=1) -> /admin
+    if (role?.toLowerCase() === 'admin' || roleId === 1) {
+      console.log('✅ Admin role - Redirect to /admin');
       navigate('/admin');
-    } else {
-      console.log('✅ Redirect to /home');
+    }
+    // Staff/Reception (roleId=2) -> /staff
+    else if (role?.toLowerCase() === 'staff' || roleId === 2) {
+      console.log('✅ Staff - Reception role - Redirect to /staff');
+      navigate('/staff');
+    }
+    // Technician/Mechanic (roleId=3) -> /technician
+    else if (role?.toLowerCase() === 'technician' || roleId === 3) {
+      console.log('✅ Technician - Mechanic role - Redirect to /technician');
+      navigate('/technician');
+    }
+    // Customer (roleId=4) -> /home
+    else {
+      console.log('✅ Customer role - Redirect to /home');
       navigate('/home');
     }
   };

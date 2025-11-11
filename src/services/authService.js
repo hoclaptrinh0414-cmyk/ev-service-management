@@ -50,30 +50,40 @@ export const authService = {
       const data = response.Data || response.data;
 
       if (success && data) {
-        const Token = data.Token || data.token;
+        // ✅ Backend có thể trả về Token HOẶC AccessToken/RefreshToken
+        const Token = data.Token || data.token || data.AccessToken || data.accessToken;
+        const RefreshToken = data.RefreshToken || data.refreshToken;
         const User = data.User || data.user;
         const Customer = data.Customer || data.customer;
 
-        console.log('🔍 Extracted data:', { Token, User, Customer });
+        console.log('🔍 Extracted data:', { Token, RefreshToken, User, Customer });
 
         if (!Token || !User) {
           console.error('❌ Missing Token or User in response');
           throw new Error('Invalid login response');
         }
 
-        // Lưu token và user data cơ bản trước
+        // Lưu token vào cả 2 keys để tương thích với mọi flow
+        localStorage.setItem('token', Token);
+        localStorage.setItem('accessToken', Token);
+        if (RefreshToken) {
+          localStorage.setItem('refreshToken', RefreshToken);
+        }
+
+        // Lưu user data cơ bản trước
         const basicUserData = {
           ...User,
           ...Customer  // Merge customer data if exists
         };
 
-        authUtils.setAuth(Token, basicUserData);
-        console.log('✅ Login success with basic data:', basicUserData);
+        // Lưu user data
+        localStorage.setItem('user', JSON.stringify(basicUserData));
+        console.log('✅ Login success - Tokens and user data saved:', basicUserData);
 
         // Gọi thêm API GET customer profile để lấy thông tin đầy đủ
         // (Chỉ gọi nếu là Customer role)
         const roleId = User.RoleId || User.roleId;
-        if (roleId === 3) {  // Customer role
+        if (roleId === 4) {  // Customer role (roleId=4, not 3!)
           try {
             console.log('📥 Fetching full customer profile...');
             const profileResponse = await apiService.getCustomerProfile();
@@ -91,7 +101,7 @@ export const authService = {
               };
 
               // Cập nhật lại localStorage với thông tin đầy đủ
-              authUtils.setAuth(Token, fullUserData);
+              localStorage.setItem('user', JSON.stringify(fullUserData));
               console.log('✅ Full profile loaded:', fullUserData);
             }
           } catch (profileError) {

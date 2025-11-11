@@ -198,7 +198,8 @@ export const AuthProvider = ({ children }) => {
     if (!name) return '';
     const n = String(name).toLowerCase();
     if (['admin', 'administrator', 'superadmin', 'super admin'].includes(n)) return 'admin';
-    if (['staff', 'tech', 'technician', 'employee'].includes(n)) return 'staff';
+    if (['staff', 'employee'].includes(n)) return 'staff';
+    if (['tech', 'technician'].includes(n)) return 'technician';
     if (['customer', 'user', 'client'].includes(n)) return 'customer';
     return n;
   };
@@ -214,7 +215,8 @@ export const AuthProvider = ({ children }) => {
 
     if (want === 'admin') return mine === 'admin' || roleId === 1;
     if (want === 'staff') return mine === 'staff' || roleId === 2;
-    if (want === 'customer') return mine === 'customer' || roleId === 3;
+    if (want === 'technician') return mine === 'technician' || roleId === 3;
+    if (want === 'customer') return mine === 'customer' || roleId === 4;
     return mine === want; // fallback strict name check
   };
 
@@ -246,7 +248,7 @@ export const AuthProvider = ({ children }) => {
 
     return (
       role?.toLowerCase() === 'customer' ||
-      roleId === 3
+      roleId === 4
     );
   };
 

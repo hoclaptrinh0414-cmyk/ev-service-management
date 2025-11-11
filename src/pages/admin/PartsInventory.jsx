@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import './PartsInventory.css';
 
 // Action Icons and Search Icon are kept as they define the component's structure
@@ -28,8 +28,150 @@ const SearchIcon = () => (
 );
 
 const PartsInventory = () => {
-    // Mock data and helper functions have been removed.
-    // In a real application, you would fetch data from an API using a hook like useEffect.
+    const [parts, setParts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [categoryFilter, setCategoryFilter] = useState('');
+    const [statusFilter, setStatusFilter] = useState('');
+
+    // Mock data - Trong thực tế sẽ fetch từ API
+    const mockParts = [
+        {
+            id: 1,
+            name: 'Pin Lithium-Ion 75kWh',
+            sku: 'BAT-LI-75K',
+            category: 'Pin',
+            quantity: 15,
+            status: 'in-stock',
+            costPrice: 150000000,
+            sellPrice: 180000000,
+            supplier: 'CATL Battery Co.',
+            image: 'https://via.placeholder.com/40x40.png?text=BAT'
+        },
+        {
+            id: 2,
+            name: 'Động cơ điện 200kW',
+            sku: 'MTR-ELC-200',
+            category: 'Động cơ',
+            quantity: 8,
+            status: 'in-stock',
+            costPrice: 80000000,
+            sellPrice: 95000000,
+            supplier: 'Bosch Electric Motors',
+            image: 'https://via.placeholder.com/40x40.png?text=MTR'
+        },
+        {
+            id: 3,
+            name: 'Phanh đĩa Ceramic',
+            sku: 'BRK-CER-F01',
+            category: 'Phanh',
+            quantity: 25,
+            status: 'in-stock',
+            costPrice: 5000000,
+            sellPrice: 7000000,
+            supplier: 'Brembo Vietnam',
+            image: 'https://via.placeholder.com/40x40.png?text=BRK'
+        },
+        {
+            id: 4,
+            name: 'Lốp xe All-Season 19"',
+            sku: 'TIR-AS-19',
+            category: 'Bánh xe',
+            quantity: 3,
+            status: 'low-stock',
+            costPrice: 3000000,
+            sellPrice: 4500000,
+            supplier: 'Michelin Vietnam',
+            image: 'https://via.placeholder.com/40x40.png?text=TIR'
+        },
+        {
+            id: 5,
+            name: 'Bộ sạc nhanh DC 150kW',
+            sku: 'CHR-DC-150',
+            category: 'Điện tử',
+            quantity: 0,
+            status: 'out-of-stock',
+            costPrice: 45000000,
+            sellPrice: 55000000,
+            supplier: 'ABB Charging',
+            image: 'https://via.placeholder.com/40x40.png?text=CHR'
+        },
+        {
+            id: 6,
+            name: 'Hệ thống làm mát Pin',
+            sku: 'COL-BAT-SYS',
+            category: 'Làm mát',
+            quantity: 12,
+            status: 'in-stock',
+            costPrice: 25000000,
+            sellPrice: 32000000,
+            supplier: 'Valeo Thermal',
+            image: 'https://via.placeholder.com/40x40.png?text=COL'
+        },
+        {
+            id: 7,
+            name: 'Bộ điều khiển BMS',
+            sku: 'BMS-CTL-V2',
+            category: 'Điện tử',
+            quantity: 20,
+            status: 'in-stock',
+            costPrice: 15000000,
+            sellPrice: 20000000,
+            supplier: 'Texas Instruments',
+            image: 'https://via.placeholder.com/40x40.png?text=BMS'
+        },
+        {
+            id: 8,
+            name: 'Cáp sạc Type 2',
+            sku: 'CAB-T2-10M',
+            category: 'Phụ kiện',
+            quantity: 5,
+            status: 'low-stock',
+            costPrice: 2000000,
+            sellPrice: 3000000,
+            supplier: 'Phoenix Contact',
+            image: 'https://via.placeholder.com/40x40.png?text=CAB'
+        }
+    ];
+
+    useEffect(() => {
+        // Simulate API call
+        setTimeout(() => {
+            setParts(mockParts);
+            setLoading(false);
+        }, 500);
+    }, []);
+
+    // Helper functions
+    const formatCurrency = (amount) => {
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND'
+        }).format(amount);
+    };
+
+    const getStatusText = (status) => {
+        switch (status) {
+            case 'in-stock':
+                return 'Còn hàng';
+            case 'low-stock':
+                return 'Sắp hết';
+            case 'out-of-stock':
+                return 'Hết hàng';
+            default:
+                return status;
+        }
+    };
+
+    // Filter parts
+    const filteredParts = parts.filter(part => {
+        const matchesSearch = part.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            part.sku.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesCategory = !categoryFilter || part.category === categoryFilter;
+        const matchesStatus = !statusFilter || part.status === statusFilter;
+        
+        return matchesSearch && matchesCategory && matchesStatus;
+    });
     
     return (
         <div className="parts-inventory-container">
@@ -42,16 +184,32 @@ const PartsInventory = () => {
                 <div className="toolbar-left">
                     <div className="search-input">
                         <SearchIcon />
-                        <input type="text" placeholder="Tìm kiếm theo tên phụ tùng, mã SKU..." />
+                        <input 
+                            type="text" 
+                            placeholder="Tìm kiếm theo tên phụ tùng, mã SKU..." 
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
                     </div>
-                    <select className="filter-dropdown">
+                    <select 
+                        className="filter-dropdown"
+                        value={categoryFilter}
+                        onChange={(e) => setCategoryFilter(e.target.value)}
+                    >
                         <option value="">Tất cả danh mục</option>
                         <option value="Pin">Pin</option>
                         <option value="Động cơ">Động cơ</option>
                         <option value="Phanh">Phanh</option>
                         <option value="Bánh xe">Bánh xe</option>
+                        <option value="Điện tử">Điện tử</option>
+                        <option value="Làm mát">Làm mát</option>
+                        <option value="Phụ kiện">Phụ kiện</option>
                     </select>
-                    <select className="filter-dropdown">
+                    <select 
+                        className="filter-dropdown"
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                    >
                         <option value="">Tất cả trạng thái</option>
                         <option value="in-stock">Còn hàng</option>
                         <option value="low-stock">Sắp hết</option>
@@ -83,38 +241,60 @@ const PartsInventory = () => {
                         </tr>
                     </thead>
                     <tbody>
-                      
-                        {/* Data will be mapped here from an API call */}
-                        {/* Example of a single row structure: */}
-                        <tr>
-                          
-                            <td>
-                                <img src="https://via.placeholder.com/40x40.png?text=..." alt="part" className="part-image" />
-                            </td>
-                            
-                            <td>Phụ tùng mẫu</td>
-                            <td>SKU-SAMPLE</td>
-                            <td>Danh mục mẫu</td>
-                            <td className="stock-quantity">10</td>
-                            <td>
-                                <span className="status-badge status-in-stock">
-                                    Còn hàng
-                                </span>
-                            </td>
-                            <td>1.000.000đ</td>
-                            <td>1.500.000đ</td>
-                            <td>Nhà cung cấp mẫu</td>
-                            <td className="action-icons">
-                                <ViewIcon />
-                                <EditIcon />
-                                <DeleteIcon />
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colSpan="10" style={{ textAlign: 'center', padding: '20px', color: '#888' }}>
-                                Dữ liệu sẽ được tải ở đây...
-                            </td>
-                        </tr>
+                        {loading ? (
+                            <tr>
+                                <td colSpan="10" style={{ textAlign: 'center', padding: '40px', color: '#888' }}>
+                                    <div className="spinner-border text-primary" role="status">
+                                        <span className="visually-hidden">Đang tải...</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        ) : filteredParts.length === 0 ? (
+                            <tr>
+                                <td colSpan="10" style={{ textAlign: 'center', padding: '40px', color: '#888' }}>
+                                    {searchTerm || categoryFilter || statusFilter 
+                                        ? '🔍 Không tìm thấy phụ tùng phù hợp'
+                                        : '📦 Chưa có phụ tùng nào trong kho'}
+                                </td>
+                            </tr>
+                        ) : (
+                            filteredParts.map((part) => (
+                                <tr key={part.id}>
+                                    <td>
+                                        <img src={part.image} alt={part.name} className="part-image" />
+                                    </td>
+                                    <td><strong>{part.name}</strong></td>
+                                    <td><code>{part.sku}</code></td>
+                                    <td>{part.category}</td>
+                                    <td className="stock-quantity" style={{ 
+                                        textAlign: 'center',
+                                        color: part.quantity === 0 ? '#dc3545' : part.quantity < 10 ? '#ffc107' : '#28a745',
+                                        fontWeight: 'bold'
+                                    }}>
+                                        {part.quantity}
+                                    </td>
+                                    <td>
+                                        <span className={`status-badge status-${part.status}`}>
+                                            {getStatusText(part.status)}
+                                        </span>
+                                    </td>
+                                    <td>{formatCurrency(part.costPrice)}</td>
+                                    <td><strong>{formatCurrency(part.sellPrice)}</strong></td>
+                                    <td>{part.supplier}</td>
+                                    <td className="action-icons">
+                                        <button title="Xem chi tiết" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                                            <ViewIcon />
+                                        </button>
+                                        <button title="Chỉnh sửa" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                                            <EditIcon />
+                                        </button>
+                                        <button title="Xóa" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                                            <DeleteIcon />
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
                     </tbody>
                 </table>
             </div>
