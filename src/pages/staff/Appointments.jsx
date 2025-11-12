@@ -377,7 +377,13 @@ export default function Appointments({ isDashboard = false }) {
                       </div>
                       <div className='info-row'>
                         <i className='bi bi-clock'></i>
-                        <span>{apt.slotTime || apt.SlotTime || 'N/A'}</span>
+                        <span>
+                          {apt.slotStartTime || apt.SlotStartTime
+                            ? `${apt.slotStartTime || apt.SlotStartTime} - ${
+                                apt.slotEndTime || apt.SlotEndTime || ''
+                              }`
+                            : 'N/A'}
+                        </span>
                       </div>
                     </div>
 
@@ -497,23 +503,26 @@ export default function Appointments({ isDashboard = false }) {
                     <label>License Plate</label>
                     <span>
                       {selectedAppointment.licensePlate ||
-                        selectedAppointment.LicensePlate}
+                        selectedAppointment.LicensePlate ||
+                        'N/A'}
                     </span>
                   </div>
+
                   <div className='detail-item'>
                     <label>Model</label>
                     <span>
-                      {selectedAppointment.vehicleModel ||
-                        selectedAppointment.VehicleModel ||
+                      {selectedAppointment.vehicleName ||
+                        selectedAppointment.VehicleName ||
                         'N/A'}
                     </span>
                   </div>
+
                   <div className='detail-item'>
                     <label>Year</label>
                     <span>
-                      {selectedAppointment.vehicleYear ||
-                        selectedAppointment.VehicleYear ||
-                        'N/A'}
+                      {selectedAppointment.vehicleName
+                        ? selectedAppointment.vehicleName.split(' ').pop()
+                        : 'N/A'}
                     </span>
                   </div>
                 </div>
@@ -535,8 +544,16 @@ export default function Appointments({ isDashboard = false }) {
                   <div className='detail-item'>
                     <label>Time</label>
                     <span>
-                      {selectedAppointment.slotTime ||
-                        selectedAppointment.SlotTime}
+                      {selectedAppointment.slotStartTime ||
+                      selectedAppointment.SlotStartTime
+                        ? `${
+                            selectedAppointment.slotStartTime ||
+                            selectedAppointment.SlotStartTime
+                          } - ${
+                            selectedAppointment.slotEndTime ||
+                            selectedAppointment.SlotEndTime
+                          }`
+                        : 'N/A'}
                     </span>
                   </div>
                   <div className='detail-item'>
