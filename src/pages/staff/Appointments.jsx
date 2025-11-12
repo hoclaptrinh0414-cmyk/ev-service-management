@@ -11,27 +11,40 @@ export default function Appointments() {
   const [showModal, setShowModal] = useState(false);
   const [confirmingId, setConfirmingId] = useState(null);
 
+  // Added Logic Pagination
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(9);
+  const [totalCount, setTotalCount] = useState(0);
+
   const statusFilters = [
     { value: 'all', label: 'All', color: '#86868b' },
-    { value: 'Pending', label: 'Pending', color: '#FF9500' },
-    { value: 'Confirmed', label: 'Confirmed', color: '#34C759' },
-    { value: 'InProgress', label: 'In Progress', color: '#007AFF' },
-    { value: 'Completed', label: 'Completed', color: '#5856D6' },
+    { value: '1', label: 'Pending', color: '#FF9500' },
+    { value: '2', label: 'Confirmed', color: '#34C759' },
+    { value: '4', label: 'In Progress', color: '#007AFF' },
+    { value: '5', label: 'Completed', color: '#5856D6' },
+    { value: '6', label: 'Cancelled', color: '#FF3B30' },
   ];
 
   useEffect(() => {
     fetchAppointments();
-  }, [selectedStatus]);
+  }, [selectedStatus, page]);
 
+  // Edited logic pagination
   const fetchAppointments = async () => {
     try {
       setLoading(true);
-      const params = selectedStatus !== 'all' ? { status: selectedStatus } : {};
-      const response = await staffService.getStaffAppointments(params);
+      const params = {
+        Page: page,
+        PageSize: pageSize,
+        ...(selectedStatus !== 'all' && { StatusId: selectedStatus }),
+      };
 
+      const response = await staffService.getStaffAppointments(params);
       const data = response.data || response;
-      const items = Array.isArray(data) ? data : (data.items || []);
+      const items = Array.isArray(data) ? data : data.items || [];
+
       setAppointments(items);
+      setTotalCount(data.totalCount || 0); // tổng số bản ghi để tính số trang
     } catch (error) {
       console.error('Error fetching appointments:', error);
       toast.error('Failed to load appointments');
@@ -40,9 +53,16 @@ export default function Appointments() {
     }
   };
 
+  const handlePageChange = (newPage) => {
+    if (newPage < 1) return;
+    setPage(newPage);
+  };
+
   const handleViewDetail = async (appointment) => {
     try {
-      const detail = await staffService.getAppointmentDetail(appointment.appointmentId || appointment.AppointmentId);
+      const detail = await staffService.getAppointmentDetail(
+        appointment.appointmentId || appointment.AppointmentId,
+      );
       setSelectedAppointment(detail.data || detail);
       setShowModal(true);
     } catch (error) {
@@ -58,7 +78,7 @@ export default function Appointments() {
         confirmationMethod: 'System',
         notes: 'Confirmed by staff',
         sendConfirmationEmail: true,
-        sendConfirmationSMS: false
+        sendConfirmationSMS: false,
       });
 
       toast.success('Appointment confirmed successfully!');
@@ -66,29 +86,34 @@ export default function Appointments() {
       if (showModal) setShowModal(false);
     } catch (error) {
       console.error('Error confirming appointment:', error);
-      toast.error(error.response?.data?.message || 'Failed to confirm appointment');
+      toast.error(
+        error.response?.data?.message || 'Failed to confirm appointment',
+      );
     } finally {
       setConfirmingId(null);
     }
   };
 
   const getStatusBadge = (statusName) => {
-    const status = statusFilters.find(s => s.value === statusName) || statusFilters[0];
+    const status =
+      statusFilters.find((s) => s.value === statusName) || statusFilters[0];
     return {
       color: status.color,
-      label: status.label
+      label: status.label,
     };
   };
 
   const countByStatus = (status) => {
     if (status === 'all') return appointments.length;
-    return appointments.filter(apt => (apt.statusName || apt.StatusName) === status).length;
+    return appointments.filter(
+      (apt) => (apt.statusName || apt.StatusName) === status,
+    ).length;
   };
 
   return (
-    <div className="appointments-page">
+    <div className='appointments-page'>
       {/* Header */}
-      <div className="page-header">
+      <div className='page-header'>
         <div>
           <h1>Appointments</h1>
           <p>Manage customer appointments and scheduling</p>
@@ -96,161 +121,256 @@ export default function Appointments() {
       </div>
 
       {/* Filter Tabs */}
-      <div className="filter-tabs">
-        {statusFilters.map(filter => (
+      <div className='filter-tabs'>
+        {statusFilters.map((filter) => (
           <button
             key={filter.value}
             className={`tab ${selectedStatus === filter.value ? 'active' : ''}`}
             onClick={() => setSelectedStatus(filter.value)}
           >
             {filter.label}
-            <span className="count">{countByStatus(filter.value)}</span>
+            <span className='count'>{countByStatus(filter.value)}</span>
           </button>
         ))}
       </div>
 
       {/* Appointments List */}
-      <div className="appointments-container">
+      <div className='appointments-container'>
         {loading ? (
-          <div className="loading-state">
-            <div className="spinner"></div>
+          <div className='loading-state'>
+            <div className='spinner'></div>
             <p>Loading appointments...</p>
           </div>
         ) : appointments.length === 0 ? (
-          <div className="empty-state">
-            <i className="bi bi-calendar-x"></i>
+          <div className='empty-state'>
+            <i className='bi bi-calendar-x'></i>
             <h3>No appointments found</h3>
-            <p>There are no {selectedStatus !== 'all' ? selectedStatus.toLowerCase() : ''} appointments at the moment.</p>
+            <p>
+              There are no{' '}
+              {selectedStatus !== 'all' ? selectedStatus.toLowerCase() : ''}{' '}
+              appointments at the moment.
+            </p>
           </div>
         ) : (
-          <div className="appointments-grid">
-            {appointments.map(apt => {
-              const statusBadge = getStatusBadge(apt.statusName || apt.StatusName);
+          <div className='appointments-grid'>
+            {appointments.map((apt) => {
+              const statusBadge = getStatusBadge(
+                apt.statusName || apt.StatusName,
+              );
               const appointmentId = apt.appointmentId || apt.AppointmentId;
 
               return (
-                <div key={appointmentId} className="appointment-card">
-                  <div className="card-header">
-                    <div className="appointment-code">
-                      {apt.appointmentCode || apt.AppointmentCode || `#${appointmentId}`}
+                <div key={appointmentId} className='appointment-card'>
+                  <div className='card-header'>
+                    <div className='appointment-code'>
+                      {apt.appointmentCode ||
+                        apt.AppointmentCode ||
+                        `#${appointmentId}`}
                     </div>
                     <div
-                      className="status-badge"
-                      style={{ backgroundColor: `${statusBadge.color}15`, color: statusBadge.color }}
+                      className='status-badge'
+                      style={{
+                        backgroundColor: `${statusBadge.color}15`,
+                        color: statusBadge.color,
+                      }}
                     >
                       {statusBadge.label}
                     </div>
                   </div>
 
-                  <div className="card-body">
-                    <div className="info-row">
-                      <i className="bi bi-person"></i>
-                      <span>{apt.customerName || apt.CustomerName || 'N/A'}</span>
-                    </div>
-                    <div className="info-row">
-                      <i className="bi bi-car-front"></i>
-                      <span>{apt.licensePlate || apt.LicensePlate || 'N/A'}</span>
-                    </div>
-                    <div className="info-row">
-                      <i className="bi bi-calendar"></i>
+                  <div className='card-body'>
+                    <div className='info-row'>
+                      <i className='bi bi-person'></i>
                       <span>
-                        {apt.slotDate ? new Date(apt.slotDate).toLocaleDateString() : 'N/A'}
+                        {apt.customerName || apt.CustomerName || 'N/A'}
                       </span>
                     </div>
-                    <div className="info-row">
-                      <i className="bi bi-clock"></i>
+                    <div className='info-row'>
+                      <i className='bi bi-car-front'></i>
+                      <span>
+                        {apt.licensePlate || apt.LicensePlate || 'N/A'}
+                      </span>
+                    </div>
+                    <div className='info-row'>
+                      <i className='bi bi-calendar'></i>
+                      <span>
+                        {apt.slotDate
+                          ? new Date(apt.slotDate).toLocaleDateString()
+                          : 'N/A'}
+                      </span>
+                    </div>
+                    <div className='info-row'>
+                      <i className='bi bi-clock'></i>
                       <span>{apt.slotTime || apt.SlotTime || 'N/A'}</span>
                     </div>
                   </div>
 
-                  <div className="card-actions">
+                  <div className='card-actions'>
                     <button
-                      className="btn-secondary"
+                      className='btn-secondary'
                       onClick={() => handleViewDetail(apt)}
                     >
                       View Details
                     </button>
                     {apt.statusName === 'Pending' && (
                       <button
-                        className="btn-primary"
+                        className='btn-primary'
                         onClick={() => handleConfirm(appointmentId)}
                         disabled={confirmingId === appointmentId}
                       >
-                        {confirmingId === appointmentId ? 'Confirming...' : 'Confirm'}
+                        {confirmingId === appointmentId
+                          ? 'Confirming...'
+                          : 'Confirm'}
                       </button>
                     )}
                   </div>
                 </div>
               );
             })}
+            {totalCount > pageSize && (
+              <div className='pagination'>
+                <button
+                  className='page-btn'
+                  onClick={() => handlePageChange(page - 1)}
+                  disabled={page === 1}
+                >
+                  <i className='bi bi-chevron-left'></i>
+                </button>
+
+                <div className='page-numbers'>
+                  {Array.from({ length: Math.ceil(totalCount / pageSize) })
+                    .slice(
+                      Math.max(0, page - 3),
+                      Math.min(Math.ceil(totalCount / pageSize), page + 2),
+                    )
+                    .map((_, idx) => {
+                      const pageNumber = Math.max(0, page - 3) + idx + 1;
+                      return (
+                        <button
+                          key={pageNumber}
+                          className={`page-number ${
+                            pageNumber === page ? 'active' : ''
+                          }`}
+                          onClick={() => handlePageChange(pageNumber)}
+                        >
+                          {pageNumber}
+                        </button>
+                      );
+                    })}
+                </div>
+
+                <button
+                  className='page-btn'
+                  onClick={() => handlePageChange(page + 1)}
+                  disabled={page >= Math.ceil(totalCount / pageSize)}
+                >
+                  <i className='bi bi-chevron-right'></i>
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
 
       {/* Detail Modal */}
       {showModal && selectedAppointment && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
+        <div className='modal-overlay' onClick={() => setShowModal(false)}>
+          <div className='modal-content' onClick={(e) => e.stopPropagation()}>
+            <div className='modal-header'>
               <h2>Appointment Details</h2>
-              <button className="btn-close" onClick={() => setShowModal(false)}>
-                <i className="bi bi-x-lg"></i>
+              <button className='btn-close' onClick={() => setShowModal(false)}>
+                <i className='bi bi-x-lg'></i>
               </button>
             </div>
 
-            <div className="modal-body">
-              <div className="detail-section">
+            <div className='modal-body'>
+              <div className='detail-section'>
                 <h3>Customer Information</h3>
-                <div className="detail-grid">
-                  <div className="detail-item">
+                <div className='detail-grid'>
+                  <div className='detail-item'>
                     <label>Name</label>
-                    <span>{selectedAppointment.customerName || selectedAppointment.CustomerName}</span>
-                  </div>
-                  <div className="detail-item">
-                    <label>Phone</label>
-                    <span>{selectedAppointment.customerPhone || selectedAppointment.CustomerPhone || 'N/A'}</span>
-                  </div>
-                  <div className="detail-item">
-                    <label>Email</label>
-                    <span>{selectedAppointment.customerEmail || selectedAppointment.CustomerEmail || 'N/A'}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="detail-section">
-                <h3>Vehicle Information</h3>
-                <div className="detail-grid">
-                  <div className="detail-item">
-                    <label>License Plate</label>
-                    <span>{selectedAppointment.licensePlate || selectedAppointment.LicensePlate}</span>
-                  </div>
-                  <div className="detail-item">
-                    <label>Model</label>
-                    <span>{selectedAppointment.vehicleModel || selectedAppointment.VehicleModel || 'N/A'}</span>
-                  </div>
-                  <div className="detail-item">
-                    <label>Year</label>
-                    <span>{selectedAppointment.vehicleYear || selectedAppointment.VehicleYear || 'N/A'}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="detail-section">
-                <h3>Appointment Information</h3>
-                <div className="detail-grid">
-                  <div className="detail-item">
-                    <label>Date</label>
                     <span>
-                      {selectedAppointment.slotDate ? new Date(selectedAppointment.slotDate).toLocaleDateString() : 'N/A'}
+                      {selectedAppointment.customerName ||
+                        selectedAppointment.CustomerName}
                     </span>
                   </div>
-                  <div className="detail-item">
-                    <label>Time</label>
-                    <span>{selectedAppointment.slotTime || selectedAppointment.SlotTime}</span>
+                  <div className='detail-item'>
+                    <label>Phone</label>
+                    <span>
+                      {selectedAppointment.customerPhone ||
+                        selectedAppointment.CustomerPhone ||
+                        'N/A'}
+                    </span>
                   </div>
-                  <div className="detail-item">
+                  <div className='detail-item'>
+                    <label>Email</label>
+                    <span>
+                      {selectedAppointment.customerEmail ||
+                        selectedAppointment.CustomerEmail ||
+                        'N/A'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className='detail-section'>
+                <h3>Vehicle Information</h3>
+                <div className='detail-grid'>
+                  <div className='detail-item'>
+                    <label>License Plate</label>
+                    <span>
+                      {selectedAppointment.licensePlate ||
+                        selectedAppointment.LicensePlate}
+                    </span>
+                  </div>
+                  <div className='detail-item'>
+                    <label>Model</label>
+                    <span>
+                      {selectedAppointment.vehicleModel ||
+                        selectedAppointment.VehicleModel ||
+                        'N/A'}
+                    </span>
+                  </div>
+                  <div className='detail-item'>
+                    <label>Year</label>
+                    <span>
+                      {selectedAppointment.vehicleYear ||
+                        selectedAppointment.VehicleYear ||
+                        'N/A'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className='detail-section'>
+                <h3>Appointment Information</h3>
+                <div className='detail-grid'>
+                  <div className='detail-item'>
+                    <label>Date</label>
+                    <span>
+                      {selectedAppointment.slotDate
+                        ? new Date(
+                            selectedAppointment.slotDate,
+                          ).toLocaleDateString()
+                        : 'N/A'}
+                    </span>
+                  </div>
+                  <div className='detail-item'>
+                    <label>Time</label>
+                    <span>
+                      {selectedAppointment.slotTime ||
+                        selectedAppointment.SlotTime}
+                    </span>
+                  </div>
+                  <div className='detail-item'>
                     <label>Status</label>
-                    <span className="status-text" style={{ color: getStatusBadge(selectedAppointment.statusName).color }}>
+                    <span
+                      className='status-text'
+                      style={{
+                        color: getStatusBadge(selectedAppointment.statusName)
+                          .color,
+                      }}
+                    >
                       {getStatusBadge(selectedAppointment.statusName).label}
                     </span>
                   </div>
@@ -258,24 +378,42 @@ export default function Appointments() {
               </div>
 
               {selectedAppointment.customerNotes && (
-                <div className="detail-section">
+                <div className='detail-section'>
                   <h3>Customer Notes</h3>
-                  <p className="notes-text">{selectedAppointment.customerNotes}</p>
+                  <p className='notes-text'>
+                    {selectedAppointment.customerNotes}
+                  </p>
                 </div>
               )}
             </div>
 
-            <div className="modal-footer">
-              <button className="btn-secondary" onClick={() => setShowModal(false)}>
+            <div className='modal-footer'>
+              <button
+                className='btn-secondary'
+                onClick={() => setShowModal(false)}
+              >
                 Close
               </button>
               {selectedAppointment.statusName === 'Pending' && (
                 <button
-                  className="btn-primary"
-                  onClick={() => handleConfirm(selectedAppointment.appointmentId || selectedAppointment.AppointmentId)}
-                  disabled={confirmingId === (selectedAppointment.appointmentId || selectedAppointment.AppointmentId)}
+                  className='btn-primary'
+                  onClick={() =>
+                    handleConfirm(
+                      selectedAppointment.appointmentId ||
+                        selectedAppointment.AppointmentId,
+                    )
+                  }
+                  disabled={
+                    confirmingId ===
+                    (selectedAppointment.appointmentId ||
+                      selectedAppointment.AppointmentId)
+                  }
                 >
-                  {confirmingId === (selectedAppointment.appointmentId || selectedAppointment.AppointmentId) ? 'Confirming...' : 'Confirm Appointment'}
+                  {confirmingId ===
+                  (selectedAppointment.appointmentId ||
+                    selectedAppointment.AppointmentId)
+                    ? 'Confirming...'
+                    : 'Confirm Appointment'}
                 </button>
               )}
             </div>
@@ -621,6 +759,66 @@ export default function Appointments() {
             grid-template-columns: 1fr;
           }
         }
+          .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            margin-top: 32px;
+          }
+
+          .page-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1px solid #e5e5e5;
+            background: white;
+            color: #1a1a1a;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+
+          .page-btn:hover:not(:disabled) {
+            background: #f5f5f7;
+            transform: translateY(-1px);
+          }
+
+          .page-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+          }
+
+          .page-numbers {
+            display: flex;
+            gap: 6px;
+          }
+
+          .page-number {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: white;
+            border: 1px solid #e5e5e5;
+            font-size: 14px;
+            color: #1a1a1a;
+            cursor: pointer;
+            transition: all 0.2s ease;
+          }
+
+          .page-number:hover {
+            background: #f5f5f7;
+          }
+
+          .page-number.active {
+            background: #1a1a1a;
+            color: white;
+            border-color: #1a1a1a;
+            font-weight: 600;
+          }
       `}</style>
     </div>
   );

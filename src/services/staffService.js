@@ -13,7 +13,7 @@ import api from './axiosInterceptor';
  * @param {Object} params - { status, page, pageSize, startDate, endDate }
  */
 export const getStaffAppointments = async (params = {}) => {
-  const { data } = await api.get('/appointment-management/appointments', { params });
+  const { data } = await api.get('/appointment-management', { params });
   return data;
 };
 

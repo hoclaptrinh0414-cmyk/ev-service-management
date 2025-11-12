@@ -19,7 +19,7 @@ export default function CheckIn() {
     try {
       const response = await staffService.getStaffAppointments({
         status: 'Confirmed',
-        pageSize: 50
+        pageSize: 20
       });
       const data = response.data || response;
       const items = Array.isArray(data) ? data : (data.items || data.appointments || []);
