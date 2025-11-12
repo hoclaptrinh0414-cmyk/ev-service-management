@@ -481,8 +481,9 @@ export default function WorkOrders() {
                     </>
                   )}
 
-                  {selectedWO.assignedTechnician &&
-                    selectedWO.status === 'Pending' && (
+                  {selectedWO.technicianId &&
+                    (selectedWO.statusName === 'Pending' ||
+                      selectedWO.statusName === 'Assigned') && (
                       <button
                         className='btn-action success'
                         onClick={handleStartWorkOrder}
