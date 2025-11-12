@@ -210,7 +210,7 @@ function App() {
               </ProtectedRoute>
             }
           >
-            <Route index element={<StaffAppointments />} />
+            <Route index element={<StaffAppointments isDashboard={true} />} />
             <Route path="appointments" element={<StaffAppointments />} />
             <Route path="checkin" element={<StaffCheckIn />} />
             <Route path="work-orders" element={<StaffWorkOrders />} />

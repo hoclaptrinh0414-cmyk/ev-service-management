@@ -2,8 +2,17 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import * as staffService from '../../services/staffService';
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
+import { useNavigate } from 'react-router-dom';
 
-export default function Appointments() {
+export default function Appointments({ isDashboard = false }) {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedStatus, setSelectedStatus] = useState('all');
@@ -15,6 +24,12 @@ export default function Appointments() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(9);
   const [totalCount, setTotalCount] = useState(0);
+
+  // Added Logic Statistic
+  const [statusSummary, setStatusSummary] = useState([]);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+
+  const navigate = useNavigate();
 
   const statusFilters = [
     { value: 'all', label: 'All', color: '#86868b' },
@@ -28,6 +43,37 @@ export default function Appointments() {
   useEffect(() => {
     fetchAppointments();
   }, [selectedStatus, page]);
+
+  // Fetch status summary for dashboard
+  useEffect(() => {
+    if (isDashboard) {
+      fetchStatusSummary();
+    }
+  }, [isDashboard]);
+
+  const fetchStatusSummary = async () => {
+    try {
+      setSummaryLoading(true);
+      const res = await staffService.getAppointmentStatistics();
+      const data = res.data || res;
+      // Convert object -> array để dễ map hiển thị
+      const statsArray = Object.entries(data.byStatus || {}).map(
+        ([status, count]) => {
+          const percentage = data.total
+            ? ((count / data.total) * 100).toFixed(1)
+            : 0;
+          return { status, count, percentage };
+        },
+      );
+
+      setStatusSummary(statsArray);
+    } catch (error) {
+      console.error('Error fetching summary:', error);
+      toast.error('Failed to load status summary');
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
 
   // Edited logic pagination
   const fetchAppointments = async () => {
@@ -59,6 +105,11 @@ export default function Appointments() {
   };
 
   const handleViewDetail = async (appointment) => {
+    if (isDashboard) {
+      navigate('/staff/appointments');
+      return;
+    }
+
     try {
       const detail = await staffService.getAppointmentDetail(
         appointment.appointmentId || appointment.AppointmentId,
@@ -121,156 +172,280 @@ export default function Appointments() {
       </div>
 
       {/* Filter Tabs */}
-      <div className='filter-tabs'>
-        {statusFilters.map((filter) => (
-          <button
-            key={filter.value}
-            className={`tab ${selectedStatus === filter.value ? 'active' : ''}`}
-            onClick={() => setSelectedStatus(filter.value)}
-          >
-            {filter.label}
-            <span className='count'>{countByStatus(filter.value)}</span>
-          </button>
-        ))}
-      </div>
+      {!isDashboard && (
+        <div className='filter-tabs'>
+          {statusFilters.map((filter) => (
+            <button
+              key={filter.value}
+              className={`tab ${
+                selectedStatus === filter.value ? 'active' : ''
+              }`}
+              onClick={() => setSelectedStatus(filter.value)}
+            >
+              {filter.label}
+              <span className='count'>{countByStatus(filter.value)}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
-      {/* Appointments List */}
-      <div className='appointments-container'>
-        {loading ? (
-          <div className='loading-state'>
-            <div className='spinner'></div>
-            <p>Loading appointments...</p>
-          </div>
-        ) : appointments.length === 0 ? (
-          <div className='empty-state'>
-            <i className='bi bi-calendar-x'></i>
-            <h3>No appointments found</h3>
-            <p>
-              There are no{' '}
-              {selectedStatus !== 'all' ? selectedStatus.toLowerCase() : ''}{' '}
-              appointments at the moment.
-            </p>
-          </div>
-        ) : (
-          <div className='appointments-grid'>
-            {appointments.map((apt) => {
-              const statusBadge = getStatusBadge(
-                apt.statusName || apt.StatusName,
-              );
-              const appointmentId = apt.appointmentId || apt.AppointmentId;
+      {isDashboard && (
+        <div className='status-summary'>
+          <h3>Appointment Status Overview</h3>
 
-              return (
-                <div key={appointmentId} className='appointment-card'>
-                  <div className='card-header'>
-                    <div className='appointment-code'>
-                      {apt.appointmentCode ||
-                        apt.AppointmentCode ||
-                        `#${appointmentId}`}
-                    </div>
+          {summaryLoading ? (
+            <div className='loading-summary'>Loading summary...</div>
+          ) : (
+            <div className='dashboard-summary'>
+              {/* Thẻ tổng hợp theo trạng thái */}
+              <div className='summary-cards colorful'>
+                {[
+                  { key: 'Pending', label: 'Pending', color: '#FFB020' },
+                  { key: 'Confirmed', label: 'Confirmed', color: '#34C759' },
+                  { key: 'InProgress', label: 'In Progress', color: '#007AFF' },
+                  { key: 'Completed', label: 'Completed', color: '#5E5CE6' },
+                  { key: 'Cancelled', label: 'Cancelled', color: '#FF3B30' },
+                ].map((status) => {
+                  const stat =
+                    statusSummary.find(
+                      (s) =>
+                        s.status.toLowerCase() === status.key.toLowerCase(),
+                    ) || {};
+                  return (
                     <div
-                      className='status-badge'
+                      key={status.key}
+                      className='summary-card fancy'
                       style={{
-                        backgroundColor: `${statusBadge.color}15`,
-                        color: statusBadge.color,
+                        borderColor: `${status.color}33`,
+                        background: `${status.color}10`,
                       }}
                     >
-                      {statusBadge.label}
-                    </div>
-                  </div>
-
-                  <div className='card-body'>
-                    <div className='info-row'>
-                      <i className='bi bi-person'></i>
-                      <span>
-                        {apt.customerName || apt.CustomerName || 'N/A'}
-                      </span>
-                    </div>
-                    <div className='info-row'>
-                      <i className='bi bi-car-front'></i>
-                      <span>
-                        {apt.licensePlate || apt.LicensePlate || 'N/A'}
-                      </span>
-                    </div>
-                    <div className='info-row'>
-                      <i className='bi bi-calendar'></i>
-                      <span>
-                        {apt.slotDate
-                          ? new Date(apt.slotDate).toLocaleDateString()
-                          : 'N/A'}
-                      </span>
-                    </div>
-                    <div className='info-row'>
-                      <i className='bi bi-clock'></i>
-                      <span>{apt.slotTime || apt.SlotTime || 'N/A'}</span>
-                    </div>
-                  </div>
-
-                  <div className='card-actions'>
-                    <button
-                      className='btn-secondary'
-                      onClick={() => handleViewDetail(apt)}
-                    >
-                      View Details
-                    </button>
-                    {apt.statusName === 'Pending' && (
-                      <button
-                        className='btn-primary'
-                        onClick={() => handleConfirm(appointmentId)}
-                        disabled={confirmingId === appointmentId}
-                      >
-                        {confirmingId === appointmentId
-                          ? 'Confirming...'
-                          : 'Confirm'}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-            {totalCount > pageSize && (
-              <div className='pagination'>
-                <button
-                  className='page-btn'
-                  onClick={() => handlePageChange(page - 1)}
-                  disabled={page === 1}
-                >
-                  <i className='bi bi-chevron-left'></i>
-                </button>
-
-                <div className='page-numbers'>
-                  {Array.from({ length: Math.ceil(totalCount / pageSize) })
-                    .slice(
-                      Math.max(0, page - 3),
-                      Math.min(Math.ceil(totalCount / pageSize), page + 2),
-                    )
-                    .map((_, idx) => {
-                      const pageNumber = Math.max(0, page - 3) + idx + 1;
-                      return (
-                        <button
-                          key={pageNumber}
-                          className={`page-number ${
-                            pageNumber === page ? 'active' : ''
-                          }`}
-                          onClick={() => handlePageChange(pageNumber)}
+                      <div
+                        className='summary-icon'
+                        style={{ backgroundColor: status.color }}
+                      ></div>
+                      <div className='summary-info'>
+                        <span
+                          className='summary-status'
+                          style={{ color: status.color }}
                         >
-                          {pageNumber}
-                        </button>
-                      );
-                    })}
-                </div>
+                          {status.label}
+                        </span>
+                        <span className='summary-count'>
+                          {stat.count || 0} appts
+                        </span>
+                        <span className='summary-percent'>
+                          {stat.percentage ? `${stat.percentage}%` : '0%'}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
 
+              {/* Biểu đồ tròn */}
+              <div className='chart-container'>
+                <ResponsiveContainer width='100%' height={300}>
+                  <PieChart>
+                    <Pie
+                      data={statusSummary.filter((item) =>
+                        [
+                          'Pending',
+                          'Confirmed',
+                          'InProgress',
+                          'Completed',
+                          'Cancelled',
+                        ].includes(item.status),
+                      )}
+                      dataKey='count'
+                      nameKey='status'
+                      outerRadius={110}
+                      label
+                    >
+                      {statusSummary
+                        .filter((item) =>
+                          [
+                            'Pending',
+                            'Confirmed',
+                            'InProgress',
+                            'Completed',
+                            'Cancelled',
+                          ].includes(item.status),
+                        )
+                        .map((entry) => {
+                          const colorMap = {
+                            Pending: '#FFB020',
+                            Confirmed: '#34C759',
+                            InProgress: '#007AFF',
+                            Completed: '#5E5CE6',
+                            Cancelled: '#FF3B30',
+                          };
+                          return (
+                            <Cell
+                              key={entry.status}
+                              fill={colorMap[entry.status] || '#ccc'}
+                            />
+                          );
+                        })}
+                    </Pie>
+                    <Tooltip />
+                    <Legend verticalAlign='bottom' height={36} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className='dashboard-actions'>
                 <button
-                  className='page-btn'
-                  onClick={() => handlePageChange(page + 1)}
-                  disabled={page >= Math.ceil(totalCount / pageSize)}
+                  className='btn-view-all'
+                  onClick={() => navigate('/staff/appointments')}
                 >
-                  <i className='bi bi-chevron-right'></i>
+                  View All Appointments
                 </button>
               </div>
-            )}
-          </div>
-        )}
-      </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Appointments List */}
+      {!isDashboard && (
+        <div className='appointments-container'>
+          {loading ? (
+            <div className='loading-state'>
+              <div className='spinner'></div>
+              <p>Loading appointments...</p>
+            </div>
+          ) : appointments.length === 0 ? (
+            <div className='empty-state'>
+              <i className='bi bi-calendar-x'></i>
+              <h3>No appointments found</h3>
+              <p>
+                There are no{' '}
+                {selectedStatus !== 'all' ? selectedStatus.toLowerCase() : ''}{' '}
+                appointments at the moment.
+              </p>
+            </div>
+          ) : (
+            <div className='appointments-grid'>
+              {appointments.map((apt) => {
+                const statusBadge = getStatusBadge(
+                  apt.statusName || apt.StatusName,
+                );
+                const appointmentId = apt.appointmentId || apt.AppointmentId;
+
+                return (
+                  <div key={appointmentId} className='appointment-card'>
+                    <div className='card-header'>
+                      <div className='appointment-code'>
+                        {apt.appointmentCode ||
+                          apt.AppointmentCode ||
+                          `#${appointmentId}`}
+                      </div>
+                      <div
+                        className='status-badge'
+                        style={{
+                          backgroundColor: `${statusBadge.color}15`,
+                          color: statusBadge.color,
+                        }}
+                      >
+                        {statusBadge.label}
+                      </div>
+                    </div>
+
+                    <div className='card-body'>
+                      <div className='info-row'>
+                        <i className='bi bi-person'></i>
+                        <span>
+                          {apt.customerName || apt.CustomerName || 'N/A'}
+                        </span>
+                      </div>
+                      <div className='info-row'>
+                        <i className='bi bi-car-front'></i>
+                        <span>
+                          {apt.licensePlate || apt.LicensePlate || 'N/A'}
+                        </span>
+                      </div>
+                      <div className='info-row'>
+                        <i className='bi bi-calendar'></i>
+                        <span>
+                          {apt.slotDate
+                            ? new Date(apt.slotDate).toLocaleDateString()
+                            : 'N/A'}
+                        </span>
+                      </div>
+                      <div className='info-row'>
+                        <i className='bi bi-clock'></i>
+                        <span>{apt.slotTime || apt.SlotTime || 'N/A'}</span>
+                      </div>
+                    </div>
+
+                    <div className='card-actions'>
+                      <button
+                        className='btn-secondary'
+                        onClick={() => handleViewDetail(apt)}
+                      >
+                        View Details
+                      </button>
+                      {apt.statusName === 'Pending' && (
+                        <button
+                          className='btn-primary'
+                          onClick={() => handleConfirm(appointmentId)}
+                          disabled={confirmingId === appointmentId}
+                        >
+                          {confirmingId === appointmentId
+                            ? 'Confirming...'
+                            : 'Confirm'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {totalCount > pageSize && (
+            <div className='pagination'>
+              <button
+                className='page-btn'
+                onClick={() => handlePageChange(page - 1)}
+                disabled={page === 1}
+              >
+                <i className='bi bi-chevron-left'></i>
+              </button>
+
+              <div className='page-numbers'>
+                {Array.from({ length: Math.ceil(totalCount / pageSize) })
+                  .slice(
+                    Math.max(0, page - 3),
+                    Math.min(Math.ceil(totalCount / pageSize), page + 2),
+                  )
+                  .map((_, idx) => {
+                    const pageNumber = Math.max(0, page - 3) + idx + 1;
+                    return (
+                      <button
+                        key={pageNumber}
+                        className={`page-number ${
+                          pageNumber === page ? 'active' : ''
+                        }`}
+                        onClick={() => handlePageChange(pageNumber)}
+                      >
+                        {pageNumber}
+                      </button>
+                    );
+                  })}
+              </div>
+
+              <button
+                className='page-btn'
+                onClick={() => handlePageChange(page + 1)}
+                disabled={page >= Math.ceil(totalCount / pageSize)}
+              >
+                <i className='bi bi-chevron-right'></i>
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Detail Modal */}
       {showModal && selectedAppointment && (
@@ -818,6 +993,126 @@ export default function Appointments() {
             color: white;
             border-color: #1a1a1a;
             font-weight: 600;
+          }
+            .status-summary {
+            margin-bottom: 28px;
+          }
+
+          .status-summary h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 12px;
+          }
+
+          .summary-cards {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+          }
+
+          .summary-card {
+            display: flex;
+            align-items: center;
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 16px;
+            padding: 10px 16px;
+            min-width: 160px;
+            flex: 1 1 auto;
+          }
+
+          .summary-circle {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 12px;
+          }
+
+          .summary-info {
+            display: flex;
+            flex-direction: column;
+          }
+
+          .summary-status {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1a1a1a;
+          }
+
+          .summary-count {
+            font-size: 12px;
+            color: #86868b;
+          }
+
+          .summary-percent {
+            font-size: 11px;
+            color: #86868b;
+          }
+
+          .loading-summary,
+          .empty-summary {
+            font-size: 13px;
+            color: #86868b;
+          }
+          .dashboard-summary {
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+          }
+          .chart-container {
+            width: 100%;
+            height: 320px;
+            margin-top: 8px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            padding: 16px;
+          }
+          .summary-cards.colorful {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+          }
+          .summary-card.fancy {
+            display: flex;
+            align-items: center;
+            border: 2px solid transparent;
+            border-radius: 16px;
+            padding: 16px;
+            transition: all 0.25s ease;
+            background: white;
+          }
+          .summary-card.fancy:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+          }
+          .summary-icon {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            margin-right: 12px;
+          }
+            .dashboard-actions {
+            text-align: center;
+            margin-top: 12px;
+          }
+
+          .btn-view-all {
+            background: #1a1a1a;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 12px 28px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+          }
+
+          .btn-view-all:hover {
+            background: #000;
+            transform: translateY(-1px);
           }
       `}</style>
     </div>
