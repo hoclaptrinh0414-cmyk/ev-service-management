@@ -70,8 +70,8 @@ const PaymentCallback = () => {
               position: 'top-center'
             });
 
-            // Redirect immediately to schedule service (step 1)
-            navigate('/schedule-service', {
+            // Redirect to Services page after success
+            navigate('/services', {
               replace: true,
               state: { paymentSuccess: true }
             });
@@ -87,8 +87,7 @@ const PaymentCallback = () => {
               position: 'top-center'
             });
 
-            // Redirect to schedule service (step 1)
-            navigate('/schedule-service', {
+            navigate('/services', {
               replace: true,
               state: { paymentSuccess: true }
             });
@@ -102,7 +101,7 @@ const PaymentCallback = () => {
             position: 'top-center'
           });
 
-          navigate('/schedule-service', {
+          navigate('/services', {
             replace: true,
             state: { paymentSuccess: true }
           });
@@ -114,7 +113,7 @@ const PaymentCallback = () => {
           autoClose: 4000
         });
 
-        navigate('/schedule-service', {
+        navigate('/services', {
           replace: true,
           state: { paymentCanceled: true }
         });
@@ -125,7 +124,7 @@ const PaymentCallback = () => {
           autoClose: 4000
         });
 
-        navigate('/schedule-service', {
+        navigate('/services', {
           replace: true,
           state: { paymentFailed: true }
         });
@@ -135,7 +134,7 @@ const PaymentCallback = () => {
       toast.error('Error processing payment result');
 
       setTimeout(() => {
-        navigate('/my-appointments');
+        navigate('/services', { replace: true });
       }, 3000);
     } finally {
       setProcessing(false);

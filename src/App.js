@@ -44,6 +44,7 @@ import StaffCheckIn from "./pages/staff/CheckIn";
 import StaffWorkOrders from "./pages/staff/WorkOrders";
 import StaffSettings from "./pages/staff/Settings";
 import PaymentCallback from "./pages/payment/PaymentCallback";
+import ChatWidget from "./components/ChatWidget";
 
 // Import test components
 import PasswordResetTest from "./components/PasswordResetTest";
@@ -179,14 +180,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route
-            path="/payment/callback"
-            element={
-              <ProtectedRoute>
-                <PaymentCallback />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/payment/callback" element={<PaymentCallback />} />
           <Route path="/products/individual" element={<ProductIndividual />} />
           <Route path="/products/combo" element={<ProductCombo />} />
           <Route
@@ -237,8 +231,9 @@ function App() {
           </Route>
 
           {/* Catch all route */}
-          <Route path="*" element={<Navigate to="/login" replace />} />
+                  <Route path="*" element={<Navigate to="/login" replace />} />
                   </Routes>
+                  <ChatWidget />
                 </div>
               </Router>
             </ScheduleProvider>

@@ -43,6 +43,60 @@
   align-items: stretch;
 }
 
+.vehicle-context {
+  border: 1px solid #ebebeb;
+  border-radius: 24px;
+  padding: 18px 24px;
+  margin-bottom: 30px;
+  background: #fafafa;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+}
+
+.context-label {
+  font-weight: 600;
+  color: #111;
+}
+
+.vehicle-select {
+  max-width: 420px;
+  width: 100%;
+  border-radius: 999px;
+  padding: 10px 18px;
+  text-align: center;
+}
+
+.context-hint {
+  font-size: 0.85rem;
+  color: #777;
+  margin: 0;
+}
+
+.link-button {
+  border: none;
+  background: transparent;
+  text-decoration: underline;
+  color: #111;
+  font-weight: 600;
+  padding: 0;
+}
+
+.empty-state {
+  padding: 2rem;
+  border: 1px dashed #d0d0d0;
+  border-radius: 20px;
+  text-align: center;
+  color: #555;
+}
+
+.empty-state.small {
+  padding: 0.5rem 0;
+  border: none;
+}
+
 .product-list {
   background: #f5f6f8;
   border-radius: 28px;
@@ -84,6 +138,10 @@
   box-shadow: 0 14px 35px rgba(15, 23, 42, 0.08);
 }
 
+.product-list-item.free-item {
+  opacity: 0.75;
+}
+
 .product-index {
   font-size: 0.85rem;
   font-weight: 600;
@@ -114,6 +172,26 @@
   font-size: 0.95rem;
   font-weight: 600;
   color: #111;
+}
+.product-price.price-free {
+  color: #009647;
+  font-weight: 600;
+}
+
+.product-price-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.product-badge {
+  background: #e6fff0;
+  color: #00a651;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 999px;
 }
 
 .product-detail-card {
@@ -151,6 +229,16 @@
   font-weight: 700;
   letter-spacing: 0.5px;
   text-transform: uppercase;
+}
+
+.detail-badge.base {
+  background: #f0f0f0;
+  color: #555;
+}
+
+.detail-badge.free {
+  background: #e6fff0;
+  color: #00a651;
 }
 
 .detail-badge.new {
@@ -215,12 +303,16 @@
 .stat-value.price {
   font-size: 1.6rem;
 }
+.stat-value.price.price-free {
+  color: #009647;
+}
 
 .detail-actions {
   margin-top: auto;
   display: flex;
   gap: 16px;
   flex-wrap: wrap;
+  justify-content: center;
 }
 
 .action-btn {

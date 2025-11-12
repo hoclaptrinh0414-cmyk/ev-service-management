@@ -7,6 +7,7 @@ import useNotifications from '../../hooks/useNotifications';
 import { useSubscriptions } from '../../hooks/useSubscriptions';
 import { appointmentService } from '../../services/appointmentService';
 import packageService from '../../services/packageService';
+import { getActiveSubscriptionsByVehicle } from '../../services/productService';
 import { formatCurrency } from '../../utils/currencyUtils';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
@@ -23,6 +24,7 @@ const Packages = () => {
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState('');
   const [message, setMessage] = useState('');
+  const [vehicleSubscriptionsCache, setVehicleSubscriptionsCache] = useState({});
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -68,6 +70,43 @@ const Packages = () => {
     setMessage('');
   };
 
+  const getVehicleSubscriptions = async (vehicleId) => {
+    if (vehicleSubscriptionsCache[vehicleId]) {
+      return vehicleSubscriptionsCache[vehicleId];
+    }
+
+    try {
+      const response = await getActiveSubscriptionsByVehicle(vehicleId);
+      const list = Array.isArray(response?.data) ? response.data :
+        Array.isArray(response?.items) ? response.items :
+        Array.isArray(response) ? response : [];
+
+      setVehicleSubscriptionsCache(prev => ({
+        ...prev,
+        [vehicleId]: list
+      }));
+
+      return list;
+    } catch (error) {
+      console.error('Error loading vehicle subscriptions:', error);
+      return [];
+    }
+  };
+
+  const hasVehicleSubscribedPackage = (subscriptions, packageId) => {
+    if (!subscriptions || subscriptions.length === 0) return false;
+
+    return subscriptions.some(sub => {
+      const subPackageId =
+        sub.packageId ||
+        sub.maintenancePackageId ||
+        sub.package?.packageId ||
+        sub.subscriptionPackageId ||
+        null;
+      return subPackageId === packageId;
+    });
+  };
+
   const confirmPurchase = async () => {
     if (!selectedVehicle) {
       setMessage('Vui lòng chọn xe');
@@ -75,9 +114,16 @@ const Packages = () => {
     }
 
     try {
+      const vehicleId = parseInt(selectedVehicle);
+      const activeSubscriptions = await getVehicleSubscriptions(vehicleId);
+      if (hasVehicleSubscribedPackage(activeSubscriptions, selectedPackage.packageId)) {
+        setMessage('Bạn đã mua gói này cho xe đã chọn');
+        return;
+      }
+
       const purchaseData = {
         packageId: selectedPackage.packageId,
-        vehicleId: parseInt(selectedVehicle),
+        vehicleId,
         paymentMethodId: 1, // Default payment method
         autoRenew: false
       };

@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
-import FancyButton from './FancyButton';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import styled from "styled-components";
+import FancyButton from "./FancyButton";
 
-const VehicleFlipCard = ({ vehicle, onDelete }) => {
+const VehicleFlipCard = ({ vehicle, onDelete, onViewDetails }) => {
   const navigate = useNavigate();
   const [showConfirm, setShowConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -21,7 +21,7 @@ const VehicleFlipCard = ({ vehicle, onDelete }) => {
         await onDelete(vehicle.id);
       }
     } catch (error) {
-      console.error('Error deleting vehicle:', error);
+      console.error("Error deleting vehicle:", error);
     } finally {
       setDeleting(false);
       setShowConfirm(false);
@@ -34,66 +34,108 @@ const VehicleFlipCard = ({ vehicle, onDelete }) => {
   };
 
   const handleCardClick = (e) => {
-    // Chỉ navigate khi không click vào nút
-    if (!e.target.closest('button') && !e.target.closest('a')) {
+    if (!e.target.closest("button") && !e.target.closest("a")) {
       navigate(`/vehicle/${vehicle.id}`);
+    }
+  };
+
+  const handleBookClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigate("/schedule-service");
+  };
+
+  const handleViewDetailsClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onViewDetails) {
+      onViewDetails(vehicle);
     }
   };
 
   return (
     <StyledWrapper>
       <div className="card" onClick={handleCardClick}>
-        {/* Mặt trước - hiển thị khi chưa hover */}
         <div className="card-front">
           <div className="car-icon">
             <i className="bi bi-car-front-fill"></i>
           </div>
           <p className="title">{vehicle.model}</p>
-          <p className="hover-text">Click để xem chi tiết</p>
+          <p className="hover-text">Tap to view details</p>
         </div>
 
-        {/* Thông tin - hiển thị khi hover */}
         <div className="card-content">
           {!showConfirm ? (
             <>
               <h3 className="model-name">{vehicle.model}</h3>
               <div className="vehicle-info">
-                <p><strong>VIN:</strong> {vehicle.vin}</p>
-                <p><strong>Năm:</strong> {vehicle.year}</p>
-                <p><strong>Bảo dưỡng tiếp theo:</strong></p>
+                <p>
+                  <strong>VIN:</strong> {vehicle.vin}
+                </p>
+                <p>
+                  <strong>Year:</strong> {vehicle.year}
+                </p>
+                <p>
+                  <strong>Next service:</strong>
+                </p>
                 <p className="next-service">{vehicle.nextService}</p>
               </div>
-              <Link to="/schedule-service" style={{ textDecoration: 'none', width: '100%' }}>
-                <button className="schedule-button">
-                  <i className="bi bi-calendar-check"></i> Đặt lịch bảo dưỡng
-                </button>
-              </Link>
+              <div className="primary-actions">
+                <div style={{width : '100%',display: 'flex', justifyContent : 'space-between'}}>
+                  <button
+                    style={{ borderRadius: "25px" }}
+                    type="button"
+                    className="schedule-button"
+                    onClick={handleBookClick}
+                  >
+                    Book service
+                  </button>
+                  <button
+                    style={{ borderRadius: "25px", height: "47px", marginTop : '15px'}}
+                    type="button"
+                    className="view-details-button"
+                    onClick={handleViewDetailsClick}
+                  >
+                    View details
+                  </button>
+                </div>
+              </div>
               <button
+                style={{ borderRadius: "25px" }}
                 onClick={handleDeleteClick}
                 className="delete-button"
               >
-                <i className="bi bi-trash3"></i> Xóa xe
+                Delete vehicle
               </button>
             </>
           ) : (
             <div className="confirm-delete">
-              <i className="bi bi-exclamation-triangle" style={{ fontSize: '3rem', color: '#dc3545', marginBottom: '1rem' }}></i>
-              <h4 style={{ marginBottom: '1rem' }}>Xác nhận xóa xe?</h4>
-              <p style={{ marginBottom: '1.5rem', color: '#666' }}>Bạn có chắc muốn xóa xe này? Hành động này không thể hoàn tác.</p>
+              <i
+                className="bi bi-exclamation-triangle"
+                style={{
+                  fontSize: "3rem",
+                  color: "#dc3545",
+                  marginBottom: "1rem",
+                }}
+              ></i>
+              <h4 style={{ marginBottom: "1rem" }}>Delete this vehicle?</h4>
+              <p style={{ marginBottom: "1.5rem", color: "#666" }}>
+                This action cannot be undone.
+              </p>
               <div className="confirm-buttons">
                 <button
                   onClick={handleConfirmDelete}
                   disabled={deleting}
                   className="btn-confirm-yes"
                 >
-                  {deleting ? 'Đang xóa...' : 'Xóa'}
+                  {deleting ? "Deleting..." : "Delete"}
                 </button>
                 <button
                   onClick={handleCancelDelete}
                   disabled={deleting}
                   className="btn-confirm-no"
                 >
-                  Hủy
+                  Cancel
                 </button>
               </div>
             </div>
@@ -102,7 +144,7 @@ const VehicleFlipCard = ({ vehicle, onDelete }) => {
       </div>
     </StyledWrapper>
   );
-}
+};
 
 const StyledWrapper = styled.div`
   .card {
@@ -117,9 +159,9 @@ const StyledWrapper = styled.div`
     border: 2px solid #000;
     cursor: pointer;
     box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-      sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+      "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans",
+      "Helvetica Neue", sans-serif;
   }
 
   .card::before,
@@ -254,16 +296,16 @@ const StyledWrapper = styled.div`
     color: #000;
     cursor: pointer;
     display: inline-block;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-      sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+      "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans",
+      "Helvetica Neue", sans-serif;
     font-weight: 700;
     letter-spacing: 0.05em;
     margin: 0;
     margin-top: 1rem;
     outline: none;
     overflow: visible;
-    padding: 0.7em 1.5em;
+    padding: 0.9em 1.5em;
     position: relative;
     text-align: center;
     text-decoration: none;
@@ -289,16 +331,16 @@ const StyledWrapper = styled.div`
     color: #dc3545;
     cursor: pointer;
     display: inline-block;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-      sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+      "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans",
+      "Helvetica Neue", sans-serif;
     font-weight: 700;
     letter-spacing: 0.05em;
     margin: 0;
     margin-top: 0.5rem;
     outline: none;
     overflow: visible;
-    padding: 0.7em 1.5em;
+    padding: 0.9em 1.5em;
     position: relative;
     text-align: center;
     text-decoration: none;
@@ -306,13 +348,44 @@ const StyledWrapper = styled.div`
     transition: all 0.3s ease-in-out;
     user-select: none;
     font-size: 13px;
-    width: 28%;
+    width: 100%;
   }
 
   .delete-button:hover {
     background-color: #dc3545;
     color: #fff;
     box-shadow: 4px 4px 0 #8b0000;
+    transform: translate(-4px, -4px);
+  }
+
+  .primary-actions {
+    display: flex;
+    gap: 0.5rem;
+    width: 100%;
+    margin-top: 0.5rem;
+  }
+
+  .schedule-button,
+  .view-details-button {
+    background-color: #fff;
+    border: 2px solid #111;
+    border-radius: 0;
+    color: #111;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    padding: 0.9em 1.5em;
+    transition: all 0.3s ease-in-out;
+    flex: 1;
+  }
+
+  .view-details-button:hover {
+    background-color: #111;
+    color: #fff;
+    box-shadow: 4px 4px 0 #333;
     transform: translate(-4px, -4px);
   }
 
@@ -342,13 +415,13 @@ const StyledWrapper = styled.div`
     border-radius: 0;
     box-sizing: border-box;
     cursor: pointer;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-      sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+      "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans",
+      "Helvetica Neue", sans-serif;
     font-weight: 700;
     letter-spacing: 0.05em;
     outline: none;
-    padding: 0.7em 1.5em;
+    padding: 0.9em 1.5em;
     text-align: center;
     transition: all 0.3s ease-in-out;
     user-select: none;

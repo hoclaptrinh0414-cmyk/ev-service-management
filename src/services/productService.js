@@ -15,7 +15,11 @@ import axiosInstance from './axiosInterceptor';
  * GET /api/maintenance-services?IsActive=true&PageSize=10
  */
 export const getMaintenanceServices = async (params = {}) => {
-  const { data } = await axiosInstance.get('/maintenance-services', { params });
+  const defaultParams = { Page: 1, PageSize: 10, Status: 'Active' };
+  const mergedParams = { ...defaultParams, ...params };
+  const { data } = await axiosInstance.get('/maintenance-services', {
+    params: mergedParams,
+  });
   return data;
 };
 
@@ -46,7 +50,11 @@ export const getServiceDetail = async (serviceId) => {
  * GET /api/maintenance-packages?Status=Active&PageSize=10
  */
 export const getMaintenancePackages = async (params = {}) => {
-  const { data } = await axiosInstance.get('/maintenance-packages', { params });
+  const defaultParams = { Page: 1, PageSize: 10, Status: 'Active' };
+  const mergedParams = { ...defaultParams, ...params };
+  const { data } = await axiosInstance.get('/maintenance-packages', {
+    params: mergedParams,
+  });
   return data;
 };
 
@@ -117,6 +125,32 @@ export const getActiveSubscriptionsByVehicle = async (vehicleId) => {
   return data;
 };
 
+/**
+ * Get applicable services (free-of-charge) for a vehicle based on active combos
+ * GET /api/package-subscriptions/vehicle/{vehicleId}/applicable-services
+ */
+export const getApplicableServicesByVehicle = async (vehicleId) => {
+  if (!vehicleId) {
+    throw new Error('vehicleId is required to load applicable services');
+  }
+  const { data } = await axiosInstance.get(
+    `/package-subscriptions/vehicle/${vehicleId}/applicable-services`
+  );
+  return data;
+};
+
+/**
+ * Purchase package subscription with payment
+ * POST /api/package-subscriptions/purchase-with-payment
+ */
+export const purchasePackageWithPayment = async (payload) => {
+  const { data } = await axiosInstance.post(
+    '/package-subscriptions/purchase-with-payment',
+    payload
+  );
+  return data;
+};
+
 export default {
   // Individual Services
   getMaintenanceServices,
@@ -134,4 +168,6 @@ export default {
   getSubscriptionDetail,
   getSubscriptionUsage,
   getActiveSubscriptionsByVehicle,
+  getApplicableServicesByVehicle,
+  purchasePackageWithPayment,
 };

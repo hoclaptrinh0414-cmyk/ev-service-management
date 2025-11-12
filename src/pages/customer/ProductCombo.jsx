@@ -1,224 +1,424 @@
 // src/pages/customer/ProductCombo.jsx
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useCart } from '../../contexts/CartContext';
 import GlobalNavbar from '../../components/GlobalNavbar';
 import Cart from '../../components/Cart';
 import { formatCurrency } from '../../utils/currencyUtils';
+import appointmentService from '../../services/appointmentService';
+import {
+  getMaintenancePackages,
+  getActiveSubscriptionsByVehicle,
+  purchasePackageWithPayment,
+} from '../../services/productService';
+import { useSchedule } from '../../contexts/ScheduleContext';
 import './ProductCombo.css';
 
-const combosPage1 = [
-  {
-    id: 1,
-    name: 'Gói Bảo Dưỡng Cơ Bản',
-    category: 'Gói cơ bản - 365 ngày',
-    price: 2000000,
-    validityPeriod: 365,
-    validityMileage: 10000,
-    description:
-      'Kiểm tra định kỳ toàn bộ hệ thống, ưu tiên lịch và ưu đãi 10% phụ tùng.',
-    badge: 'New',
-  },
-  {
-    id: 2,
-    name: 'Gói Bảo Dưỡng Cao Cấp',
-    category: 'Gói cao cấp - 365 ngày',
-    price: 4500000,
-    validityPeriod: 365,
-    validityMileage: 15000,
-    description:
-      'Bao gồm chăm sóc pin, hệ thống điện, xe được ưu tiên kỹ thuật viên trưởng.',
-    badge: 'Best',
-  },
-  {
-    id: 3,
-    name: 'Gói Bảo Dưỡng VIP',
-    category: 'Gói VIP - 730 ngày',
-    price: 8000000,
-    validityPeriod: 730,
-    validityMileage: 30000,
-    description:
-      'Phục vụ riêng 24/7, hỗ trợ cứu hộ miễn phí và bảo hành mở rộng.',
-    badge: 'Best',
-  },
-  {
-    id: 4,
-    name: 'Gói Kiểm Tra Pin Toàn Diện',
-    category: 'Gói chuyên biệt - 180 ngày',
-    price: 1500000,
-    validityPeriod: 180,
-    validityMileage: 5000,
-    description:
-      'Đánh giá pin chuyên sâu, tối ưu dung lượng và cập nhật phần mềm pin.',
-  },
-];
+const extractItems = (payload) => {
+  if (!payload) return [];
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload.items)) return payload.items;
+  if (Array.isArray(payload.data?.items)) return payload.data.items;
+  if (Array.isArray(payload.data)) return payload.data;
+  return [];
+};
 
-const combosPage2 = [
-  {
-    id: 5,
-    name: 'Gói Chăm Sóc Hệ Thống Phanh',
-    category: 'Gói an toàn - 365 ngày',
-    price: 2500000,
-    validityPeriod: 365,
-    validityMileage: 12000,
-    description:
-      'Kiểm tra, thay thế phanh, tinh chỉnh ABS và vệ sinh hệ thống phanh.',
-    badge: 'New',
-  },
-  {
-    id: 6,
-    name: 'Gói Chăm Sóc Động Cơ Điện',
-    category: 'Gói chuyên sâu - 365 ngày',
-    price: 3200000,
-    validityPeriod: 365,
-    validityMileage: 15000,
-    description:
-      'Kiểm tra động cơ điện, cập nhật phần mềm điều khiển và tối ưu hiệu suất.',
-  },
-  {
-    id: 7,
-    name: 'Gói Bảo Dưỡng Điều Hòa',
-    category: 'Gói tiện nghi - 365 ngày',
-    price: 1800000,
-    validityPeriod: 365,
-    validityMileage: 10000,
-    description:
-      'Làm sạch hệ thống điều hòa, thay lọc gió và kiểm tra gas lạnh định kỳ.',
-  },
-  {
-    id: 8,
-    name: 'Gói Bảo Dưỡng Lốp Xe',
-    category: 'Gói tiêu chuẩn - 365 ngày',
-    price: 1200000,
-    validityPeriod: 365,
-    validityMileage: 20000,
-    description:
-      'Xoay lốp, cân chỉnh góc đặt bánh và theo dõi mòn lốp thông minh.',
-  },
-];
-
-const comboPackages = [...combosPage1, ...combosPage2];
-
-const buildComboPayload = (combo) => ({
-  packageId: combo.id,
-  packageName: combo.name,
-  totalPriceAfterDiscount: combo.price,
-  validityPeriod: combo.validityPeriod,
-  validityMileage: combo.validityMileage,
-  isPackage: true,
-});
+const buildComboPayload = (combo) => {
+  if (!combo) return null;
+  const packageId = combo.packageId ?? combo.id;
+  return {
+    packageId,
+    packageName: combo.packageName ?? combo.name,
+    totalPriceAfterDiscount:
+      combo.totalPriceAfterDiscount ?? combo.price ?? combo.basePrice ?? 0,
+    validityPeriod: combo.validityPeriod ?? combo.durationInDays ?? 0,
+    validityMileage: combo.validityMileage ?? combo.mileageLimit ?? 0,
+    isPackage: true,
+  };
+};
 
 const ProductCombo = () => {
   const navigate = useNavigate();
   const { addPackageToCart, clearCart } = useCart();
-  const [selectedCombo, setSelectedCombo] = useState(comboPackages[0]);
 
-  const handleAddToCart = () => {
-    addPackageToCart(buildComboPayload(selectedCombo));
-    toast.success(`Đã thêm "${selectedCombo.name}" vào giỏ hàng`);
+  const [packages, setPackages] = useState([]);
+  const [selectedCombo, setSelectedCombo] = useState(null);
+  const { bookingState } = useSchedule();
+  const lockedVehicleId = bookingState?.selectedVehicleId
+    ? String(bookingState.selectedVehicleId)
+    : '';
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const [vehicles, setVehicles] = useState([]);
+  const [selectedVehicleId, setSelectedVehicleId] = useState('');
+  const [loadingVehicles, setLoadingVehicles] = useState(true);
+  const [activeSubscriptions, setActiveSubscriptions] = useState([]);
+  const [loadingSubscriptions, setLoadingSubscriptions] = useState(false);
+  const [isPurchasing, setIsPurchasing] = useState(false);
+
+  useEffect(() => {
+    const loadPackages = async () => {
+      try {
+        setLoading(true);
+        const response = await getMaintenancePackages({
+          Page: 1,
+          PageSize: 12,
+          Status: 'Active',
+        });
+        const list = extractItems(response);
+        setPackages(list);
+        setSelectedCombo(list[0] ?? null);
+      } catch (err) {
+        console.error('Error loading packages:', err);
+        setError('Không thể tải danh sách gói combo. Vui lòng thử lại sau.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const loadVehicles = async () => {
+      try {
+        setLoadingVehicles(true);
+        const response = await appointmentService.getMyVehicles();
+        const list = Array.isArray(response?.data)
+          ? response.data
+          : Array.isArray(response)
+          ? response
+          : [];
+        setVehicles(list);
+        if (lockedVehicleId) {
+          setSelectedVehicleId(lockedVehicleId);
+        } else if (list.length > 0) {
+          setSelectedVehicleId(String(list[0].vehicleId));
+        }
+      } catch (err) {
+        console.error('Error loading vehicles:', err);
+      } finally {
+        setLoadingVehicles(false);
+      }
+    };
+
+    loadPackages();
+    loadVehicles();
+  }, []);
+
+  useEffect(() => {
+    if (!selectedVehicleId) {
+      setActiveSubscriptions([]);
+      return;
+    }
+
+    const loadSubscriptions = async () => {
+      try {
+        setLoadingSubscriptions(true);
+        const response = await getActiveSubscriptionsByVehicle(selectedVehicleId);
+        const list = Array.isArray(response?.data)
+          ? response.data
+          : Array.isArray(response)
+          ? response
+          : [];
+        setActiveSubscriptions(list);
+      } catch (err) {
+        console.error('Error loading active subscriptions:', err);
+        setActiveSubscriptions([]);
+      } finally {
+        setLoadingSubscriptions(false);
+      }
+    };
+
+    loadSubscriptions();
+  }, [selectedVehicleId]);
+
+  const extractPackageId = (sub) => {
+    const directId =
+      sub.packageId ??
+      sub.PackageId ??
+      sub.maintenancePackageId ??
+      sub.maintenancePackageID ??
+      sub.subscriptionPackageId ??
+      sub.SubscriptionPackageId;
+
+    if (directId) return directId;
+
+    const nestedSources = [
+      sub.package,
+      sub.Package,
+      sub.packageInfo,
+      sub.PackageInfo,
+      sub.packageDetail,
+      sub.PackageDetail,
+      sub.subscription?.package,
+      sub.subscription?.Package,
+    ].filter(Boolean);
+
+    for (const source of nestedSources) {
+      const nestedId =
+        source.packageId ??
+        source.PackageId ??
+        source.id ??
+        source.Id ??
+        source.maintenancePackageId ??
+        source.maintenancePackageID;
+      if (nestedId) return nestedId;
+    }
+
+    return null;
   };
 
-  const handleBookNow = () => {
-    clearCart();
-    addPackageToCart(buildComboPayload(selectedCombo));
-    toast.success('Đã sẵn sàng đặt lịch với gói combo này');
-    navigate('/schedule-service');
+  const ownedPackageIds = useMemo(() => {
+    const ids = activeSubscriptions
+      .map(extractPackageId)
+      .filter(Boolean)
+      .map((id) => String(id));
+    return new Set(ids);
+  }, [activeSubscriptions]);
+
+  const selectedComboId = selectedCombo?.packageId ?? selectedCombo?.id;
+  const isComboOwned =
+    selectedVehicleId && selectedComboId
+      ? ownedPackageIds.has(String(selectedComboId))
+      : false;
+
+  const comboDuration =
+    selectedCombo?.validityPeriod ?? selectedCombo?.durationInDays ?? 0;
+  const comboMileage =
+    Number(
+      selectedCombo?.validityMileage ?? selectedCombo?.mileageLimit ?? 0
+    ) || 0;
+  const comboPrice =
+    selectedCombo?.totalPriceAfterDiscount ?? selectedCombo?.price ?? 0;
+
+  const handleAddToCart = () => {
+    toast.info('Combo không thể đặt lịch – vui lòng dùng Pay Now để thanh toán cho xe đã chọn.');
+  };
+
+  const handleBookNow = async () => {
+    if (!selectedCombo) return;
+    if (!selectedVehicleId) {
+      toast.error('Vui lòng chọn xe trước khi thanh toán');
+      return;
+    }
+    if (isComboOwned) {
+      toast.info('You have bought this combo');
+      return;
+    }
+
+    const payload = {
+      packageId: selectedCombo.packageId ?? selectedCombo.id,
+      vehicleId: Number(selectedVehicleId),
+      paymentMethod: 'VNPay',
+      returnUrl: `${window.location.origin}/payment/callback`,
+    };
+
+    try {
+      setIsPurchasing(true);
+      const purchaseResponse = await purchasePackageWithPayment(payload);
+
+      const paymentUrl =
+        purchaseResponse?.data?.paymentUrl ||
+        purchaseResponse?.data?.payment?.paymentUrl ||
+        purchaseResponse?.paymentUrl ||
+        purchaseResponse?.payment?.paymentUrl;
+
+      if (paymentUrl) {
+        toast.info('Đang chuyển đến cổng thanh toán...');
+        window.location.href = paymentUrl;
+        return;
+      }
+
+      toast.success('Thanh toán thành công! Vui lòng kiểm tra mục Subscriptions.');
+      clearCart();
+      const response = await getActiveSubscriptionsByVehicle(selectedVehicleId);
+      const list = Array.isArray(response?.data)
+        ? response.data
+        : Array.isArray(response)
+        ? response
+        : [];
+      setActiveSubscriptions(list);
+    } catch (err) {
+      console.error('Purchase combo failed:', err);
+      const message =
+        err.response?.data?.message ||
+        err.message ||
+        'Không thể thanh toán gói. Vui lòng thử lại.';
+      toast.error(message);
+    } finally {
+      setIsPurchasing(false);
+    }
+  };
+
+  const renderList = () => {
+    if (loading) {
+      return (
+        <div className="empty-state">
+          <div className="spinner-border text-dark" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      );
+    }
+
+    if (error) {
+      return <div className="empty-state text-danger">{error}</div>;
+    }
+
+    if (packages.length === 0) {
+      return <div className="empty-state">Hiện chưa có gói nào.</div>;
+    }
+
+    return packages.map((pkg, index) => {
+      const packageId = pkg.packageId ?? pkg.id;
+      const isActive =
+        selectedCombo?.packageId === packageId || selectedCombo?.id === packageId;
+      const owned =
+        selectedVehicleId && ownedPackageIds.has(String(packageId));
+      return (
+        <button
+          key={packageId}
+          className={`product-list-item ${isActive ? 'active' : ''} ${owned ? 'owned-item' : ''}`}
+          type="button"
+          onClick={() => setSelectedCombo(pkg)}
+          disabled={owned}
+          title={owned ? 'Bạn đã mua gói này cho xe đã chọn' : undefined}
+        >
+          <span className="product-index">{String(index + 1).padStart(2, '0')}</span>
+          <div className="product-meta">
+                <p className="product-name">{pkg.packageName ?? pkg.name}</p>
+            <p className="product-category">{pkg.category ?? pkg.packageCategory}</p>
+          </div>
+          <div className="product-price-block">
+            {owned && <span className="product-badge bought">Bought</span>}
+            <span className={`product-price ${owned ? 'price-bought' : ''}`}>
+              {owned
+                ? 'Bought'
+                : formatCurrency(pkg.totalPriceAfterDiscount ?? pkg.price ?? 0)}
+            </span>
+          </div>
+        </button>
+      );
+    });
   };
 
   return (
     <>
       <GlobalNavbar />
       <div className="product-showcase">
-      <div className="product-switcher">
-        <button
-          className="switch-btn"
-          type="button"
-          onClick={() => navigate('/products/individual')}
-        >
-          Individual
-        </button>
-        <button className="switch-btn active" type="button">
-          Combo
-        </button>
-      </div>
+        <div className="product-switcher">
+          <button
+            className="switch-btn"
+            type="button"
+            onClick={() => navigate('/products/individual')}
+          >
+            Individual
+          </button>
+          <button className="switch-btn active" type="button">
+            Combo
+          </button>
+        </div>
 
-      <div className="product-layout">
-        <aside className="product-list">
-          {comboPackages.map((combo, index) => {
-            const isActive = selectedCombo.id === combo.id;
-            return (
-              <button
-                key={combo.id}
-                className={`product-list-item ${isActive ? 'active' : ''}`}
-                type="button"
-                onClick={() => setSelectedCombo(combo)}
-              >
-                <span className="product-index">
-                  {String(index + 1).padStart(2, '0')}
-                </span>
-                <div className="product-meta">
-                  <p className="product-name">{combo.name}</p>
-                  <p className="product-category">{combo.category}</p>
-                </div>
-                <span className="product-price">
-                  {formatCurrency(combo.price)}
-                </span>
+        <div className="vehicle-context">
+          <label className="context-label">Chọn xe để xem quyền lợi combo</label>
+          {loadingVehicles ? (
+            <div className="empty-state small">Đang tải danh sách xe...</div>
+          ) : vehicles.length === 0 ? (
+            <div className="empty-state small">
+              Bạn chưa có xe nào.{' '}
+              <button className="link-button" onClick={() => navigate('/register-vehicle')}>
+                Đăng ký xe
               </button>
-            );
-          })}
-        </aside>
-
-        <section className="product-detail-card">
-          <div className="detail-pill">Select your package</div>
-          {selectedCombo.badge && (
-            <span className={`detail-badge ${selectedCombo.badge.toLowerCase()}`}>
-              {selectedCombo.badge}
-            </span>
+            </div>
+          ) : (
+            <select
+              className="form-select vehicle-select"
+              value={selectedVehicleId}
+              onChange={(e) => {
+                if (lockedVehicleId) return;
+                setSelectedVehicleId(e.target.value);
+              }}
+              disabled={!!lockedVehicleId}
+            >
+              {vehicles.map((vehicle) => (
+                <option key={vehicle.vehicleId} value={vehicle.vehicleId}>
+                  {vehicle.fullModelName || vehicle.modelName} • {vehicle.licensePlate}
+                </option>
+              ))}
+            </select>
           )}
-          <h1 className="detail-title">{selectedCombo.name}</h1>
-          <p className="detail-category-label">{selectedCombo.category}</p>
-          <p className="detail-description">{selectedCombo.description}</p>
+          {lockedVehicleId && (
+            <p className="context-hint">Vehicle comes from your booking and cannot be changed here.</p>
+          )}
+          {loadingSubscriptions && selectedVehicleId && (
+            <p className="context-hint">Đang kiểm tra các gói bạn đã sở hữu...</p>
+          )}
+        </div>
 
-          <div className="detail-stats">
-            <div className="stat-card">
-              <span className="stat-label">Thời hạn</span>
-              <strong className="stat-value">
-                {selectedCombo.validityPeriod} ngày
-              </strong>
-            </div>
-            <div className="stat-card">
-              <span className="stat-label">Giới hạn số km</span>
-              <strong className="stat-value">
-                {selectedCombo.validityMileage.toLocaleString('vi-VN')} km
-              </strong>
-            </div>
-            <div className="stat-card">
-              <span className="stat-label">Giá gói</span>
-              <strong className="stat-value price">
-                {formatCurrency(selectedCombo.price)}
-              </strong>
-            </div>
-          </div>
+        <div className="product-layout">
+          <aside className="product-list">{renderList()}</aside>
 
-          <div className="detail-actions">
-            <button
-              type="button"
-              className="action-btn ghost"
-              onClick={handleAddToCart}
-            >
-              <i className="bi bi-bag-plus" /> Add to Cart
-            </button>
-            <button
-              type="button"
-              className="action-btn solid"
-              onClick={handleBookNow}
-            >
-              <i className="bi bi-lightning-charge" /> Book Now
-            </button>
-          </div>
-        </section>
-      </div>
+          <section className="product-detail-card">
+            <div className="detail-pill">Select your package</div>
+            {selectedCombo && (
+              <span
+                className={`detail-badge ${
+                  isComboOwned ? 'owned' : 'purchase-only'
+                }`}
+              >
+                {isComboOwned ? 'Bought' : 'Combos can only be purchased'}
+              </span>
+            )}
+
+            {selectedCombo ? (
+              <>
+                <h1 className="detail-title">
+                  {selectedCombo.packageName ?? selectedCombo.name}
+                </h1>
+                <p className="detail-category-label">
+                  {selectedCombo.category ?? selectedCombo.packageCategory}
+                </p>
+                <p className="detail-description">{selectedCombo.description}</p>
+
+                <div className="detail-stats">
+                  <div className="stat-card">
+                    <span className="stat-label">Thời hạn</span>
+                    <strong className="stat-value">{comboDuration} ngày</strong>
+                  </div>
+                  <div className="stat-card">
+                    <span className="stat-label">Giới hạn số km</span>
+                    <strong className="stat-value">
+                      {comboMileage.toLocaleString('vi-VN')} km
+                    </strong>
+                  </div>
+                  <div className="stat-card">
+                    <span className="stat-label">Giá gói</span>
+                    <strong className="stat-value price">
+                      {formatCurrency(comboPrice)}
+                    </strong>
+                  </div>
+                </div>
+
+                {isComboOwned && (
+                  <div className="owned-alert">You have bought this combo</div>
+                )}
+
+                <div className="detail-actions">
+                  <button
+                    type="button"
+                    className={`action-btn solid ${isComboOwned ? 'disabled-owned' : ''}`}
+                    onClick={handleBookNow}
+                    disabled={isComboOwned || isPurchasing}
+                  >
+                    <i className="bi bi-calendar-plus" />{' '}
+                    {isComboOwned ? 'Bought' : isPurchasing ? 'Processing...' : 'Pay Now'}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="empty-state">Chọn một gói để xem chi tiết</div>
+            )}
+          </section>
+        </div>
         <Cart />
       </div>
     </>

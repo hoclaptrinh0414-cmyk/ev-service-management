@@ -34,7 +34,7 @@ const Services = () => {
             <h1 className={`hero-title ${showContent ? 'show' : ''}`}>Good service, good car.</h1>
             {/* 3 static feature cards (subtitle reveals on hover) */}
             <section className={`feature-grid ${showContent ? 'show' : ''}`}>
-              <div className="feature-item" onClick={() => navigate('/products')}>
+              <div className="feature-item" onClick={() => navigate('/products/individual')}>
                 <div className="feature-icon"><FiShoppingCart size={44} /></div>
                 <h3 className="feature-title">Single Product & Combo</h3>
                 <p className="feature-subtitle">Premium EV parts and curated bundles</p>

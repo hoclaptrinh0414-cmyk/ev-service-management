@@ -33,12 +33,18 @@ class UnifiedAPIService {
     return headers;
   }
 
-  async request(endpoint, options = {}) {
+  async request(endpoint, options = {}, retryWithRefresh = true) {
     const url = `${this.baseURL}${endpoint}`;
+    const includeAuth = options.auth !== false;
+    const headers = {
+      ...this.getHeaders(includeAuth),
+      ...(options.headers || {}),
+    };
+
     const config = {
       method: "GET",
-      headers: this.getHeaders(options.auth !== false),
       ...options,
+      headers,
     };
 
     const controller = new AbortController();
@@ -50,7 +56,14 @@ class UnifiedAPIService {
       console.log("📋 Request config:", {
         method: config.method,
         headers: config.headers,
-        body: config.body ? JSON.parse(config.body) : undefined,
+        body: (() => {
+          if (!config.body) return undefined;
+          try {
+            return JSON.parse(config.body);
+          } catch {
+            return config.body;
+          }
+        })(),
       });
 
       const response = await fetch(url, config);
@@ -72,8 +85,25 @@ class UnifiedAPIService {
       console.log("📦 API Response Data:", data);
 
       if (!response.ok) {
+        // Attempt refresh token for 401 responses on authenticated routes
+        if (
+          response.status === 401 &&
+          includeAuth &&
+          retryWithRefresh &&
+          !(endpoint.startsWith("/auth/") || endpoint.startsWith("/customer-registration/"))
+        ) {
+          try {
+            const newAccessToken = await this.refreshAccessToken();
+            console.log("🔁 Retrying original request with refreshed token");
+            return this.request(endpoint, options, false);
+          } catch (refreshError) {
+            console.error("❌ Refresh token flow failed:", refreshError);
+            this.clearAuth();
+          }
+        }
+
         const error = new Error(
-          data.message || data || `HTTP error! status: ${response.status}`
+          (data && data.message) || data || `HTTP error! status: ${response.status}`
         );
         error.response = { status: response.status, data };
         throw error;
@@ -99,6 +129,49 @@ class UnifiedAPIService {
 
       throw error;
     }
+  }
+
+  async refreshAccessToken() {
+    const refreshToken = localStorage.getItem("refreshToken");
+    if (!refreshToken) {
+      throw new Error("No refresh token available");
+    }
+
+    console.log("🔄 Attempting to refresh access token via fetch client");
+    const response = await fetch(`${this.baseURL}/auth/refresh`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "ngrok-skip-browser-warning": "true",
+      },
+      body: JSON.stringify({ refreshToken }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to refresh token");
+    }
+
+    const data = await response.json();
+    console.log("🔄 Refresh response (fetch client):", data);
+    const success = data.success || data.Success;
+    const payload = data.data || data.Data;
+
+    if (!success || !payload) {
+      throw new Error("Invalid refresh response");
+    }
+
+    const newAccessToken = payload.accessToken || payload.AccessToken;
+    const newRefreshToken = payload.refreshToken || payload.RefreshToken;
+
+    if (!newAccessToken || !newRefreshToken) {
+      throw new Error("Missing tokens in refresh response");
+    }
+
+    localStorage.setItem("accessToken", newAccessToken);
+    localStorage.setItem("refreshToken", newRefreshToken);
+    localStorage.setItem("token", newAccessToken);
+    console.log("✅ Access token refreshed successfully (fetch client)");
+    return newAccessToken;
   }
 
   // ============ AUTH METHODS ============

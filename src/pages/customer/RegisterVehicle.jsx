@@ -1,11 +1,9 @@
 // src/pages/customer/RegisterVehicle.jsx - TRANG ĐĂNG KÝ XE MỚI
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { vehicleAPI, carBrandAPI, carModelAPI } from '../../services/apiService';
-import UserMenu from '../../components/UserMenu';
-import NotificationDropdown from '../../components/NotificationDropdown';
-import useNotifications from '../../hooks/useNotifications';
 import FancyButton from '../../components/FancyButton';
+import GlobalNavbar from '../../components/GlobalNavbar';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -15,7 +13,6 @@ import '../Home.css';
 
 const RegisterVehicle = () => {
   const navigate = useNavigate();
-  const { notifications, markAsRead, dismissNotification } = useNotifications();
   const [brands, setBrands] = useState([]);
   const [models, setModels] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -112,13 +109,6 @@ const RegisterVehicle = () => {
     }));
   };
 
-  const handleNotificationClick = (notification) => {
-    markAsRead(notification.id);
-    if (notification.type === 'appointment_reminder' && notification.appointmentId) {
-      navigate('/my-appointments');
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -182,73 +172,10 @@ const RegisterVehicle = () => {
 
   return (
     <>
-      {/* Navbar giống Home */}
-      <nav className="navbar navbar-expand-lg navbar-custom scrolled">
-        <div className="container d-flex flex-column">
-          <div className="d-flex justify-content-between align-items-center w-100 top-navbar">
-            <form className="search-form">
-              <input
-                type="text"
-                className="form-control search-input"
-                placeholder="Tìm kiếm sản phẩm..."
-              />
-              <button type="submit" className="search-btn">
-                <i className="fas fa-search"></i>
-              </button>
-            </form>
-
-            <Link style={{ fontSize: '2rem' }} className="navbar-brand" to="/home">
-              Tesla
-            </Link>
-
-            <div className="nav-icons d-flex align-items-center">
-              <UserMenu />
-              <NotificationDropdown
-                notifications={notifications}
-                onMarkRead={markAsRead}
-                onDismiss={dismissNotification}
-                onNotificationClick={handleNotificationClick}
-              />
-            </div>
-          </div>
-
-          <div className="bottom-navbar">
-            <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-              <span className="navbar-toggler-icon"></span>
-            </button>
-
-            <div className="collapse navbar-collapse" id="navbarNav">
-              <ul className="navbar-nav w-100 justify-content-center">
-                <li className="nav-item">
-                  <Link className="nav-link move" to="/home">TRANG CHỦ</Link>
-                </li>
-                <li className="nav-item dropdown">
-                  <a className="nav-link dropdown-toggle move" href="#" role="button" data-bs-toggle="dropdown">
-                    DỊCH VỤ
-                  </a>
-                  <ul className="dropdown-menu">
-                    <li><Link className="dropdown-item" to="/my-appointments">Theo dõi & Nhắc nhở</Link></li>
-                    <li><Link className="dropdown-item" to="/schedule-service">Đặt lịch dịch vụ</Link></li>
-                    <li><Link className="dropdown-item" to="/products/individual">Quản lý chi phí</Link></li>
-                  </ul>
-                </li>
-                <li className="nav-item">
-                  <a className="nav-link move" href="#">BLOG</a>
-                </li>
-                <li className="nav-item">
-                  <a className="nav-link move" href="#">GIỚI THIỆU</a>
-                </li>
-                <li className="nav-item">
-                  <a className="nav-link move" href="#">LIÊN HỆ</a>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <GlobalNavbar />
 
       {/* Form Container */}
-      <div className="container" style={{ marginTop: '180px', marginBottom: '3rem', maxWidth: '1400px' }}>
+      <div className="container" style={{ marginTop: '140px', marginBottom: '3rem', maxWidth: '1400px' }}>
         <div className="row justify-content-center">
           <div className="col-12">
             <div className="card shadow-lg border-0">

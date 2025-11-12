@@ -1,13 +1,11 @@
 // src/pages/customer/Profile.jsx
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import UserMenu from '../../components/UserMenu';
-import NotificationDropdown from '../../components/NotificationDropdown';
-import useNotifications from '../../hooks/useNotifications';
 import FancyButton from '../../components/FancyButton';
 import { accountAPI } from '../../services/apiService';
 import { customerProfileService } from '../../services/customerProfileService';
 import { useAuth } from '../../contexts/AuthContext';
+import GlobalNavbar from '../../components/GlobalNavbar';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -17,7 +15,6 @@ import '../Home.css';
 
 const Profile = () => {
   const navigate = useNavigate();
-  const { notifications, markAsRead, dismissNotification } = useNotifications();
   const { updateUser } = useAuth(); // ✅ Lấy updateUser từ AuthContext
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -247,13 +244,6 @@ const Profile = () => {
     }
   };
 
-  const handleNotificationClick = (notification) => {
-    markAsRead(notification.id);
-    if (notification.type === 'appointment_reminder' && notification.appointmentId) {
-      navigate('/my-appointments');
-    }
-  };
-
   const handleSave = async () => {
     // Kiểm tra validation trước khi submit
     const phoneError = validatePhoneNumber(editData.phoneNumber);
@@ -311,73 +301,10 @@ const Profile = () => {
 
   return (
     <>
-      {/* Navbar */}
-      <nav className="navbar navbar-expand-lg navbar-custom scrolled">
-        <div className="container d-flex flex-column">
-          <div className="d-flex justify-content-between align-items-center w-100 top-navbar">
-            <form className="search-form">
-              <input
-                type="text"
-                className="form-control search-input"
-                placeholder="Tìm kiếm sản phẩm..."
-              />
-              <button type="submit" className="search-btn">
-                <i className="fas fa-search"></i>
-              </button>
-            </form>
-
-            <Link style={{ fontSize: '2rem' }} className="navbar-brand" to="/home">
-              Tesla
-            </Link>
-
-            <div className="nav-icons d-flex align-items-center">
-              <UserMenu />
-              <NotificationDropdown
-                notifications={notifications}
-                onMarkRead={markAsRead}
-                onDismiss={dismissNotification}
-                onNotificationClick={handleNotificationClick}
-              />
-            </div>
-          </div>
-
-          <div className="bottom-navbar">
-            <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-              <span className="navbar-toggler-icon"></span>
-            </button>
-
-            <div className="collapse navbar-collapse" id="navbarNav">
-              <ul className="navbar-nav w-100 justify-content-center">
-                <li className="nav-item">
-                  <Link className="nav-link move" to="/home">TRANG CHỦ</Link>
-                </li>
-                <li className="nav-item dropdown">
-                  <a className="nav-link dropdown-toggle move" href="#" role="button" data-bs-toggle="dropdown">
-                    DỊCH VỤ
-                  </a>
-                  <ul className="dropdown-menu">
-                    <li><Link className="dropdown-item" to="/my-appointments">Theo dõi & Nhắc nhở</Link></li>
-                    <li><Link className="dropdown-item" to="/schedule-service">Đặt lịch dịch vụ</Link></li>
-                    <li><Link className="dropdown-item" to="/products/individual">Quản lý chi phí</Link></li>
-                  </ul>
-                </li>
-                <li className="nav-item">
-                  <a className="nav-link move" href="#">BLOG</a>
-                </li>
-                <li className="nav-item">
-                  <a className="nav-link move" href="#">GIỚI THIỆU</a>
-                </li>
-                <li className="nav-item">
-                  <a className="nav-link move" href="#">LIÊN HỆ</a>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <GlobalNavbar />
 
       {/* Profile Section */}
-       <section className="profile-section" style={{ marginTop: '180px', minHeight: '60vh' }}>
+       <section className="profile-section" style={{ marginTop: '140px', minHeight: '60vh' }}>
         <div className="container">
           <div className="row justify-content-center">
             <div className="col-lg-12">  {/* <--- Đã Đổi thành col-lg-10 */}
