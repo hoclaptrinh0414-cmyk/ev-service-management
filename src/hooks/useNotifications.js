@@ -69,7 +69,7 @@ const createNotificationFromAppointment = (appointment) => {
   };
 };
 
-export const useNotifications = () => {
+export const useNotifications = ({ enabled = true } = {}) => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -107,6 +107,11 @@ export const useNotifications = () => {
 
   // Fetch appointments và tạo notifications
   const fetchNotifications = useCallback(async () => {
+    if (!enabled) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
@@ -168,7 +173,7 @@ export const useNotifications = () => {
     } finally {
       setLoading(false);
     }
-  }, [loadNotificationsFromStorage, saveNotificationsToStorage]);
+  }, [enabled, loadNotificationsFromStorage, saveNotificationsToStorage]);
 
   // Mark notification as read
   const markAsRead = useCallback((notificationId) => {

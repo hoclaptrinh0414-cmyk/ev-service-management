@@ -135,11 +135,11 @@ const Cart = () => {
                 </div>
 
                 <button className="btn-clear-cart" onClick={clearCart}>
-                  <i className="bi bi-trash"></i> Clear Cart
+                  <i className="bi bi-trash"></i> Clear All
                 </button>
 
                 <button className="btn-confirm-selection" onClick={handleConfirmSelection}>
-                  <i className="bi bi-check-circle"></i> Confirm Selection
+                  <i className="bi bi-calendar-check"></i> Book All
                 </button>
 
                 <button className="btn-continue-shopping" onClick={handleContinueShopping}>

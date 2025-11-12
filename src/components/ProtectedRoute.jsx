@@ -2,6 +2,21 @@ import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
+const normalizeRoleName = (name) => {
+  if (!name) return '';
+  const normalized = String(name).toLowerCase();
+  if (['admin', 'administrator', 'superadmin', 'super admin'].includes(normalized)) return 'admin';
+  if (['staff', 'tech', 'technician', 'employee'].includes(normalized)) return 'staff';
+  if (['customer', 'user', 'client'].includes(normalized)) return 'customer';
+  return normalized;
+};
+
+const getRoleRedirectPath = (role, roleId) => {
+  if (role === 'admin' || roleId === 1) return '/admin';
+  if (role === 'staff' || roleId === 2) return '/staff';
+  return '/home';
+};
+
 const ProtectedRoute = ({ children, requireRole = null }) => {
   const { isAuthenticated, user, loading, hasRole, hasAnyRole } = useAuth();
 
@@ -48,20 +63,12 @@ const ProtectedRoute = ({ children, requireRole = null }) => {
     if (!allowed && hasLsAuth) {
       try {
         const lsUser = JSON.parse(localStorage.getItem('user'));
-        const normalize = (name) => {
-          if (!name) return '';
-          const n = String(name).toLowerCase();
-          if (['admin', 'administrator', 'superadmin', 'super admin'].includes(n)) return 'admin';
-          if (['staff', 'tech', 'technician', 'employee'].includes(n)) return 'staff';
-          if (['customer', 'user', 'client'].includes(n)) return 'customer';
-          return n;
-        };
         const role = lsUser?.role || lsUser?.Role || lsUser?.roleName || lsUser?.RoleName;
         const roleId = lsUser?.roleId || lsUser?.RoleId;
-        const mine = normalize(role);
+        const mine = normalizeRoleName(role);
         const wants = Array.isArray(requireRole) ? requireRole : [requireRole];
         allowed = wants.some((r) => {
-          const want = normalize(r);
+          const want = normalizeRoleName(r);
           if (want === 'admin') return mine === 'admin' || roleId === 1;
           if (want === 'staff') return mine === 'staff' || roleId === 2;
           if (want === 'customer') return mine === 'customer' || roleId === 3;
@@ -71,9 +78,29 @@ const ProtectedRoute = ({ children, requireRole = null }) => {
     }
 
     if (!allowed) {
-      console.log(`User lacks required role(s): ${requireRole} - redirecting to home`);
+      const fallbackUser = (() => {
+        if (hasLsAuth) {
+          try {
+            return JSON.parse(localStorage.getItem('user'));
+          } catch {
+            return null;
+          }
+        }
+        return user;
+      })();
+
+      const role =
+        fallbackUser?.role ||
+        fallbackUser?.Role ||
+        fallbackUser?.roleName ||
+        fallbackUser?.RoleName;
+      const roleId = fallbackUser?.roleId || fallbackUser?.RoleId;
+      const normalizedRole = normalizeRoleName(role);
+      const redirectPath = getRoleRedirectPath(normalizedRole, roleId);
+
+      console.log(`User lacks required role(s): ${requireRole} - redirecting to ${redirectPath}`);
       console.log('=== END PROTECTED ROUTE CHECK ===');
-      return <Navigate to="/home" replace />;
+      return <Navigate to={redirectPath} replace />;
     }
   }
 

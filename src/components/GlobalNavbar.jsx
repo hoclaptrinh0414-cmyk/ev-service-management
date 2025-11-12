@@ -17,7 +17,9 @@ const GlobalNavbar = () => {
 
   // Luôn gọi hook (required by React hooks rules)
   // Hook sẽ tự kiểm tra token bên trong
-  const { notifications, markAsRead, dismissNotification } = useNotifications();
+  const { notifications, markAsRead, dismissNotification } = useNotifications({
+    enabled: isAuthenticated,
+  });
 
   // Hide navbar on auth pages and staff pages
   const hideNavbarPaths = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email', '/resend-verification'];

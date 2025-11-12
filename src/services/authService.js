@@ -43,14 +43,23 @@ export const authService = {
     try {
       const response = await apiService.login({ username, password });
       console.log('🔍 Raw login response:', response);
+      console.log('🔍 Response keys:', Object.keys(response));
+      console.log('🔍 Response type:', typeof response);
+      console.log('🔍 Full response JSON:', JSON.stringify(response, null, 2));
 
       // ✅ BE trả về: { Success, Data: { User, Customer, Token } }
       // api.js đã convert về lowercase: { success, data }
       const success = response.Success || response.success;
       const data = response.Data || response.data;
 
+      console.log('🔍 Success:', success);
+      console.log('🔍 Data:', data);
+      console.log('🔍 Data keys:', data ? Object.keys(data) : 'null');
+
       if (success && data) {
-        const Token = data.Token || data.token;
+        // ✅ BE trả về accessToken, refreshToken (lowercase)
+        const Token = data.accessToken || data.AccessToken || data.Token || data.token;
+        const RefreshToken = data.refreshToken || data.RefreshToken || data.refresh_token;
         const User = data.User || data.user;
         const Customer = data.Customer || data.customer;
 
@@ -58,6 +67,7 @@ export const authService = {
 
         if (!Token || !User) {
           console.error('❌ Missing Token or User in response');
+          console.error('❌ Data structure:', JSON.stringify(data, null, 2));
           throw new Error('Invalid login response');
         }
 
@@ -68,6 +78,10 @@ export const authService = {
         };
 
         authUtils.setAuth(Token, basicUserData);
+        localStorage.setItem('accessToken', Token);
+        if (RefreshToken) {
+          localStorage.setItem('refreshToken', RefreshToken);
+        }
         console.log('✅ Login success with basic data:', basicUserData);
 
         // Gọi thêm API GET customer profile để lấy thông tin đầy đủ
@@ -92,6 +106,10 @@ export const authService = {
 
               // Cập nhật lại localStorage với thông tin đầy đủ
               authUtils.setAuth(Token, fullUserData);
+              localStorage.setItem('accessToken', Token);
+              if (RefreshToken) {
+                localStorage.setItem('refreshToken', RefreshToken);
+              }
               console.log('✅ Full profile loaded:', fullUserData);
             }
           } catch (profileError) {

@@ -388,9 +388,9 @@ const ScheduleService = () => {
                     DỊCH VỤ
                   </a>
                   <ul className="dropdown-menu">
-                    <li><Link className="dropdown-item" to="/track-reminder">Theo dõi & Nhắc nhở</Link></li>
+                    <li><Link className="dropdown-item" to="/my-appointments">Theo dõi & Nhắc nhở</Link></li>
                     <li><Link className="dropdown-item" to="/schedule-service">Đặt lịch dịch vụ</Link></li>
-                    <li><a className="dropdown-item" href="#">Quản lý chi phí</a></li>
+                    <li><Link className="dropdown-item" to="/products/individual">Quản lý chi phí</Link></li>
                   </ul>
                 </li>
                 <li className="nav-item">

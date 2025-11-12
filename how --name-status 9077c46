@@ -1,0 +1,7 @@
+[33mcommit eeea5eec7afd0e9114f447a5d64ad24f96102f8f[m
+Author: LeTuyen0414 <tuyenlhse181699@fpt.edu.vn>
+Date:   Wed Oct 1 16:50:01 2025 +0700
+
+    Customers' Vehicle
+
+ delete mode 100644 src/services/authService.js

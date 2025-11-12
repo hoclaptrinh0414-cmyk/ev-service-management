@@ -1,10 +1,8 @@
 // src/pages/Home.jsx - UPDATED WITH USER MENU AND NOTIFICATIONS
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import UserMenu from '../components/UserMenu';
+import React from 'react';
+import { Link } from 'react-router-dom';
+import GlobalNavbar from '../components/GlobalNavbar';
 import FancyButton from '../components/FancyButton';
-import NotificationDropdown from '../components/NotificationDropdown';
-import useNotifications from '../hooks/useNotifications';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import 'bootstrap-icons/font/bootstrap-icons.css';
@@ -12,117 +10,9 @@ import '@fortawesome/fontawesome-free/css/all.min.css';
 import './Home.css'; // Import CSS file
 
 const Home = () => {
-  const [scrolled, setScrolled] = useState(false);
-  const [hidden, setHidden] = useState(false);
-  let lastScrollY = 0;
-
-  const navigate = useNavigate();
-  const { notifications, markAsRead, dismissNotification } = useNotifications();
-
-  // Xử lý khi click vào notification
-  const handleNotificationClick = (notification) => {
-    // Đánh dấu đã đọc
-    markAsRead(notification.id);
-
-    // Nếu là notification về appointment, chuyển đến trang my-appointments
-    if (notification.type === 'appointment_reminder' && notification.appointmentId) {
-      navigate('/my-appointments');
-    }
-  };
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const navbar = document.querySelector('.navbar-custom');
-      const carousel = document.querySelector('#carouselExampleAutoplaying');
-      const carouselHeight = carousel ? carousel.offsetHeight : 0;
-      const scrollPosition = window.scrollY;
-      const currentScrollY = window.scrollY;
-
-      if (scrollPosition > carouselHeight - 100) {
-        if (currentScrollY > lastScrollY) {
-          setHidden(true);
-        } else {
-          setHidden(false);
-          setScrolled(true);
-        }
-      } else {
-        setHidden(false);
-        setScrolled(false);
-      }
-
-      lastScrollY = currentScrollY;
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
   return (
     <>
-      {/* Navbar */}
-      <nav className={`navbar navbar-expand-lg navbar-custom ${scrolled ? 'scrolled' : ''} ${hidden ? 'hidden' : ''}`}>
-        <div className="container d-flex flex-column">
-          <div className="d-flex justify-content-between align-items-center w-100 top-navbar">
-            <form className="search-form">
-              <input
-                type="text"
-                className="form-control search-input"
-                placeholder="Tìm kiếm sản phẩm..."
-              />
-              <button type="submit" className="search-btn">
-                <i className="fas fa-search"></i>
-              </button>
-            </form>
-
-            <Link style={{ fontSize: '2rem' }} className="navbar-brand" to="/home">
-              Tesla
-            </Link>
-
-            <div className="nav-icons d-flex align-items-center">
-              <UserMenu />
-              <NotificationDropdown
-                notifications={notifications}
-                onMarkRead={markAsRead}
-                onDismiss={dismissNotification}
-                onNotificationClick={handleNotificationClick}
-              />
-            </div>
-          </div>
-
-          <div className="bottom-navbar">
-            <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-              <span className="navbar-toggler-icon"></span>
-            </button>
-
-            <div className="collapse navbar-collapse" id="navbarNav">
-              <ul className="navbar-nav w-100 justify-content-center">
-                <li className="nav-item">
-                  <Link className="nav-link move" to="/home">TRANG CHỦ</Link>
-                </li>
-                <li className="nav-item dropdown">
-                  <a className="nav-link dropdown-toggle move" href="#" role="button" data-bs-toggle="dropdown">
-                    DỊCH VỤ
-                  </a>
-                  <ul className="dropdown-menu">
-                    <li><Link className="dropdown-item" to="/track-reminder">Theo dõi & Nhắc nhở</Link></li>
-                    <li><Link className="dropdown-item" to="/schedule-service">Đặt lịch dịch vụ</Link></li>
-                    <li><a className="dropdown-item" href="#">Quản lý chi phí</a></li>
-                  </ul>
-                </li>
-                <li className="nav-item">
-                  <a className="nav-link move" href="#">BLOG</a>
-                </li>
-                <li className="nav-item">
-                  <a className="nav-link move" href="#">GIỚI THIỆU</a>
-                </li>
-                <li className="nav-item">
-                  <a className="nav-link move" href="#">LIÊN HỆ</a>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <GlobalNavbar />
 
       {/* Carousel */}
       <div id="carouselExampleAutoplaying" className="carousel slide carousel-fade" data-bs-ride="carousel" data-bs-interval="10000">
@@ -174,7 +64,7 @@ const Home = () => {
                 />
                 <div className="card-body text-center mt-3">
                   <h5 style={{ fontWeight: 600 }} className="product-title mb-3">Theo dõi & Nhắc nhở</h5>
-                  <Link to="/track-reminder" style={{ textDecoration: 'none' }}>
+                  <Link to="/my-appointments" style={{ textDecoration: 'none' }}>
                     <FancyButton variant="dark">Đặt thông báo</FancyButton>
                   </Link>
                 </div>
@@ -212,9 +102,11 @@ const Home = () => {
                     fontFamily: "'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif",
                   }}>
                   </p>
-                  <FancyButton variant="dark" style={{ marginTop: '0%' }}>
-                    Xem tất cả dịch vụ
-                  </FancyButton>
+                  <Link to="/products/individual" style={{ textDecoration: 'none' }}>
+                    <FancyButton variant="dark" style={{ marginTop: '0%' }}>
+                      Xem tất cả dịch vụ
+                    </FancyButton>
+                  </Link>
                 </div>
               </div>
             </div>

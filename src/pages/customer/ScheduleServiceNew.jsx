@@ -9,14 +9,15 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useCart } from '../../contexts/CartContext';
 import { useSchedule } from '../../contexts/ScheduleContext';
 import { toast } from 'react-toastify';
+import GlobalNavbar from '../../components/GlobalNavbar';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import './ScheduleServiceNew.css';
 
 const ScheduleServiceNew = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { cartItems } = useCart();
+  const { user, isAuthenticated } = useAuth();
+  const { cartItems, getTotalPrice } = useCart();
   const { saveBookingState, restoreBookingState, hasBookingState, clearBookingState } = useSchedule();
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -47,8 +48,46 @@ const ScheduleServiceNew = () => {
   const [appointmentData, setAppointmentData] = useState(null);
   const [paymentProcessing, setPaymentProcessing] = useState(false);
 
+  const normalizeApiResponse = (response) => {
+    if (!response) return null;
+    if (response?.data?.data) return response.data.data;
+    if (response?.data) return response.data;
+    return response;
+  };
+
+  const buildPaymentReturnUrl = () => {
+    const envUrl = process.env.REACT_APP_APP_URL;
+    if (envUrl && typeof envUrl === 'string') {
+      return `${envUrl.replace(/\/$/, '')}/payment/callback`;
+    }
+    if (typeof window !== 'undefined' && window.location?.origin) {
+      return `${window.location.origin}/payment/callback`;
+    }
+    return '/payment/callback';
+  };
+
+  const paymentReturnUrl = buildPaymentReturnUrl();
+
+  const resolveCartTotal = () => {
+    if (typeof getTotalPrice === 'function') {
+      return getTotalPrice();
+    }
+
+    return cartItems.reduce((total, item) => {
+      const price = item.isPackage
+        ? (item.totalPriceAfterDiscount || item.basePrice || 0)
+        : (item.basePrice || 0);
+      const quantity = item.isPackage ? 1 : item.quantity || 1;
+      return total + (price * quantity);
+    }, 0);
+  };
+
   // ============ RESTORE STATE ON MOUNT ============
   useEffect(() => {
+    if (!isAuthenticated) {
+      return;
+    }
+
     // Check if there's a saved booking state (coming back from products page)
     if (hasBookingState()) {
       const savedState = restoreBookingState();
@@ -76,17 +115,28 @@ const ScheduleServiceNew = () => {
 
     // Normal flow: start from beginning
     loadVehicles();
-  }, []);
+  }, [isAuthenticated, hasBookingState, restoreBookingState]);
 
   // ============ STEP 1: LOAD VEHICLES ============
 
+  const handleAuthError = (error) => {
+    if (error?.response?.status === 401) {
+      toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+      navigate('/login', { replace: true });
+      return true;
+    }
+    return false;
+  };
+
   const loadVehicles = async () => {
+    if (!isAuthenticated) return;
     try {
       setLoading(true);
       const response = await appointmentService.getMyVehicles();
       setVehicles(response.data || []);
     } catch (error) {
       console.error('Error loading vehicles:', error);
+      if (handleAuthError(error)) return;
       toast.error('Unable to load vehicles. Please try again.');
     } finally {
       setLoading(false);
@@ -95,10 +145,11 @@ const ScheduleServiceNew = () => {
 
   // ============ STEP 2: LOAD SERVICE CENTERS & TIME SLOTS ============
   useEffect(() => {
+    if (!isAuthenticated) return;
     if (currentStep === 2) {
       loadServiceCenters();
     }
-  }, [currentStep]);
+  }, [currentStep, isAuthenticated]);
 
   useEffect(() => {
     console.log('⚡ useEffect triggered!');
@@ -112,9 +163,15 @@ const ScheduleServiceNew = () => {
     } else {
       console.log('⚠️ Conditions NOT met - skipping API call');
     }
-  }, [selectedServiceCenterId, selectedDate]);
+  }, [isAuthenticated, selectedServiceCenterId, selectedDate]);
 
   const loadServiceCenters = async () => {
+    if (!isAuthenticated) return;
+    if (serviceCenters.length > 0) {
+      console.log('⚠️ Service centers already loaded - skipping extra API call');
+      return;
+    }
+
     try {
       setLoading(true);
       // Use getActiveServiceCenters to get only active centers
@@ -130,6 +187,7 @@ const ScheduleServiceNew = () => {
       setServiceCenters(response.data || []);
     } catch (error) {
       console.error('Error loading service centers:', error);
+      if (handleAuthError(error)) return;
       toast.error('Unable to load service centers.');
     } finally {
       setLoading(false);
@@ -154,6 +212,7 @@ const ScheduleServiceNew = () => {
   };
 
   const loadAvailableTimeSlots = async () => {
+    if (!isAuthenticated) return;
     console.log('🚀 ========== LOAD TIME SLOTS FUNCTION CALLED ==========');
     console.log('📍 selectedServiceCenterId:', selectedServiceCenterId);
     console.log('📅 selectedDate:', selectedDate);
@@ -236,6 +295,7 @@ const ScheduleServiceNew = () => {
   }, [currentStep, selectedVehicleId]);
 
   const loadServicesAndSubscriptions = async () => {
+    if (!isAuthenticated) return;
     try {
       setLoading(true);
 
@@ -349,7 +409,21 @@ const ScheduleServiceNew = () => {
       toast.error('Please select at least one service');
       return;
     }
-    setCurrentStep(prev => Math.min(prev + 1, 5));
+
+    const nextStep = Math.min(currentStep + 1, 5);
+    setCurrentStep(nextStep);
+
+    if (nextStep === 3 && cartItems.length === 0) {
+      saveBookingState({
+        currentStep: nextStep,
+        selectedVehicleId,
+        selectedServiceCenterId,
+        selectedDate,
+        selectedTimeSlotId,
+        notes
+      });
+      navigate('/products/individual');
+    }
   };
 
   const goToPreviousStep = () => {
@@ -442,11 +516,19 @@ const ScheduleServiceNew = () => {
 
       console.log('📝 Creating appointment with data:', bookingData);
       const appointmentResponse = await appointmentService.createAppointment(bookingData);
+      const appointmentResult = normalizeApiResponse(appointmentResponse);
 
-      const appointmentResult = appointmentResponse.data?.data || appointmentResponse.data;
+      if (!appointmentResult) {
+        throw new Error('Invalid response when creating appointment');
+      }
+
       const appointmentId = appointmentResult?.appointmentId || appointmentResult?.id;
       const appointmentCode = appointmentResult?.appointmentCode;
       const invoiceId = appointmentResult?.invoiceId;
+
+      if (!appointmentId) {
+        throw new Error('Appointment ID missing in response');
+      }
 
       console.log('✅ Appointment created:', { appointmentId, appointmentCode, invoiceId });
       toast.success(`Appointment created! Code: ${appointmentCode}`);
@@ -454,16 +536,20 @@ const ScheduleServiceNew = () => {
       // Try to create payment intent
       console.log('💳 Checking if payment is required for appointment:', appointmentId);
       console.log('💳 Payment method:', paymentMethod);
-      console.log('💳 Return URL:', `${window.location.origin}/payment/callback`);
+      console.log('💳 Return URL:', paymentReturnUrl);
 
       try {
         const paymentResponse = await paymentService.createPaymentForAppointment(appointmentId, {
           paymentMethod: paymentMethod,
-          returnUrl: `${window.location.origin}/payment/callback`
+          returnUrl: paymentReturnUrl
         });
 
-        const paymentResult = paymentResponse.data?.data || paymentResponse.data;
+        const paymentResult = normalizeApiResponse(paymentResponse);
         console.log('✅ Payment intent created:', paymentResult);
+
+        if (!paymentResult) {
+          throw new Error('Invalid response when creating payment intent');
+        }
 
         // Save appointment and payment data
         setAppointmentData({
@@ -475,7 +561,7 @@ const ScheduleServiceNew = () => {
           paymentId: paymentResult?.paymentId,
           paymentCode: paymentResult?.paymentCode,
           paymentUrl: paymentResult?.paymentUrl,
-          amount: paymentResult?.amount || estimatedCost
+          amount: paymentResult?.amount || estimatedCost || resolveCartTotal()
         });
 
         // Move to payment step
@@ -516,13 +602,16 @@ const ScheduleServiceNew = () => {
       console.error('❌ Status code:', error.response?.status);
 
       // Show detailed error to user
-      const errorMessage = error.response?.data?.message
-        || error.response?.data?.title
-        || error.message
-        || 'Unable to create appointment. Please try again.';
+      const errorPayload = error.response?.data;
+      const errorMessage =
+        errorPayload?.message ||
+        errorPayload?.error ||
+        errorPayload?.title ||
+        error.message ||
+        'Unable to create appointment. Please try again.';
 
-      const errorDetails = error.response?.data?.errors
-        ? '\n' + JSON.stringify(error.response.data.errors, null, 2)
+      const errorDetails = errorPayload?.errors
+        ? '\n' + JSON.stringify(errorPayload.errors, null, 2)
         : '';
 
       toast.error(errorMessage + errorDetails);
@@ -611,6 +700,8 @@ const ScheduleServiceNew = () => {
 
   // ============ RENDER ============
   return (
+    <>
+      <GlobalNavbar />
       <div className="schedule-service-page">
         <div className="container py-5">
           <div className="row justify-content-center">
@@ -1167,6 +1258,7 @@ const ScheduleServiceNew = () => {
           </div>
         </div>
       </div>
+    </>
   );
 };
 

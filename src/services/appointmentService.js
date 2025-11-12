@@ -6,6 +6,22 @@ import apiService, { appointmentsAPI, lookupAPI } from './api';
  * Cung cấp các phương thức quản lý lịch hẹn bảo dưỡng theo tài liệu CUSTOMER_API_ENDPOINTS.md
  */
 export const appointmentService = {
+  // ============ VEHICLE HELPERS FOR BOOKING FLOW ============
+  /**
+   * Lấy danh sách xe của khách (dùng ở bước chọn xe)
+   * GET /api/customer/profile/my-vehicles
+   */
+  async getMyVehicles() {
+    try {
+      const response = await apiService.getMyVehicles();
+      console.log('🛠️ Get my vehicles success:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ Get my vehicles failed:', error);
+      throw error;
+    }
+  },
+
   // ============ 4. APPOINTMENTS - ĐẶT LỊCH BẢO DƯỠNG ============
 
   /**
@@ -176,6 +192,53 @@ export const appointmentService = {
       throw error;
     }
   },
+
+
+
+  /**
+
+   * Lay trung tam dang hoat dong (loc tai FE)
+
+   */
+
+  async getActiveServiceCenters() {
+    try {
+      const response = await lookupAPI.getActiveServiceCenters();
+      if (response?.data) {
+        return response;
+      }
+
+      const centers = Array.isArray(response)
+        ? response
+        : Array.isArray(response?.data)
+          ? response.data
+          : [];
+
+      if (centers.length === 0) {
+        const allCenters = await lookupAPI.getServiceCenters();
+        const list = Array.isArray(allCenters?.data) ? allCenters.data : allCenters;
+        return {
+          ...allCenters,
+          data: list,
+        };
+      }
+
+      return {
+        ...response,
+        data: centers,
+      };
+    } catch (error) {
+      console.error('Get active service centers failed:', error);
+      try {
+        const fallback = await lookupAPI.getServiceCenters();
+        return fallback;
+      } catch {
+        throw error;
+      }
+    }
+  },
+
+
 
   /**
    * Lấy danh sách dịch vụ bảo dưỡng

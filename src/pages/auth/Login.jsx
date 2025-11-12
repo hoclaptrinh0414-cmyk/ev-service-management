@@ -46,18 +46,22 @@ const Login = () => {
     console.log('📋 Role info:', { role, roleId });
 
     // Admin/Staff -> /admin, Customer -> /home
-    if (
-      role?.toLowerCase() === 'admin' ||
-      role?.toLowerCase() === 'staff' ||
-      roleId === 1 ||
-      roleId === 2
-    ) {
+    const normalizedRole = role?.toLowerCase() || '';
+
+    if (normalizedRole === 'admin' || roleId === 1) {
       console.log('✅ Redirect to /admin');
       navigate('/admin');
-    } else {
-      console.log('✅ Redirect to /home');
-      navigate('/home');
+      return;
     }
+
+    if (normalizedRole === 'staff' || roleId === 2) {
+      console.log('✅ Redirect to /staff');
+      navigate('/staff');
+      return;
+    }
+
+    console.log('✅ Redirect to /home');
+    navigate('/home');
   };
 
   const handleLoginSuccess = (result) => {

@@ -512,6 +512,71 @@ class UnifiedAPIService {
     return response;
   }
 
+  // ============ PAYMENT & INVOICE METHODS ============
+  async createPaymentForAppointment(appointmentId, paymentData) {
+    if (appointmentId === undefined || appointmentId === null) {
+      throw new Error("Appointment ID is required to create payment");
+    }
+    const response = await this.request(
+      `/appointments/${appointmentId}/pay`,
+      {
+        method: "POST",
+        body: JSON.stringify(paymentData),
+      }
+    );
+    return response;
+  }
+
+  async mockCompletePayment(paymentCode, gateway, success, amount) {
+    if (!paymentCode) {
+      throw new Error("Payment code is required for mock payment");
+    }
+    const response = await this.request(`/payments/mock/complete`, {
+      method: "POST",
+      body: JSON.stringify({
+        paymentCode,
+        gateway,
+        success,
+        amount,
+      }),
+    });
+    return response;
+  }
+
+  async getPaymentByCode(paymentCode) {
+    if (!paymentCode) {
+      throw new Error("Payment code is required");
+    }
+    const response = await this.request(`/payments/by-code/${paymentCode}`);
+    return response;
+  }
+
+  async getPaymentsByInvoice(invoiceId) {
+    if (invoiceId === undefined || invoiceId === null) {
+      throw new Error("Invoice ID is required");
+    }
+    const response = await this.request(
+      `/payments/by-invoice/${invoiceId}`
+    );
+    return response;
+  }
+
+  async getInvoiceById(invoiceId) {
+    if (invoiceId === undefined || invoiceId === null) {
+      throw new Error("Invoice ID is required");
+    }
+    const response = await this.request(`/invoices/${invoiceId}`);
+    return response;
+  }
+
+  async getInvoiceByCode(invoiceCode) {
+    if (!invoiceCode) {
+      throw new Error("Invoice code is required");
+    }
+    const response = await this.request(`/invoices/by-code/${invoiceCode}`);
+    return response;
+  }
+
   // Legacy methods for backward compatibility
   async bookService(serviceData) {
     return this.createAppointment(serviceData);
@@ -602,16 +667,23 @@ class UnifiedAPIService {
 
   // 6.3. Danh sách trung tâm dịch vụ
   async getServiceCenters() {
-    const response = await this.request("/lookup/service-centers", {
+    const response = await this.request("/service-centers", {
+      auth: false,
+    });
+    return response;
+  }
+  async getActiveServiceCenters() {
+    const response = await this.request("/service-centers/active", {
       auth: false,
     });
     return response;
   }
 
+
   // 6.4. Time slots available (khung giờ trống)
   async getAvailableTimeSlots(serviceCenterId, date) {
     const response = await this.request(
-      `/lookup/time-slots/available?serviceCenterId=${serviceCenterId}&date=${date}`,
+      `/time-slots/available?centerId=${serviceCenterId}&date=${date}`,
       { auth: false }
     );
     return response;
@@ -750,13 +822,16 @@ class UnifiedAPIService {
   clearAuth() {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    console.log("🧹 Auth data cleared from localStorage");
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    console.log("Auth data cleared from localStorage");
   }
 
   setAuth(token, user) {
     localStorage.setItem("token", token);
     localStorage.setItem("user", JSON.stringify(user));
-    console.log("💾 Auth data saved to localStorage");
+    localStorage.setItem("accessToken", token);
+    console.log("Auth data saved to localStorage");
   }
 
   // ============ ERROR HANDLING UTILITY ============
@@ -1078,6 +1153,7 @@ export const lookupAPI = {
   getCarBrands: () => apiService.getCarBrands(),
   getCarModelsByBrand: (brandId) => apiService.getCarModelsByBrand(brandId),
   getServiceCenters: () => apiService.getServiceCenters(),
+  getActiveServiceCenters: () => apiService.getActiveServiceCenters(),
   getAvailableTimeSlots: (serviceCenterId, date) =>
     apiService.getAvailableTimeSlots(serviceCenterId, date),
   getMaintenanceServices: () => apiService.getMaintenanceServices(),
@@ -1114,6 +1190,22 @@ export const orderAPI = {
   createOrder: (orderData) => apiService.createOrder(orderData),
   getOrders: () => apiService.getOrders(),
   getOrder: (id) => apiService.getOrder(id),
+};
+
+export const paymentAPI = {
+  createPaymentForAppointment: (appointmentId, paymentData) =>
+    apiService.createPaymentForAppointment(appointmentId, paymentData),
+  mockCompletePayment: (paymentCode, gateway, success, amount) =>
+    apiService.mockCompletePayment(paymentCode, gateway, success, amount),
+  getPaymentByCode: (paymentCode) =>
+    apiService.getPaymentByCode(paymentCode),
+  getPaymentsByInvoice: (invoiceId) =>
+    apiService.getPaymentsByInvoice(invoiceId),
+};
+
+export const invoiceAPI = {
+  getInvoiceById: (invoiceId) => apiService.getInvoiceById(invoiceId),
+  getInvoiceByCode: (invoiceCode) => apiService.getInvoiceByCode(invoiceCode),
 };
 
 // ============ STAFF MANAGEMENT API ============

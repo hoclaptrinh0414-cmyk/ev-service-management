@@ -15,11 +15,13 @@ import "./App.css";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { ToastProvider } from "./contexts/ToastContext";
 import { AuthProvider } from "./contexts/AuthContext";
+import { CartProvider } from "./contexts/CartContext";
+import { ScheduleProvider } from "./contexts/ScheduleContext";
 
 // Import pages
 import Home from "./pages/Home";
 import TrackReminder from "./pages/TrackReminder";
-import ScheduleService from "./pages/ScheduleService";
+import Services from "./pages/Services";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import ForgotPassword from "./pages/auth/ForgotPassword";
@@ -33,6 +35,15 @@ import Profile from "./pages/customer/Profile";
 import MyAppointments from "./pages/customer/MyAppointments";
 import MySubscriptions from "./pages/customer/MySubscriptions";
 import Packages from "./pages/customer/Packages";
+import ScheduleServiceNew from "./pages/customer/ScheduleServiceNew";
+import ProductIndividual from "./pages/customer/ProductIndividual";
+import ProductCombo from "./pages/customer/ProductCombo";
+import StaffLayout from "./pages/staff/StaffLayout";
+import StaffAppointments from "./pages/staff/Appointments";
+import StaffCheckIn from "./pages/staff/CheckIn";
+import StaffWorkOrders from "./pages/staff/WorkOrders";
+import StaffSettings from "./pages/staff/Settings";
+import PaymentCallback from "./pages/payment/PaymentCallback";
 
 // Import test components
 import PasswordResetTest from "./components/PasswordResetTest";
@@ -64,9 +75,11 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
         <AuthProvider>
-          <Router>
-            <div className="App">
-              <Routes>
+          <CartProvider>
+            <ScheduleProvider>
+              <Router>
+                <div className="App">
+                  <Routes>
           {/* Redirect root to login */}
           <Route path="/" element={<Navigate to="/login" replace />} />
 
@@ -84,6 +97,8 @@ function App() {
           <Route path="/api-debug" element={<APIDebug />} />
 
           {/* Protected routes - Customer */}
+          <Route path="/services" element={<Services />} />
+
           <Route
             path="/home"
             element={
@@ -124,7 +139,7 @@ function App() {
             path="/schedule-service"
             element={
               <ProtectedRoute>
-                <ScheduleService />
+                <ScheduleServiceNew />
               </ProtectedRoute>
             }
           />
@@ -164,6 +179,30 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/payment/callback"
+            element={
+              <ProtectedRoute>
+                <PaymentCallback />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/products/individual" element={<ProductIndividual />} />
+          <Route path="/products/combo" element={<ProductCombo />} />
+          <Route
+            path="/staff"
+            element={
+              <ProtectedRoute requireRole={["staff", "admin"]}>
+                <StaffLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<Navigate to="/staff/appointments" replace />} />
+            <Route path="appointments" element={<StaffAppointments />} />
+            <Route path="checkin" element={<StaffCheckIn />} />
+            <Route path="work-orders" element={<StaffWorkOrders />} />
+            <Route path="settings" element={<StaffSettings />} />
+          </Route>
 
           {/* Admin routes */}
           <Route
@@ -199,9 +238,11 @@ function App() {
 
           {/* Catch all route */}
           <Route path="*" element={<Navigate to="/login" replace />} />
-              </Routes>
-            </div>
-          </Router>
+                  </Routes>
+                </div>
+              </Router>
+            </ScheduleProvider>
+          </CartProvider>
         </AuthProvider>
       </ToastProvider>
     </QueryClientProvider>

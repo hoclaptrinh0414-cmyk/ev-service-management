@@ -115,9 +115,9 @@ const MySubscriptions = () => {
                     DỊCH VỤ
                   </a>
                   <ul className="dropdown-menu">
-                    <li><Link className="dropdown-item" to="/track-reminder">Theo dõi & Nhắc nhở</Link></li>
+                    <li><Link className="dropdown-item" to="/my-appointments">Theo dõi & Nhắc nhở</Link></li>
                     <li><Link className="dropdown-item" to="/schedule-service">Đặt lịch dịch vụ</Link></li>
-                    <li><Link className="dropdown-item" to="/my-appointments">Lịch hẹn của tôi</Link></li>
+                    <li><Link className="dropdown-item" to="/products/combo">Lịch hẹn của tôi</Link></li>
                     <li><Link className="dropdown-item" to="/my-subscriptions">Gói đăng ký của tôi</Link></li>
                   </ul>
                 </li>
