@@ -75,18 +75,28 @@ export default function WorkOrders() {
       setSelectedWO(detailResponse.data || detailResponse);
 
       // Load checklist if exists
+      // Load checklist if exists (new schema)
       try {
         const checklistResponse = await staffService.getWorkOrderChecklist(
           woId,
         );
-        const checklistData = checklistResponse.data || checklistResponse;
-        setChecklist(
-          Array.isArray(checklistData)
-            ? checklistData
-            : checklistData.items || [],
-        );
+        const raw = checklistResponse.data || checklistResponse;
+
+        const checklistPayload = raw.data || raw; // because backend wraps inside data:{...}
+        const items = checklistPayload.items || [];
+
+        setChecklist(items);
+
+        // attach progress info from backend
+        setSelectedWO((prev) => ({
+          ...prev,
+          checklistTotal: checklistPayload.totalItems || items.length,
+          checklistCompleted:
+            checklistPayload.completedItems ||
+            items.filter((i) => i.isCompleted).length,
+          checklistCompletion: checklistPayload.completionPercentage ?? 0,
+        }));
       } catch (err) {
-        // Checklist might not exist yet
         setChecklist([]);
       }
 
@@ -387,13 +397,18 @@ export default function WorkOrders() {
               {/* Work Order Info Card */}
               <div className='detail-card'>
                 <div className='card-header-detail'>
-                  <h2>Work Order #{selectedWO.workOrderId || selectedWO.id}</h2>
+                  <h2>
+                    {selectedWO.workOrderCode ||
+                      `WO #${selectedWO.workOrderId}`}
+                  </h2>
                   <span
-                    className={`status-badge ${(
-                      selectedWO.status || ''
-                    ).toLowerCase()}`}
+                    className='status-badge'
+                    style={{
+                      backgroundColor: selectedWO.statusColor || '#f5f5f7',
+                      color: '#1a1a1a',
+                    }}
                   >
-                    {selectedWO.status || 'Pending'}
+                    {selectedWO.statusName || 'Pending'}
                   </span>
                 </div>
 
@@ -405,22 +420,33 @@ export default function WorkOrders() {
                     </span>
                   </div>
                   <div className='detail-row'>
+                    <span className='label'>Phone:</span>
+                    <span className='value'>
+                      {selectedWO.customerPhone || 'N/A'}
+                    </span>
+                  </div>
+                  <div className='detail-row'>
                     <span className='label'>Vehicle:</span>
                     <span className='value'>
-                      {selectedWO.licensePlate ||
-                        selectedWO.vehicle?.licensePlate ||
+                      {selectedWO.vehiclePlate ||
+                        selectedWO.vehicleModel ||
                         'N/A'}
                     </span>
                   </div>
                   <div className='detail-row'>
                     <span className='label'>Technician:</span>
                     <span className='value'>
-                      {selectedWO.assignedTechnician || 'Not assigned'}
+                      {selectedWO.technicianName || 'Unassigned'}
                     </span>
                   </div>
                   <div className='detail-row'>
                     <span className='label'>Progress:</span>
-                    <span className='value'>{selectedWO.progress || 0}%</span>
+                    <span className='value'>
+                      {selectedWO.checklistCompletion ??
+                        selectedWO.progressPercentage ??
+                        0}
+                      %
+                    </span>
                   </div>
                 </div>
 
@@ -494,48 +520,54 @@ export default function WorkOrders() {
                   <div className='card-header-detail'>
                     <h2>Checklist</h2>
                     <span className='count-badge'>
-                      {
-                        checklist.filter((item) => item.status === 'Completed')
-                          .length
-                      }{' '}
-                      / {checklist.length}
+                      {selectedWO.checklistCompleted ??
+                        checklist.filter((i) => i.isCompleted).length}{' '}
+                      /{selectedWO.checklistTotal ?? checklist.length}
                     </span>
                   </div>
 
                   <div className='checklist-items'>
                     {checklist.map((item, index) => (
                       <div
-                        key={item.checklistItemId || item.id || index}
+                        key={item.itemId || index}
                         className='checklist-item'
                       >
                         <div className='item-content'>
                           <div className='item-header'>
                             <span className='item-title'>
-                              {item.taskDescription ||
-                                item.description ||
-                                `Item ${index + 1}`}
+                              {item.itemDescription || `Item ${index + 1}`}
                             </span>
                             <span
-                              className={`item-status ${(
-                                item.status || ''
-                              ).toLowerCase()}`}
+                              className={`item-status ${
+                                item.isCompleted ? 'completed' : 'pending'
+                              }`}
                             >
-                              {item.status || 'Pending'}
+                              {item.isCompleted ? 'Completed' : 'Pending'}
                             </span>
                           </div>
+
                           {item.notes && (
                             <p className='item-notes'>{item.notes}</p>
                           )}
+
+                          {item.completedByName && (
+                            <p className='item-notes'>
+                              By: {item.completedByName}{' '}
+                              {item.completedDate
+                                ? ` • ${new Date(
+                                    item.completedDate,
+                                  ).toLocaleString('vi-VN')}`
+                                : ''}
+                            </p>
+                          )}
                         </div>
 
-                        {item.status !== 'Completed' &&
-                          selectedWO.status === 'InProgress' && (
+                        {!item.isCompleted &&
+                          selectedWO.statusName === 'InProgress' && (
                             <button
                               className='btn-complete-item'
                               onClick={() =>
-                                handleCompleteChecklistItem(
-                                  item.checklistItemId || item.id,
-                                )
+                                handleCompleteChecklistItem(item.itemId)
                               }
                             >
                               <i className='bi bi-check'></i>
