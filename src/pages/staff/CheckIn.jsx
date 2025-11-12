@@ -57,7 +57,12 @@ export default function CheckIn() {
       fetchConfirmed();
     } catch (err) {
       console.error('Check-in failed:', err);
-      toast.error(err.response?.data?.message || 'Check-in failed');
+      const message =
+        err.response?.data?.error || // "Khách hàng chưa thanh toán..."
+        err.response?.data?.message ||
+        'Check-in failed. Please try again.';
+
+      toast.error(message);
     }
   };
 
@@ -157,33 +162,45 @@ export default function CheckIn() {
                   <div key={wo.workOrderId || wo.id} className='result-card'>
                     <div className='result-header'>
                       <span className='wo-id'>
-                        WO #{wo.workOrderId || wo.id}
+                        {wo.workOrderCode || `WO #${wo.workOrderId}`}
                       </span>
                       <span
-                        className={`status-badge ${wo.status?.toLowerCase()}`}
+                        className='status-badge'
+                        style={{
+                          backgroundColor: wo.statusColor || '#f5f5f7',
+                          color: '#1a1a1a',
+                        }}
                       >
-                        {wo.status || 'Unknown'}
+                        {wo.statusName || 'Unknown'}
                       </span>
                     </div>
+
                     <div className='result-body'>
                       <div className='info-item'>
                         <i className='bi bi-person'></i>
                         <span>{wo.customerName || 'N/A'}</span>
                       </div>
+
                       <div className='info-item'>
                         <i className='bi bi-car-front'></i>
                         <span>
-                          {wo.licensePlate || wo.vehicle?.licensePlate || 'N/A'}
+                          {wo.vehiclePlate || wo.vehicleModel || 'N/A'}
                         </span>
                       </div>
+
+                      <div className='info-item'>
+                        <i className='bi bi-tools'></i>
+                        <span>{wo.technicianName || 'Unassigned'}</span>
+                      </div>
+
                       <div className='progress-bar'>
                         <div
                           className='progress-fill'
-                          style={{ width: `${wo.progress || 0}%` }}
+                          style={{ width: `${wo.progressPercentage || 0}%` }}
                         ></div>
                       </div>
                       <span className='progress-text'>
-                        {wo.progress || 0}% completed
+                        {wo.progressPercentage || 0}% completed
                       </span>
                     </div>
                   </div>
@@ -243,21 +260,18 @@ export default function CheckIn() {
                       <i className='bi bi-calendar'></i>
                       <span className='label'>Date:</span>
                       <span className='value'>
-                        {new Date(
-                          app.appointmentDate || app.scheduledDate,
-                        ).toLocaleDateString('en-US')}
+                        {app.slotDate
+                          ? new Date(app.slotDate).toLocaleDateString('en-GB') // format dd/mm/yyyy
+                          : 'N/A'}
                       </span>
                     </div>
                     <div className='info-row'>
                       <i className='bi bi-clock'></i>
                       <span className='label'>Time:</span>
                       <span className='value'>
-                        {new Date(
-                          app.appointmentDate || app.scheduledDate,
-                        ).toLocaleTimeString('en-US', {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
+                        {app.slotDate && app.slotStartTime
+                          ? `${app.slotStartTime} - ${app.slotEndTime}`
+                          : 'N/A'}
                       </span>
                     </div>
                   </div>
