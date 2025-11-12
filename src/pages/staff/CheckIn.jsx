@@ -1,14 +1,30 @@
 // src/pages/staff/CheckIn.jsx
-import { useState, useEffect } from "react";
-import { toast } from "react-toastify";
-import staffService from "../../services/staffService";
+import { useState, useEffect, useRef } from 'react';
+import { toast } from 'react-toastify';
+import staffService from '../../services/staffService';
+import useDebounce from '../../hooks/useDebounce';
 
 export default function CheckIn() {
   const [appointments, setAppointments] = useState([]);
   const [workOrders, setWorkOrders] = useState([]);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [searchLoading, setSearchLoading] = useState(false);
+
+  const controllerRef = useRef(null);
+  const debouncedSearch = useDebounce(search, 500); // 500ms cho “nhẹ nhàng”
+  const [hasSearched, setHasSearched] = useState(false);
+
+  // Auto search theo debounce
+  useEffect(() => {
+    // nếu rỗng -> clear kết quả & không gọi API
+    if (!debouncedSearch.trim()) {
+      setWorkOrders([]);
+      return;
+    }
+    runSearch(debouncedSearch);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch]);
 
   useEffect(() => {
     fetchConfirmed();
@@ -19,14 +35,16 @@ export default function CheckIn() {
     try {
       const response = await staffService.getStaffAppointments({
         status: 'Confirmed',
-        pageSize: 20
+        pageSize: 20,
       });
       const data = response.data || response;
-      const items = Array.isArray(data) ? data : (data.items || data.appointments || []);
+      const items = Array.isArray(data)
+        ? data
+        : data.items || data.appointments || [];
       setAppointments(items);
     } catch (err) {
-      console.error("Failed to load appointments:", err);
-      toast.error("Failed to load appointments");
+      console.error('Failed to load appointments:', err);
+      toast.error('Failed to load appointments');
     } finally {
       setLoading(false);
     }
@@ -35,196 +53,229 @@ export default function CheckIn() {
   const handleCheckIn = async (appointmentId) => {
     try {
       await staffService.checkInAppointment(appointmentId);
-      toast.success("Check-in successful! WorkOrder created.");
+      toast.success('Check-in successful! WorkOrder created.');
       fetchConfirmed();
     } catch (err) {
-      console.error("Check-in failed:", err);
-      toast.error(err.response?.data?.message || "Check-in failed");
+      console.error('Check-in failed:', err);
+      toast.error(err.response?.data?.message || 'Check-in failed');
     }
   };
 
-  const handleSearch = async () => {
-    if (!search.trim()) {
-      toast.warning("Please enter license plate or Work Order ID");
-      return;
-    }
+  const runSearch = async (keyword) => {
+    if (controllerRef.current) controllerRef.current.abort();
+    controllerRef.current = new AbortController();
 
     setSearchLoading(true);
-    try {
-      const response = await staffService.searchWorkOrders({
-        SearchTerm: search.trim()
-      });
-      const data = response.data || response;
-      const items = Array.isArray(data) ? data : (data.items || []);
-      setWorkOrders(items);
+    setHasSearched(false); // reset trước khi gọi API
 
-      if (items.length === 0) {
-        toast.info("No Work Orders found");
-      } else {
-        toast.success(`Found ${items.length} work order(s)`);
-      }
+    try {
+      const response = await staffService.searchWorkOrders(
+        { SearchTerm: keyword.trim() },
+        { signal: controllerRef.current.signal },
+      );
+      const data = response.data || response;
+      const items = Array.isArray(data) ? data : data.items || [];
+      setWorkOrders(items);
     } catch (err) {
-      console.error("Search failed:", err);
-      toast.error(err.response?.data?.message || "Search failed");
-      setWorkOrders([]);
+      if (err.name !== 'AbortError') {
+        console.error('Search failed:', err);
+        toast.error(err.response?.data?.message || 'Search failed');
+        setWorkOrders([]);
+      }
     } finally {
       setSearchLoading(false);
+      setHasSearched(true); // chỉ bật sau khi API hoàn tất
     }
   };
 
-  if (loading) return (
-    <div className="loading-container">
-      <div className="spinner"></div>
-      <p>Loading...</p>
-    </div>
-  );
+  const handleSearch = () => {
+    if (!search.trim()) {
+      toast.warning('Please enter license plate or Work Order ID');
+      return;
+    }
+    runSearch(search);
+  };
+
+  if (loading)
+    return (
+      <div className='loading-container'>
+        <div className='spinner'></div>
+        <p>Loading...</p>
+      </div>
+    );
 
   return (
-    <div className="checkin-page">
+    <div className='checkin-page'>
       {/* Header */}
-      <div className="page-header">
-        <div className="header-left">
+      <div className='page-header'>
+        <div className='header-left'>
           <h1>Check-in & Work Orders</h1>
           <p>Manage customer check-in and search work orders</p>
         </div>
       </div>
 
       {/* Two Column Layout */}
-      <div className="two-column-container">
+      <div className='two-column-container'>
         {/* Search Work Order Section */}
-        <div className="search-section">
-        <div className="section-title">
-          <i className="bi bi-search"></i>
-          <h2>Search Work Order</h2>
-        </div>
-        <div className="search-container">
-          <input
-            type="text"
-            className="search-input"
-            placeholder="Enter license plate or work order ID..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-          />
-          <button
-            className="search-btn"
-            onClick={handleSearch}
-            disabled={searchLoading}
-          >
-            {searchLoading ? (
-              <>
-                <span className="spinner-sm"></span>
-                Searching...
-              </>
-            ) : (
-              <>
-                <i className="bi bi-search"></i>
-                Search
-              </>
+        <div className='search-section'>
+          <div className='section-title'>
+            <i className='bi bi-search'></i>
+            <h2>Search Work Order</h2>
+          </div>
+          <div className='search-container'>
+            <i className='bi bi-search search-icon'></i>
+            <input
+              type='text'
+              className='search-input'
+              placeholder='Search work order by license plate or ID...'
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+            />
+            {searchLoading && (
+              <span className='search-spinner' aria-label='loading' />
             )}
-          </button>
+          </div>
+
+          {hasSearched &&
+            !searchLoading &&
+            workOrders.length === 0 &&
+            search.trim() && (
+              <div className='empty-search'>
+                <i className='bi bi-search'></i>
+                <h3>No Work Orders Found</h3>
+                <p>Try searching with a different license plate or ID.</p>
+              </div>
+            )}
+
+          {/* Search Results */}
+          {workOrders.length > 0 && (
+            <div className='search-results'>
+              <h3>Search Results ({workOrders.length})</h3>
+              <div className='results-grid'>
+                {workOrders.map((wo) => (
+                  <div key={wo.workOrderId || wo.id} className='result-card'>
+                    <div className='result-header'>
+                      <span className='wo-id'>
+                        WO #{wo.workOrderId || wo.id}
+                      </span>
+                      <span
+                        className={`status-badge ${wo.status?.toLowerCase()}`}
+                      >
+                        {wo.status || 'Unknown'}
+                      </span>
+                    </div>
+                    <div className='result-body'>
+                      <div className='info-item'>
+                        <i className='bi bi-person'></i>
+                        <span>{wo.customerName || 'N/A'}</span>
+                      </div>
+                      <div className='info-item'>
+                        <i className='bi bi-car-front'></i>
+                        <span>
+                          {wo.licensePlate || wo.vehicle?.licensePlate || 'N/A'}
+                        </span>
+                      </div>
+                      <div className='progress-bar'>
+                        <div
+                          className='progress-fill'
+                          style={{ width: `${wo.progress || 0}%` }}
+                        ></div>
+                      </div>
+                      <span className='progress-text'>
+                        {wo.progress || 0}% completed
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Search Results */}
-        {workOrders.length > 0 && (
-          <div className="search-results">
-            <h3>Search Results ({workOrders.length})</h3>
-            <div className="results-grid">
-              {workOrders.map((wo) => (
-                <div key={wo.workOrderId || wo.id} className="result-card">
-                  <div className="result-header">
-                    <span className="wo-id">WO #{wo.workOrderId || wo.id}</span>
-                    <span className={`status-badge ${wo.status?.toLowerCase()}`}>
-                      {wo.status || 'Unknown'}
-                    </span>
+        {/* Ready for Check-in Section */}
+        <div className='checkin-section'>
+          <div className='section-title'>
+            <i className='bi bi-clipboard-check'></i>
+            <h2>Ready for Check-in</h2>
+            <span className='count-badge'>{appointments.length}</span>
+          </div>
+
+          {appointments.length === 0 ? (
+            <div className='empty-state'>
+              <i className='bi bi-calendar-x'></i>
+              <h3>No Appointments</h3>
+              <p>No appointments ready for check-in at the moment</p>
+            </div>
+          ) : (
+            <div className='appointments-grid'>
+              {appointments.map((app) => (
+                <div
+                  key={app.appointmentId || app.id}
+                  className='appointment-card'
+                >
+                  <div className='card-header-checkin'>
+                    <div className='appointment-id'>
+                      <span className='id-label'>ID</span>
+                      <span className='id-value'>
+                        #{app.appointmentId || app.id}
+                      </span>
+                    </div>
+                    <span className='status-confirmed'>Confirmed</span>
                   </div>
-                  <div className="result-body">
-                    <div className="info-item">
-                      <i className="bi bi-person"></i>
-                      <span>{wo.customerName || 'N/A'}</span>
+
+                  <div className='card-body-checkin'>
+                    <div className='info-row'>
+                      <i className='bi bi-person'></i>
+                      <span className='label'>Customer:</span>
+                      <span className='value'>
+                        {app.customerName || app.customer?.fullName || 'N/A'}
+                      </span>
                     </div>
-                    <div className="info-item">
-                      <i className="bi bi-car-front"></i>
-                      <span>{wo.licensePlate || wo.vehicle?.licensePlate || 'N/A'}</span>
+                    <div className='info-row'>
+                      <i className='bi bi-car-front'></i>
+                      <span className='label'>Vehicle:</span>
+                      <span className='value'>
+                        {app.licensePlate || app.vehicle?.licensePlate || 'N/A'}
+                      </span>
                     </div>
-                    <div className="progress-bar">
-                      <div
-                        className="progress-fill"
-                        style={{ width: `${wo.progress || 0}%` }}
-                      ></div>
+                    <div className='info-row'>
+                      <i className='bi bi-calendar'></i>
+                      <span className='label'>Date:</span>
+                      <span className='value'>
+                        {new Date(
+                          app.appointmentDate || app.scheduledDate,
+                        ).toLocaleDateString('en-US')}
+                      </span>
                     </div>
-                    <span className="progress-text">{wo.progress || 0}% completed</span>
+                    <div className='info-row'>
+                      <i className='bi bi-clock'></i>
+                      <span className='label'>Time:</span>
+                      <span className='value'>
+                        {new Date(
+                          app.appointmentDate || app.scheduledDate,
+                        ).toLocaleTimeString('en-US', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className='card-footer-checkin'>
+                    <button
+                      className='btn-checkin'
+                      onClick={() => handleCheckIn(app.appointmentId || app.id)}
+                    >
+                      <i className='bi bi-check-circle'></i>
+                      Check-in
+                    </button>
                   </div>
                 </div>
               ))}
             </div>
-          </div>
-        )}
-      </div>
-
-      {/* Ready for Check-in Section */}
-      <div className="checkin-section">
-        <div className="section-title">
-          <i className="bi bi-clipboard-check"></i>
-          <h2>Ready for Check-in</h2>
-          <span className="count-badge">{appointments.length}</span>
+          )}
         </div>
-
-        {appointments.length === 0 ? (
-          <div className="empty-state">
-            <i className="bi bi-calendar-x"></i>
-            <h3>No Appointments</h3>
-            <p>No appointments ready for check-in at the moment</p>
-          </div>
-        ) : (
-          <div className="appointments-grid">
-            {appointments.map((app) => (
-              <div key={app.appointmentId || app.id} className="appointment-card">
-                <div className="card-header-checkin">
-                  <div className="appointment-id">
-                    <span className="id-label">ID</span>
-                    <span className="id-value">#{app.appointmentId || app.id}</span>
-                  </div>
-                  <span className="status-confirmed">Confirmed</span>
-                </div>
-
-                <div className="card-body-checkin">
-                  <div className="info-row">
-                    <i className="bi bi-person"></i>
-                    <span className="label">Customer:</span>
-                    <span className="value">{app.customerName || app.customer?.fullName || "N/A"}</span>
-                  </div>
-                  <div className="info-row">
-                    <i className="bi bi-car-front"></i>
-                    <span className="label">Vehicle:</span>
-                    <span className="value">{app.licensePlate || app.vehicle?.licensePlate || "N/A"}</span>
-                  </div>
-                  <div className="info-row">
-                    <i className="bi bi-calendar"></i>
-                    <span className="label">Date:</span>
-                    <span className="value">{new Date(app.appointmentDate || app.scheduledDate).toLocaleDateString('en-US')}</span>
-                  </div>
-                  <div className="info-row">
-                    <i className="bi bi-clock"></i>
-                    <span className="label">Time:</span>
-                    <span className="value">{new Date(app.appointmentDate || app.scheduledDate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
-                  </div>
-                </div>
-
-                <div className="card-footer-checkin">
-                  <button
-                    className="btn-checkin"
-                    onClick={() => handleCheckIn(app.appointmentId || app.id)}
-                  >
-                    <i className="bi bi-check-circle"></i>
-                    Check-in
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
       </div>
 
       <style>{`
@@ -299,21 +350,47 @@ export default function CheckIn() {
 
         /* Search Container */
         .search-container {
-          display: flex;
-          gap: 12px;
+          position: relative;
+          width: 100%;
+        }
+
+        .search-spinner {
+          position: absolute;
+          right: 14px;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 16px;
+          height: 16px;
+          border: 2px solid #e5e5e5;
+          border-top-color: #1a1a1a;
+          border-radius: 50%;
+          animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin { to { transform: translateY(-50%) rotate(360deg); } }
+
+        .search-icon {
+          position: absolute;
+          left: 16px;
+          top: 50%;
+          transform: translateY(-50%);
+          font-size: 18px;
+          color: #86868b;
         }
 
         .search-input {
-          flex: 1;
-          padding: 12px 20px;
+          width: 100%;
+          padding: 12px 20px 12px 42px; /* chừa chỗ cho icon */
           border: 1px solid #e5e5e5;
           border-radius: 25px;
+          background: #fafafa;
           font-size: 14px;
           color: #1a1a1a;
           transition: all 0.2s;
         }
 
         .search-input:focus {
+          background: #fff;
           outline: none;
           border-color: #1a1a1a;
           box-shadow: 0 0 0 3px rgba(26, 26, 26, 0.1);
@@ -323,30 +400,6 @@ export default function CheckIn() {
           color: #d1d1d6;
         }
 
-        .search-btn {
-          padding: 12px 24px;
-          background: #1a1a1a;
-          color: white;
-          border: none;
-          border-radius: 25px;
-          font-size: 14px;
-          font-weight: 500;
-          cursor: pointer;
-          transition: all 0.2s;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          white-space: nowrap;
-        }
-
-        .search-btn:hover:not(:disabled) {
-          background: #000;
-        }
-
-        .search-btn:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
 
         /* Search Results */
         .search-results {
@@ -638,6 +691,31 @@ export default function CheckIn() {
             justify-content: center;
           }
         }
+          .empty-search {
+            text-align: center;
+            padding: 60px 20px;
+            color: #86868b;
+          }
+
+          .empty-search i {
+            font-size: 64px;
+            color: #d1d1d6;
+            margin-bottom: 16px;
+          }
+
+          .empty-search h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin: 0 0 8px 0;
+          }
+
+          .empty-search p {
+            font-size: 14px;
+            color: #86868b;
+            margin: 0;
+          }
+
       `}</style>
     </div>
   );
