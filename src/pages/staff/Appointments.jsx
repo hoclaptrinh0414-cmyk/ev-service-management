@@ -126,7 +126,8 @@ export default function Appointments({ isDashboard = false }) {
     try {
       setConfirmingId(appointmentId);
       await staffService.confirmAppointment(appointmentId, {
-        confirmationMethod: 'System',
+        appointmentId,
+        confirmationMethod: 'In-Person',
         notes: 'Confirmed by staff',
         sendConfirmationEmail: true,
         sendConfirmationSMS: false,
@@ -146,8 +147,9 @@ export default function Appointments({ isDashboard = false }) {
   };
 
   const getStatusBadge = (statusName) => {
-    const status =
-      statusFilters.find((s) => s.value === statusName) || statusFilters[0];
+    const status = statusFilters.find(
+      (s) => s.label.toLowerCase() === (statusName || '').toLowerCase(),
+    ) || { color: '#ccc', label: statusName || 'Unknown' };
     return {
       color: status.color,
       label: status.label,
