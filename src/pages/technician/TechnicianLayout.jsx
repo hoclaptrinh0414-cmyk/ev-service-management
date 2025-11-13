@@ -13,7 +13,7 @@ export default function TechnicianLayout() {
   const menuItems = [
     { path: "/technician", label: "Dashboard", icon: "bi-speedometer2", exact: true },
     { path: "/technician/work-orders", label: "My Work Orders", icon: "bi-tools" },
-    { path: "/technician/maintenance", label: "Maintenance Jobs", icon: "bi-list-check" },
+    { path: "/technician/maintenance/1017", label: "Maintenance Jobs", icon: "bi-list-check" },
   ];
 
   const handleLogout = () => {

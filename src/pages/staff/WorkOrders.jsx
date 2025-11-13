@@ -1,7 +1,7 @@
 // src/pages/staff/WorkOrders.jsx
-import { useState, useEffect } from "react";
-import { toast } from "react-toastify";
-import staffService from "../../services/staffService";
+import { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
+import staffService from '../../services/staffService';
 
 export default function WorkOrders() {
   const [workOrders, setWorkOrders] = useState([]);
@@ -13,22 +13,32 @@ export default function WorkOrders() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [view, setView] = useState('list'); // 'list' | 'detail'
 
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
   useEffect(() => {
     fetchWorkOrders();
     fetchTechnicians();
     fetchTemplates();
   }, []);
 
-  const fetchWorkOrders = async () => {
+  const fetchWorkOrders = async (pageNum = 1) => {
     setLoading(true);
     try {
-      const response = await staffService.searchWorkOrders({});
-      const data = response.data || response;
-      const items = Array.isArray(data) ? data : (data.items || []);
+      const response = await staffService.searchWorkOrders({
+        Page: pageNum,
+        PageSize: 9,
+      });
+      const data = response.data?.data || response.data || response;
+      const items = Array.isArray(data) ? data : data.items || [];
       setWorkOrders(items);
+
+      // Update local state manually để không phụ thuộc backend trả về
+      setPage(pageNum);
+      setTotalPages(data.totalPages || 1);
     } catch (err) {
-      console.error("Failed to load work orders:", err);
-      toast.error("Failed to load work orders list");
+      console.error('Failed to load work orders:', err);
+      toast.error('Failed to load work orders list');
     } finally {
       setLoading(false);
     }
@@ -40,18 +50,21 @@ export default function WorkOrders() {
       const data = response.data || response;
       setTechnicians(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error("Failed to load technicians:", err);
+      console.error('Failed to load technicians:', err);
     }
   };
 
   const fetchTemplates = async () => {
     try {
-      const response = await staffService.getChecklistTemplates({ IsActive: true, PageSize: 50 });
+      const response = await staffService.getChecklistTemplates({
+        IsActive: true,
+        PageSize: 50,
+      });
       const data = response.data || response;
-      const items = Array.isArray(data) ? data : (data.items || []);
+      const items = Array.isArray(data) ? data : data.items || [];
       setTemplates(items);
     } catch (err) {
-      console.error("Failed to load templates:", err);
+      console.error('Failed to load templates:', err);
     }
   };
 
@@ -62,19 +75,35 @@ export default function WorkOrders() {
       setSelectedWO(detailResponse.data || detailResponse);
 
       // Load checklist if exists
+      // Load checklist if exists (new schema)
       try {
-        const checklistResponse = await staffService.getWorkOrderChecklist(woId);
-        const checklistData = checklistResponse.data || checklistResponse;
-        setChecklist(Array.isArray(checklistData) ? checklistData : (checklistData.items || []));
+        const checklistResponse = await staffService.getWorkOrderChecklist(
+          woId,
+        );
+        const raw = checklistResponse.data || checklistResponse;
+
+        const checklistPayload = raw.data || raw; // because backend wraps inside data:{...}
+        const items = checklistPayload.items || [];
+
+        setChecklist(items);
+
+        // attach progress info from backend
+        setSelectedWO((prev) => ({
+          ...prev,
+          checklistTotal: checklistPayload.totalItems || items.length,
+          checklistCompleted:
+            checklistPayload.completedItems ||
+            items.filter((i) => i.isCompleted).length,
+          checklistCompletion: checklistPayload.completionPercentage ?? 0,
+        }));
       } catch (err) {
-        // Checklist might not exist yet
         setChecklist([]);
       }
 
       setView('detail');
     } catch (err) {
-      console.error("Failed to load work order detail:", err);
-      toast.error("Failed to load work order detail");
+      console.error('Failed to load work order detail:', err);
+      toast.error('Failed to load work order detail');
     } finally {
       setDetailLoading(false);
     }
@@ -86,19 +115,22 @@ export default function WorkOrders() {
     try {
       const bestTech = await staffService.autoSelectTechnician({
         serviceCenterId: selectedWO.serviceCenterId,
-        requiredSkills: selectedWO.requiredSkills || []
+        requiredSkills: selectedWO.requiredSkills || [],
       });
 
       const techId = bestTech.data?.technicianId || bestTech.technicianId;
 
       if (techId) {
-        await staffService.assignTechnician(selectedWO.workOrderId || selectedWO.id, techId);
-        toast.success("Auto-assigned technician successfully!");
+        await staffService.assignTechnician(
+          selectedWO.workOrderId || selectedWO.id,
+          techId,
+        );
+        toast.success('Auto-assigned technician successfully!');
         viewWorkOrderDetail(selectedWO.workOrderId || selectedWO.id);
       }
     } catch (err) {
-      console.error("Auto assign failed:", err);
-      toast.error(err.response?.data?.message || "Auto-assign failed");
+      console.error('Auto assign failed:', err);
+      toast.error(err.response?.data?.message || 'Auto-assign failed');
     }
   };
 
@@ -106,12 +138,15 @@ export default function WorkOrders() {
     if (!selectedWO) return;
 
     try {
-      await staffService.assignTechnician(selectedWO.workOrderId || selectedWO.id, techId);
-      toast.success("Assigned technician successfully!");
+      await staffService.assignTechnician(
+        selectedWO.workOrderId || selectedWO.id,
+        techId,
+      );
+      toast.success('Assigned technician successfully!');
       viewWorkOrderDetail(selectedWO.workOrderId || selectedWO.id);
     } catch (err) {
-      console.error("Manual assign failed:", err);
-      toast.error(err.response?.data?.message || "Assignment failed");
+      console.error('Manual assign failed:', err);
+      toast.error(err.response?.data?.message || 'Assignment failed');
     }
   };
 
@@ -119,14 +154,17 @@ export default function WorkOrders() {
     if (!selectedWO) return;
 
     try {
-      await staffService.applyChecklistTemplate(selectedWO.workOrderId || selectedWO.id, {
-        templateId: Number(templateId)
-      });
-      toast.success("Applied checklist template successfully!");
+      await staffService.applyChecklistTemplate(
+        selectedWO.workOrderId || selectedWO.id,
+        {
+          templateId: Number(templateId),
+        },
+      );
+      toast.success('Applied checklist template successfully!');
       viewWorkOrderDetail(selectedWO.workOrderId || selectedWO.id);
     } catch (err) {
-      console.error("Apply template failed:", err);
-      toast.error(err.response?.data?.message || "Failed to apply template");
+      console.error('Apply template failed:', err);
+      toast.error(err.response?.data?.message || 'Failed to apply template');
     }
   };
 
@@ -134,23 +172,25 @@ export default function WorkOrders() {
     if (!selectedWO) return;
 
     try {
-      await staffService.startWorkOrder(selectedWO.workOrderId || selectedWO.id);
-      toast.success("Work order started successfully!");
+      await staffService.startWorkOrder(
+        selectedWO.workOrderId || selectedWO.id,
+      );
+      toast.success('Work order started successfully!');
       viewWorkOrderDetail(selectedWO.workOrderId || selectedWO.id);
     } catch (err) {
-      console.error("Start work order failed:", err);
-      toast.error(err.response?.data?.message || "Failed to start work order");
+      console.error('Start work order failed:', err);
+      toast.error(err.response?.data?.message || 'Failed to start work order');
     }
   };
 
   const handleCompleteChecklistItem = async (itemId) => {
     try {
-      await staffService.quickCompleteItem(itemId, "Completed by staff");
-      toast.success("Item completed successfully!");
+      await staffService.quickCompleteItem(itemId, 'Completed by staff');
+      toast.success('Item completed successfully!');
       viewWorkOrderDetail(selectedWO.workOrderId || selectedWO.id);
     } catch (err) {
-      console.error("Complete item failed:", err);
-      toast.error(err.response?.data?.message || "Failed to complete item");
+      console.error('Complete item failed:', err);
+      toast.error(err.response?.data?.message || 'Failed to complete item');
     }
   };
 
@@ -159,17 +199,23 @@ export default function WorkOrders() {
 
     try {
       // Validate checklist first
-      await staffService.validateChecklist(selectedWO.workOrderId || selectedWO.id);
+      await staffService.validateChecklist(
+        selectedWO.workOrderId || selectedWO.id,
+      );
 
       // Complete work order
-      await staffService.completeWorkOrder(selectedWO.workOrderId || selectedWO.id);
-      toast.success("Work order completed successfully!");
+      await staffService.completeWorkOrder(
+        selectedWO.workOrderId || selectedWO.id,
+      );
+      toast.success('Work order completed successfully!');
 
       setView('list');
       fetchWorkOrders();
     } catch (err) {
-      console.error("Complete work order failed:", err);
-      toast.error(err.response?.data?.message || "Failed to complete work order");
+      console.error('Complete work order failed:', err);
+      toast.error(
+        err.response?.data?.message || 'Failed to complete work order',
+      );
     }
   };
 
@@ -177,162 +223,257 @@ export default function WorkOrders() {
     if (!selectedWO) return;
 
     try {
-      await staffService.performQualityCheck(selectedWO.workOrderId || selectedWO.id, {
-        inspectedBy: "Staff",
-        passed: true,
-        notes: "Quality check passed"
-      });
-      toast.success("Quality check completed successfully!");
+      await staffService.performQualityCheck(
+        selectedWO.workOrderId || selectedWO.id,
+        {
+          inspectedBy: 'Staff',
+          passed: true,
+          notes: 'Quality check passed',
+        },
+      );
+      toast.success('Quality check completed successfully!');
       viewWorkOrderDetail(selectedWO.workOrderId || selectedWO.id);
     } catch (err) {
-      console.error("Quality check failed:", err);
-      toast.error(err.response?.data?.message || "Quality check failed");
+      console.error('Quality check failed:', err);
+      toast.error(err.response?.data?.message || 'Quality check failed');
     }
   };
 
   if (loading) {
     return (
-      <div className="loading-container">
-        <div className="spinner"></div>
+      <div className='loading-container'>
+        <div className='spinner'></div>
         <p>Loading...</p>
       </div>
     );
   }
 
   return (
-    <div className="workorders-page">
+    <div className='workorders-page'>
       {view === 'list' ? (
         <>
           {/* Header */}
-          <div className="page-header">
-            <div className="header-left">
+          <div className='page-header'>
+            <div className='header-left'>
               <h1>Work Orders</h1>
               <p>Manage work orders and checklists</p>
             </div>
           </div>
 
           {/* Work Orders List */}
-          <div className="workorders-section">
-            <div className="section-title">
-              <i className="bi bi-tools"></i>
+          <div className='workorders-section'>
+            <div className='section-title'>
+              <i className='bi bi-tools'></i>
               <h2>All Work Orders</h2>
-              <span className="count-badge">{workOrders.length}</span>
+              <span className='count-badge'>{workOrders.length}</span>
             </div>
 
             {workOrders.length === 0 ? (
-              <div className="empty-state">
-                <i className="bi bi-inbox"></i>
+              <div className='empty-state'>
+                <i className='bi bi-inbox'></i>
                 <h3>No Work Orders</h3>
                 <p>No work orders have been created yet</p>
               </div>
             ) : (
-              <div className="workorders-grid">
+              <div className='workorders-grid'>
                 {workOrders.map((wo) => (
                   <div
-                    key={wo.workOrderId || wo.id}
-                    className="workorder-card"
-                    onClick={() => viewWorkOrderDetail(wo.workOrderId || wo.id)}
+                    key={wo.workOrderId}
+                    className='workorder-card'
+                    onClick={() => viewWorkOrderDetail(wo.workOrderId)}
                   >
-                    <div className="card-header-wo">
-                      <span className="wo-id">WO #{wo.workOrderId || wo.id}</span>
-                      <span className={`status-badge ${(wo.status || '').toLowerCase()}`}>
-                        {wo.status || 'Pending'}
+                    <div className='card-header-wo'>
+                      <span className='wo-id'>
+                        {wo.workOrderCode || `WO #${wo.workOrderId}`}
+                      </span>
+                      <span
+                        className='status-badge'
+                        style={{
+                          backgroundColor: wo.statusColor || '#f5f5f7',
+                          color: '#1a1a1a',
+                        }}
+                      >
+                        {wo.statusName || 'Pending'}
                       </span>
                     </div>
 
-                    <div className="card-body-wo">
-                      <div className="info-item">
-                        <i className="bi bi-person"></i>
+                    <div className='card-body-wo'>
+                      <div className='info-item'>
+                        <i className='bi bi-person'></i>
                         <span>{wo.customerName || 'N/A'}</span>
                       </div>
-                      <div className="info-item">
-                        <i className="bi bi-car-front"></i>
-                        <span>{wo.licensePlate || wo.vehicle?.licensePlate || 'N/A'}</span>
-                      </div>
-                      {wo.assignedTechnician && (
-                        <div className="info-item">
-                          <i className="bi bi-wrench"></i>
-                          <span>{wo.assignedTechnician}</span>
-                        </div>
-                      )}
 
-                      <div className="progress-section">
-                        <div className="progress-bar">
+                      <div className='info-item'>
+                        <i className='bi bi-car-front'></i>
+                        <span>
+                          {wo.vehiclePlate || wo.vehicleModel || 'N/A'}
+                        </span>
+                      </div>
+
+                      <div className='info-item'>
+                        <i className='bi bi-tools'></i>
+                        <span>{wo.technicianName || 'Unassigned'}</span>
+                      </div>
+
+                      <div className='info-item'>
+                        <i className='bi bi-clock-history'></i>
+                        <span>
+                          {wo.startDate
+                            ? new Date(wo.startDate).toLocaleString('vi-VN', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })
+                            : 'N/A'}
+                        </span>
+                      </div>
+
+                      <div className='progress-section'>
+                        <div className='progress-bar'>
                           <div
-                            className="progress-fill"
-                            style={{ width: `${wo.progress || 0}%` }}
+                            className='progress-fill'
+                            style={{ width: `${wo.progressPercentage || 0}%` }}
                           ></div>
                         </div>
-                        <span className="progress-text">{wo.progress || 0}% completed</span>
+                        <span className='progress-text'>
+                          {wo.progressPercentage || 0}% completed
+                        </span>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
             )}
+            <div className='pagination-container'>
+              <button
+                disabled={page <= 1}
+                onClick={() => fetchWorkOrders(page - 1)}
+                className='btn-page nav'
+              >
+                <i className='bi bi-chevron-left'></i>
+              </button>
+
+              {Array.from({ length: totalPages }).map((_, i) => (
+                <button
+                  key={i}
+                  className={`btn-page number ${
+                    page === i + 1 ? 'active' : ''
+                  }`}
+                  onClick={() => fetchWorkOrders(i + 1)}
+                >
+                  {i + 1}
+                </button>
+              ))}
+
+              <button
+                disabled={page >= totalPages}
+                onClick={() => fetchWorkOrders(page + 1)}
+                className='btn-page nav'
+              >
+                <i className='bi bi-chevron-right'></i>
+              </button>
+            </div>
           </div>
         </>
       ) : (
         <>
           {/* Detail View */}
-          <div className="page-header">
-            <button className="btn-back" onClick={() => setView('list')}>
-              <i className="bi bi-arrow-left"></i>
+          <div className='page-header'>
+            <button className='btn-back' onClick={() => setView('list')}>
+              <i className='bi bi-arrow-left'></i>
               Back to List
             </button>
           </div>
 
           {detailLoading ? (
-            <div className="loading-container">
-              <div className="spinner"></div>
+            <div className='loading-container'>
+              <div className='spinner'></div>
               <p>Loading details...</p>
             </div>
           ) : selectedWO ? (
-            <div className="detail-container">
+            <div className='detail-container'>
               {/* Work Order Info Card */}
-              <div className="detail-card">
-                <div className="card-header-detail">
-                  <h2>Work Order #{selectedWO.workOrderId || selectedWO.id}</h2>
-                  <span className={`status-badge ${(selectedWO.status || '').toLowerCase()}`}>
-                    {selectedWO.status || 'Pending'}
+              <div className='detail-card'>
+                <div className='card-header-detail'>
+                  <h2>
+                    {selectedWO.workOrderCode ||
+                      `WO #${selectedWO.workOrderId}`}
+                  </h2>
+                  <span
+                    className='status-badge'
+                    style={{
+                      backgroundColor: selectedWO.statusColor || '#f5f5f7',
+                      color: '#1a1a1a',
+                    }}
+                  >
+                    {selectedWO.statusName || 'Pending'}
                   </span>
                 </div>
 
-                <div className="card-body-detail">
-                  <div className="detail-row">
-                    <span className="label">Customer:</span>
-                    <span className="value">{selectedWO.customerName || 'N/A'}</span>
+                <div className='card-body-detail'>
+                  <div className='detail-row'>
+                    <span className='label'>Customer:</span>
+                    <span className='value'>
+                      {selectedWO.customerName || 'N/A'}
+                    </span>
                   </div>
-                  <div className="detail-row">
-                    <span className="label">Vehicle:</span>
-                    <span className="value">{selectedWO.licensePlate || selectedWO.vehicle?.licensePlate || 'N/A'}</span>
+                  <div className='detail-row'>
+                    <span className='label'>Phone:</span>
+                    <span className='value'>
+                      {selectedWO.customerPhone || 'N/A'}
+                    </span>
                   </div>
-                  <div className="detail-row">
-                    <span className="label">Technician:</span>
-                    <span className="value">{selectedWO.assignedTechnician || 'Not assigned'}</span>
+                  <div className='detail-row'>
+                    <span className='label'>Vehicle:</span>
+                    <span className='value'>
+                      {selectedWO.vehiclePlate ||
+                        selectedWO.vehicleModel ||
+                        'N/A'}
+                    </span>
                   </div>
-                  <div className="detail-row">
-                    <span className="label">Progress:</span>
-                    <span className="value">{selectedWO.progress || 0}%</span>
+                  <div className='detail-row'>
+                    <span className='label'>Technician:</span>
+                    <span className='value'>
+                      {selectedWO.technicianName || 'Unassigned'}
+                    </span>
+                  </div>
+                  <div className='detail-row'>
+                    <span className='label'>Progress:</span>
+                    <span className='value'>
+                      {selectedWO.checklistCompletion ??
+                        selectedWO.progressPercentage ??
+                        0}
+                      %
+                    </span>
                   </div>
                 </div>
 
                 {/* Actions */}
-                <div className="card-actions">
+                <div className='card-actions'>
                   {!selectedWO.assignedTechnician && (
                     <>
-                      <button className="btn-action primary" onClick={handleAutoAssign}>
-                        <i className="bi bi-magic"></i>
+                      <button
+                        className='btn-action primary'
+                        onClick={handleAutoAssign}
+                      >
+                        <i className='bi bi-magic'></i>
                         Auto Assign
                       </button>
                       <select
-                        className="select-technician"
+                        className='select-technician'
                         onChange={(e) => handleManualAssign(e.target.value)}
-                        defaultValue=""
+                        defaultValue=''
                       >
-                        <option value="" disabled>Manual Assign...</option>
-                        {technicians.map(tech => (
-                          <option key={tech.technicianId || tech.id} value={tech.technicianId || tech.id}>
+                        <option value='' disabled>
+                          Manual Assign...
+                        </option>
+                        {technicians.map((tech) => (
+                          <option
+                            key={tech.technicianId || tech.id}
+                            value={tech.technicianId || tech.id}
+                          >
                             {tech.fullName || tech.name}
                           </option>
                         ))}
@@ -340,90 +481,136 @@ export default function WorkOrders() {
                     </>
                   )}
 
-                  {selectedWO.assignedTechnician && selectedWO.status === 'Pending' && (
-                    <button className="btn-action success" onClick={handleStartWorkOrder}>
-                      <i className="bi bi-play-circle"></i>
-                      Start Work Order
-                    </button>
-                  )}
+                  {selectedWO.technicianId &&
+                    (selectedWO.statusName === 'Pending' ||
+                      selectedWO.statusName === 'Assigned') && (
+                      <button
+                        className='btn-action success'
+                        onClick={handleStartWorkOrder}
+                      >
+                        <i className='bi bi-play-circle'></i>
+                        Start Work Order
+                      </button>
+                    )}
 
-                  {selectedWO.status === 'InProgress' && selectedWO.progress === 100 && (
-                    <>
-                      <button className="btn-action success" onClick={handleCompleteWorkOrder}>
-                        <i className="bi bi-check-circle"></i>
-                        Complete Work Order
-                      </button>
-                      <button className="btn-action primary" onClick={handleQualityCheck}>
-                        <i className="bi bi-shield-check"></i>
-                        Quality Check
-                      </button>
-                    </>
-                  )}
+                  {selectedWO.statusName === 'InProgress' &&
+                    selectedWO.progress === 100 && (
+                      <>
+                        <button
+                          className='btn-action success'
+                          onClick={handleCompleteWorkOrder}
+                        >
+                          <i className='bi bi-check-circle'></i>
+                          Complete Work Order
+                        </button>
+                        <button
+                          className='btn-action primary'
+                          onClick={handleQualityCheck}
+                        >
+                          <i className='bi bi-shield-check'></i>
+                          Quality Check
+                        </button>
+                      </>
+                    )}
                 </div>
               </div>
 
               {/* Checklist Card */}
               {checklist.length > 0 ? (
-                <div className="detail-card">
-                  <div className="card-header-detail">
+                <div className='detail-card'>
+                  <div className='card-header-detail'>
                     <h2>Checklist</h2>
-                    <span className="count-badge">
-                      {checklist.filter(item => item.status === 'Completed').length} / {checklist.length}
+                    <span className='count-badge'>
+                      {selectedWO.checklistCompleted ??
+                        checklist.filter((i) => i.isCompleted).length}{' '}
+                      /{selectedWO.checklistTotal ?? checklist.length}
                     </span>
                   </div>
 
-                  <div className="checklist-items">
+                  <div className='checklist-items'>
                     {checklist.map((item, index) => (
-                      <div key={item.checklistItemId || item.id || index} className="checklist-item">
-                        <div className="item-content">
-                          <div className="item-header">
-                            <span className="item-title">{item.taskDescription || item.description || `Item ${index + 1}`}</span>
-                            <span className={`item-status ${(item.status || '').toLowerCase()}`}>
-                              {item.status || 'Pending'}
+                      <div
+                        key={item.itemId || index}
+                        className='checklist-item'
+                      >
+                        <div className='item-content'>
+                          <div className='item-header'>
+                            <span className='item-title'>
+                              {item.itemDescription || `Item ${index + 1}`}
+                            </span>
+                            <span
+                              className={`item-status ${
+                                item.isCompleted ? 'completed' : 'pending'
+                              }`}
+                            >
+                              {item.isCompleted ? 'Completed' : 'Pending'}
                             </span>
                           </div>
+
                           {item.notes && (
-                            <p className="item-notes">{item.notes}</p>
+                            <p className='item-notes'>{item.notes}</p>
+                          )}
+
+                          {item.completedByName && (
+                            <p className='item-notes'>
+                              By: {item.completedByName}{' '}
+                              {item.completedDate
+                                ? ` • ${new Date(
+                                    item.completedDate,
+                                  ).toLocaleString('vi-VN')}`
+                                : ''}
+                            </p>
                           )}
                         </div>
 
-                        {item.status !== 'Completed' && selectedWO.status === 'InProgress' && (
-                          <button
-                            className="btn-complete-item"
-                            onClick={() => handleCompleteChecklistItem(item.checklistItemId || item.id)}
-                          >
-                            <i className="bi bi-check"></i>
-                          </button>
-                        )}
+                        {!item.isCompleted &&
+                          selectedWO.statusName === 'InProgress' && (
+                            <button
+                              className='btn-complete-item'
+                              onClick={() =>
+                                handleCompleteChecklistItem(item.itemId)
+                              }
+                            >
+                              <i className='bi bi-check'></i>
+                            </button>
+                          )}
                       </div>
                     ))}
                   </div>
                 </div>
-              ) : selectedWO.status === 'InProgress' && (
-                <div className="detail-card">
-                  <div className="card-header-detail">
-                    <h2>Apply Checklist Template</h2>
-                  </div>
+              ) : (
+                selectedWO.statusName === 'InProgress' && (
+                  <div className='detail-card'>
+                    <div className='card-header-detail'>
+                      <h2>Apply Checklist Template</h2>
+                    </div>
 
-                  <div className="card-body-detail">
-                    <p className="no-checklist-msg">No checklist found. Apply a template to start:</p>
-                    <select
-                      className="select-template"
-                      onChange={(e) => e.target.value && handleApplyTemplate(e.target.value)}
-                      defaultValue=""
-                    >
-                      <option value="" disabled>Select Template...</option>
-                      {templates.map(template => (
-                        <option
-                          key={template.templateId || template.id}
-                          value={template.templateId || template.id}
-                        >
-                          {template.templateName || template.name}
+                    <div className='card-body-detail'>
+                      <p className='no-checklist-msg'>
+                        No checklist found. Apply a template to start:
+                      </p>
+                      <select
+                        className='select-template'
+                        onChange={(e) =>
+                          e.target.value && handleApplyTemplate(e.target.value)
+                        }
+                        defaultValue=''
+                      >
+                        <option value='' disabled>
+                          Select Template...
                         </option>
-                      ))}
-                    </select>
+                        {templates.map((template) => (
+                          <option
+                            key={template.templateId || template.id}
+                            value={template.templateId || template.id}
+                          >
+                            {template.templateName || template.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
-                </div>
+                )
               )}
             </div>
           ) : null}
@@ -880,6 +1067,50 @@ export default function WorkOrders() {
             justify-content: center;
           }
         }
+          .pagination-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 24px;
+          }
+
+          .btn-page {
+            width: 36px;
+            height: 36px;
+            border: none;
+            border-radius: 50%;
+            background: #f5f5f7;
+            color: #1a1a1a;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+
+          .btn-page.number {
+            font-size: 14px;
+          }
+
+          .btn-page.nav i {
+            font-size: 18px;
+          }
+
+          .btn-page:hover:not(:disabled) {
+            background: #e5e5e5;
+          }
+
+          .btn-page.active {
+            background: #1a1a1a;
+            color: white;
+          }
+
+          .btn-page:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+          }
       `}</style>
     </div>
   );
