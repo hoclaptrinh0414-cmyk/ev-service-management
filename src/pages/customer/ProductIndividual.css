@@ -347,6 +347,12 @@
   background: #000;
 }
 
+.detail-actions .free-indicator {
+  color: #16a34a;
+  font-weight: 600;
+  margin-left: 0.25rem;
+}
+
 @media (max-width: 1100px) {
   .product-layout {
     grid-template-columns: 1fr;

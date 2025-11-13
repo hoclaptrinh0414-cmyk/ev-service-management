@@ -17,7 +17,7 @@ import './ScheduleServiceNew.css';
 const ScheduleServiceNew = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
-  const { cartItems, getTotalPrice } = useCart();
+  const { cartItems, getTotalPrice, clearCart } = useCart();
   const { saveBookingState, restoreBookingState, hasBookingState, clearBookingState } = useSchedule();
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -47,6 +47,7 @@ const ScheduleServiceNew = () => {
   const [paymentMethod, setPaymentMethod] = useState('VNPay');
   const [appointmentData, setAppointmentData] = useState(null);
   const [paymentProcessing, setPaymentProcessing] = useState(false);
+  const [isFreeAppointment, setIsFreeAppointment] = useState(false);
 
   const normalizeApiResponse = (response) => {
     if (!response) return null;
@@ -434,6 +435,7 @@ const ScheduleServiceNew = () => {
   const handleSubmitAppointment = async () => {
     try {
       setSubmitting(true);
+      setIsFreeAppointment(false);
 
       // Validation: Check required fields
       if (!user?.customerId) {
@@ -551,6 +553,9 @@ const ScheduleServiceNew = () => {
           throw new Error('Invalid response when creating payment intent');
         }
 
+        const resolvedAmount = paymentResult?.amount ?? estimatedCost ?? resolveCartTotal();
+        const requiresPayment = !!paymentResult?.paymentUrl && resolvedAmount > 0;
+
         // Save appointment and payment data
         setAppointmentData({
           appointmentId,
@@ -561,31 +566,44 @@ const ScheduleServiceNew = () => {
           paymentId: paymentResult?.paymentId,
           paymentCode: paymentResult?.paymentCode,
           paymentUrl: paymentResult?.paymentUrl,
-          amount: paymentResult?.amount || estimatedCost || resolveCartTotal()
+          amount: resolvedAmount
         });
+
+        setIsFreeAppointment(!requiresPayment);
 
         // Move to payment step
         setCurrentStep(5);
-        toast.info('Please complete payment to confirm your appointment');
+        if (requiresPayment) {
+          toast.info('Please complete payment to confirm your appointment');
+        } else {
+          toast.success('Appointment is covered. Click Book Now to finalize your schedule.');
+        }
 
       } catch (paymentError) {
         // Check if error is "no payment required" (free appointment)
         const errorMessage = paymentError.response?.data?.error || paymentError.response?.data?.message || '';
-        const isFreeAppointment = errorMessage.toLowerCase().includes('no payment required')
-          || errorMessage.toLowerCase().includes('appointment is free')
-          || errorMessage.toLowerCase().includes('subscription services');
+        const normalizedErrorMessage = errorMessage.toLowerCase();
+        const freeAppointmentDetected = normalizedErrorMessage.includes('no payment required')
+          || normalizedErrorMessage.includes('appointment is free')
+          || normalizedErrorMessage.includes('subscription services');
 
-        if (isFreeAppointment) {
+        if (freeAppointmentDetected) {
           console.log('✅ Appointment is FREE (covered by subscription), no payment needed');
-          toast.success('🎉 Appointment confirmed! (Covered by your subscription)');
-
-          // Clear cart and booking state
-          clearBookingState();
-
-          // Redirect to my appointments after 2 seconds
-          setTimeout(() => {
-            navigate('/my-appointments');
-          }, 2000);
+          setAppointmentData({
+            appointmentId,
+            appointmentCode,
+            invoiceId,
+            invoiceCode: null,
+            paymentIntentId: null,
+            paymentId: null,
+            paymentCode: null,
+            paymentUrl: null,
+            amount: 0
+          });
+          setIsFreeAppointment(true);
+          setCurrentStep(5);
+          toast.success('Appointment is covered. Click Book Now to finalize your schedule.');
+          return;
         } else {
           // Other payment errors - rethrow to be caught by outer catch block
           throw paymentError;
@@ -687,6 +705,23 @@ const ScheduleServiceNew = () => {
     }, 500);
   };
 
+  const handleConfirmFreeAppointment = () => {
+    if (!appointmentData?.appointmentId) {
+      toast.error('Không tìm thấy thông tin cuộc hẹn để xác nhận. Vui lòng thử lại.');
+      return;
+    }
+
+    setPaymentProcessing(true);
+    toast.success('🎉 Appointment confirmed! No payment required.');
+    clearBookingState();
+    clearCart();
+
+    setTimeout(() => {
+      setPaymentProcessing(false);
+      navigate('/my-appointments');
+    }, 1200);
+  };
+
   // ============ RENDER HELPERS ============
   const getTomorrowDate = () => {
     const tomorrow = new Date();
@@ -697,6 +732,10 @@ const ScheduleServiceNew = () => {
   const selectedVehicle = vehicles.find(v => v.vehicleId === parseInt(selectedVehicleId));
   const selectedServiceCenter = serviceCenters.find(sc => sc.serviceCenterId === parseInt(selectedServiceCenterId));
   const selectedTimeSlot = availableTimeSlots.find(ts => ts.timeSlotId === parseInt(selectedTimeSlotId));
+  const cartTotalAmount = resolveCartTotal();
+  const cartRequiresPayment = cartTotalAmount > 0;
+  const appointmentAmount = appointmentData?.amount ?? cartTotalAmount;
+  const appointmentRequiresPayment = !!appointmentData && !isFreeAppointment && appointmentAmount > 0 && !!appointmentData.paymentUrl;
 
   // ============ RENDER ============
   return (
@@ -1098,7 +1137,11 @@ const ScheduleServiceNew = () => {
                           <i className="bi bi-check-circle-fill text-success" style={{ fontSize: '3rem' }}></i>
                           <h4 className="mt-3 mb-2">Appointment Created Successfully!</h4>
                           <p className="text-muted">Appointment Code: <strong>{appointmentData.appointmentCode}</strong></p>
-                          <p className="text-muted">Please complete payment to confirm your booking</p>
+                          <p className="text-muted">
+                            {appointmentRequiresPayment
+                              ? 'Please complete payment to confirm your booking'
+                              : 'This appointment is fully covered. Click Book Now to finalize your schedule.'}
+                          </p>
                         </div>
 
                         <div className="payment-card">
@@ -1107,11 +1150,11 @@ const ScheduleServiceNew = () => {
                             <h6 className="mb-3"><i className="bi bi-receipt me-2"></i>Payment Summary</h6>
                             <div className="d-flex justify-content-between mb-2">
                               <span>Invoice Code:</span>
-                              <strong>{appointmentData.invoiceCode}</strong>
+                              <strong>{appointmentData.invoiceCode || '—'}</strong>
                             </div>
                             <div className="d-flex justify-content-between mb-2">
                               <span>Payment Code:</span>
-                              <strong>{appointmentData.paymentCode}</strong>
+                              <strong>{appointmentData.paymentCode || '—'}</strong>
                             </div>
                             <hr />
                             <div className="d-flex justify-content-between align-items-center">
@@ -1120,87 +1163,116 @@ const ScheduleServiceNew = () => {
                                 {new Intl.NumberFormat('vi-VN', {
                                   style: 'currency',
                                   currency: 'VND'
-                                }).format(appointmentData.amount)}
+                                }).format(appointmentAmount || 0)}
                               </h4>
                             </div>
                           </div>
 
                           {/* Payment Method Selection */}
-                          <div className="payment-methods-selection mb-4">
-                            <h6 className="mb-3"><i className="bi bi-credit-card me-2"></i>Select Payment Method</h6>
+                          {appointmentRequiresPayment ? (
+                            <div className="payment-methods-selection mb-4">
+                              <h6 className="mb-3"><i className="bi bi-credit-card me-2"></i>Select Payment Method</h6>
 
-                            <div className="payment-method-options">
-                              <label className="payment-method-option">
-                                <div className="payment-method-content">
-                                  <img
-                                    src="https://cdn.haitrieu.com/wp-content/uploads/2022/10/Logo-VNPAY-QR-350x65.png"
-                                    alt="VNPay"
+                              <div className="payment-method-options">
+                                <label className="payment-method-option">
+                                  <div className="payment-method-content">
+                                    <img
+                                      src="https://cdn.haitrieu.com/wp-content/uploads/2022/10/Logo-VNPAY-QR-350x65.png"
+                                      alt="VNPay"
+                                    />
+                                    <span>VNPay</span>
+                                  </div>
+                                  <input
+                                    type="radio"
+                                    name="paymentMethod"
+                                    value="VNPay"
+                                    checked={paymentMethod === 'VNPay'}
+                                    onChange={(e) => setPaymentMethod(e.target.value)}
                                   />
-                                  <span>VNPay</span>
-                                </div>
-                                <input
-                                  type="radio"
-                                  name="paymentMethod"
-                                  value="VNPay"
-                                  checked={paymentMethod === 'VNPay'}
-                                  onChange={(e) => setPaymentMethod(e.target.value)}
-                                />
-                              </label>
+                                </label>
 
-                              <label className="payment-method-option">
-                                <div className="payment-method-content">
-                                  <img
-                                    src="https://cdn.prod.website-files.com/64199d190fc7afa82666d89c/6491bee997eba92836f95d0c_momo_wallet.png"
-                                    alt="Momo"
+                                <label className="payment-method-option">
+                                  <div className="payment-method-content">
+                                    <img
+                                      src="https://cdn.prod.website-files.com/64199d190fc7afa82666d89c/6491bee997eba92836f95d0c_momo_wallet.png"
+                                      alt="Momo"
+                                    />
+                                    <span>Momo</span>
+                                  </div>
+                                  <input
+                                    type="radio"
+                                    name="paymentMethod"
+                                    value="Momo"
+                                    checked={paymentMethod === 'Momo'}
+                                    onChange={(e) => setPaymentMethod(e.target.value)}
                                   />
-                                  <span>Momo</span>
-                                </div>
-                                <input
-                                  type="radio"
-                                  name="paymentMethod"
-                                  value="Momo"
-                                  checked={paymentMethod === 'Momo'}
-                                  onChange={(e) => setPaymentMethod(e.target.value)}
-                                />
-                              </label>
+                                </label>
 
-                              <label className="payment-method-option">
-                                <div className="payment-method-content">
-                                  <svg fill="currentColor" viewBox="0 0 32 32" height={32} width={32} xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M32 13.333l-4.177 9.333h-1.292l1.552-3.266-2.75-6.068h1.359l1.99 4.651h0.026l1.927-4.651zM14.646 16.219v3.781h-1.313v-9.333h3.474c0.828-0.021 1.63 0.266 2.25 0.807 0.615 0.505 0.953 1.219 0.943 1.974 0.010 0.766-0.339 1.5-0.943 1.979-0.604 0.531-1.354 0.792-2.25 0.792zM14.641 11.818v3.255h2.198c0.484 0.016 0.958-0.161 1.297-0.479 0.339-0.302 0.526-0.714 0.526-1.141 0-0.432-0.188-0.844-0.526-1.141-0.349-0.333-0.818-0.51-1.297-0.495zM22.63 13.333c0.833 0 1.495 0.234 1.979 0.698s0.724 1.099 0.724 1.906v3.859h-1.083v-0.87h-0.047c-0.469 0.714-1.089 1.073-1.865 1.073-0.667 0-1.219-0.203-1.667-0.615-0.438-0.385-0.682-0.948-0.672-1.531 0-0.646 0.234-1.161 0.708-1.547 0.469-0.38 1.099-0.573 1.885-0.573 0.672 0 1.224 0.13 1.656 0.385v-0.271c0.005-0.396-0.167-0.776-0.464-1.042-0.297-0.276-0.688-0.432-1.094-0.427-0.63 0-1.13 0.276-1.5 0.828l-0.995-0.646c0.547-0.818 1.359-1.229 2.432-1.229zM21.167 17.88c-0.005 0.302 0.135 0.583 0.375 0.766 0.25 0.203 0.563 0.313 0.88 0.307 0.474 0 0.932-0.198 1.271-0.547 0.359-0.333 0.563-0.802 0.563-1.292-0.354-0.292-0.844-0.438-1.474-0.438-0.464 0-0.844 0.115-1.151 0.344-0.307 0.234-0.464 0.516-0.464 0.859zM5.443 10.667c1.344-0.016 2.646 0.479 3.641 1.391l-1.552 1.521c-0.568-0.526-1.318-0.813-2.089-0.797-1.385 0.005-2.609 0.891-3.057 2.198-0.229 0.661-0.229 1.38 0 2.042 0.448 1.307 1.672 2.193 3.057 2.198 0.734 0 1.365-0.182 1.854-0.505 0.568-0.375 0.964-0.958 1.083-1.625h-2.938v-2.052h5.13c0.063 0.359 0.094 0.719 0.094 1.083 0 1.625-0.594 3-1.62 3.927-0.901 0.813-2.135 1.286-3.604 1.286-2.047 0.010-3.922-1.125-4.865-2.938-0.771-1.505-0.771-3.286 0-4.792 0.943-1.813 2.818-2.948 4.859-2.938z" />
-                                  </svg>
-                                  <span>Google Pay</span>
-                                </div>
-                                <input
-                                  type="radio"
-                                  name="paymentMethod"
-                                  value="GooglePay"
-                                  checked={paymentMethod === 'GooglePay'}
-                                  onChange={(e) => setPaymentMethod(e.target.value)}
-                                />
-                              </label>
+                                <label className="payment-method-option">
+                                  <div className="payment-method-content">
+                                    <svg fill="currentColor" viewBox="0 0 32 32" height={32} width={32} xmlns="http://www.w3.org/2000/svg">
+                                      <path d="M32 13.333l-4.177 9.333h-1.292l1.552-3.266-2.75-6.068h1.359l1.99 4.651h0.026l1.927-4.651zM14.646 16.219v3.781h-1.313v-9.333h3.474c0.828-0.021 1.63 0.266 2.25 0.807 0.615 0.505 0.953 1.219 0.943 1.974 0.010 0.766-0.339 1.5-0.943 1.979-0.604 0.531-1.354 0.792-2.25 0.792zM14.641 11.818v3.255h2.198c0.484 0.016 0.958-0.161 1.297-0.479 0.339-0.302 0.526-0.714 0.526-1.141 0-0.432-0.188-0.844-0.526-1.141-0.349-0.333-0.818-0.51-1.297-0.495zM22.63 13.333c0.833 0 1.495 0.234 1.979 0.698s0.724 1.099 0.724 1.906v3.859h-1.083v-0.87h-0.047c-0.469 0.714-1.089 1.073-1.865 1.073-0.667 0-1.219-0.203-1.667-0.615-0.438-0.385-0.682-0.948-0.672-1.531 0-0.646 0.234-1.161 0.708-1.547 0.469-0.38 1.099-0.573 1.885-0.573 0.672 0 1.224 0.13 1.656 0.385v-0.271c0.005-0.396-0.167-0.776-0.464-1.042-0.297-0.276-0.688-0.432-1.094-0.427-0.63 0-1.13 0.276-1.5 0.828l-0.995-0.646c0.547-0.818 1.359-1.229 2.432-1.229zM21.167 17.88c-0.005 0.302 0.135 0.583 0.375 0.766 0.25 0.203 0.563 0.313 0.88 0.307 0.474 0 0.932-0.198 1.271-0.547 0.359-0.333 0.563-0.802 0.563-1.292-0.354-0.292-0.844-0.438-1.474-0.438-0.464 0-0.844 0.115-1.151 0.344-0.307 0.234-0.464 0.516-0.464 0.859zM5.443 10.667c1.344-0.016 2.646 0.479 3.641 1.391l-1.552 1.521c-0.568-0.526-1.318-0.813-2.089-0.797-1.385 0.005-2.609 0.891-3.057 2.198-0.229 0.661-0.229 1.38 0 2.042 0.448 1.307 1.672 2.193 3.057 2.198 0.734 0 1.365-0.182 1.854-0.505 0.568-0.375 0.964-0.958 1.083-1.625h-2.938v-2.052h5.13c0.063 0.359 0.094 0.719 0.094 1.083 0 1.625-0.594 3-1.62 3.927-0.901 0.813-2.135 1.286-3.604 1.286-2.047 0.010-3.922-1.125-4.865-2.938-0.771-1.505-0.771-3.286 0-4.792 0.943-1.813 2.818-2.948 4.859-2.938z" />
+                                    </svg>
+                                    <span>Google Pay</span>
+                                  </div>
+                                  <input
+                                    type="radio"
+                                    name="paymentMethod"
+                                    value="GooglePay"
+                                    checked={paymentMethod === 'GooglePay'}
+                                    onChange={(e) => setPaymentMethod(e.target.value)}
+                                  />
+                                </label>
+                              </div>
                             </div>
-                          </div>
+                          ) : (
+                            <div className="payment-methods-selection mb-4">
+                              <h6 className="mb-2"><i className="bi bi-gift me-2"></i>No Payment Required</h6>
+                              <p className="text-muted mb-0">
+                                This booking is fully covered by your package or promotion. Click Book Now below to lock your slot.
+                              </p>
+                            </div>
+                          )}
 
                           {/* Payment Actions */}
                           <div className="payment-actions">
-                            <button
-                              className="btn btn-lg btn-success"
-                              onClick={handleRealPayment}
-                              disabled={paymentProcessing || !appointmentData.paymentUrl}
-                            >
-                              {paymentProcessing ? (
-                                <>
-                                  <span className="spinner-border spinner-border-sm me-2"></span>
-                                  Processing Payment...
-                                </>
-                              ) : (
-                                <>
-                                  <i className="bi bi-credit-card me-2"></i>
-                                  Proceed to Payment
-                                </>
-                              )}
-                            </button>
+                            {appointmentRequiresPayment ? (
+                              <button
+                                className="btn btn-lg btn-success"
+                                onClick={handleRealPayment}
+                                disabled={paymentProcessing || !appointmentData.paymentUrl}
+                              >
+                                {paymentProcessing ? (
+                                  <>
+                                    <span className="spinner-border spinner-border-sm me-2"></span>
+                                    Processing Payment...
+                                  </>
+                                ) : (
+                                  <>
+                                    <i className="bi bi-credit-card me-2"></i>
+                                    Proceed to Payment
+                                  </>
+                                )}
+                              </button>
+                            ) : (
+                              <button
+                                className="btn btn-lg btn-primary"
+                                onClick={handleConfirmFreeAppointment}
+                                disabled={paymentProcessing}
+                              >
+                                {paymentProcessing ? (
+                                  <>
+                                    <span className="spinner-border spinner-border-sm me-2"></span>
+                                    Booking...
+                                  </>
+                                ) : (
+                                  <>
+                                    <i className="bi bi-calendar-check me-2"></i>
+                                    Book Now
+                                  </>
+                                )}
+                              </button>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -1244,8 +1316,8 @@ const ScheduleServiceNew = () => {
                             </>
                           ) : (
                             <>
-                              <i className="bi bi-arrow-right me-2"></i>
-                              Proceed to Payment
+                              <i className={`bi ${cartRequiresPayment ? 'bi-arrow-right' : 'bi-calendar-check'} me-2`}></i>
+                              {cartRequiresPayment ? 'Proceed to Payment' : 'Book Now'}
                             </>
                           )}
                         </button>

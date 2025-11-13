@@ -153,29 +153,40 @@ const ProductIndividual = () => {
       String(selectedProduct.serviceId ?? selectedProduct.id)
     );
 
-  const handleAddToCart = () => {
-    if (!selectedProduct) return;
-    if (isSelectedServiceFree) {
-      toast.info('Dịch vụ này đã có trong combo bạn mua, bạn có thể dùng miễn phí.');
-      return;
-    }
+  const buildCartItem = () => {
+    if (!selectedProduct) return null;
     const payload = buildCartPayload(selectedProduct);
-    if (!payload) return;
-    addToCart(payload);
-    toast.success(`Đã thêm "${payload.serviceName}" vào giỏ hàng`);
+    if (!payload) return null;
+    return isSelectedServiceFree
+      ? {
+          ...payload,
+          basePrice: 0,
+          isComplimentary: true,
+        }
+      : payload;
+  };
+
+  const handleAddToCart = () => {
+    const cartItem = buildCartItem();
+    if (!cartItem) return;
+    addToCart(cartItem);
+    toast.success(
+      cartItem.isComplimentary
+        ? `Đã thêm "${cartItem.serviceName}" (Free) vào giỏ hàng`
+        : `Đã thêm "${cartItem.serviceName}" vào giỏ hàng`
+    );
   };
 
   const handleBookNow = () => {
-    if (!selectedProduct) return;
-    if (isSelectedServiceFree) {
-      toast.success('Dịch vụ này đã nằm trong gói của bạn. Đặt lịch từ mục Schedule để sử dụng.');
-      return;
-    }
-    const payload = buildCartPayload(selectedProduct);
-    if (!payload) return;
+    const cartItem = buildCartItem();
+    if (!cartItem) return;
     clearCart();
-    addToCart(payload);
-    toast.success('Đã sẵn sàng đặt lịch với dịch vụ này');
+    addToCart(cartItem);
+    toast.success(
+      cartItem.isComplimentary
+        ? 'Đã sẵn sàng đặt lịch với dịch vụ miễn phí này'
+        : 'Đã sẵn sàng đặt lịch với dịch vụ này'
+    );
     navigate('/schedule-service');
   };
 
@@ -339,21 +350,25 @@ const ProductIndividual = () => {
                     type="button"
                     className="action-btn ghost"
                     onClick={handleAddToCart}
-                    disabled={isSelectedServiceFree}
                   >
-                    <i className="bi bi-bag-plus" />{' '}
-                    {isSelectedServiceFree ? 'Included' : 'Add to Cart'}
+                    <i className="bi bi-bag-plus" /> Add to Cart{' '}
+                    {isSelectedServiceFree && <span className="free-indicator">(Free)</span>}
                   </button>
                   <button
                     type="button"
                     className="action-btn solid"
                     onClick={handleBookNow}
-                    disabled={isSelectedServiceFree}
                   >
-                    <i className="bi bi-lightning-charge" />{' '}
-                    {isSelectedServiceFree ? 'Free in combo' : 'Book Now'}
+                    <i className="bi bi-lightning-charge" /> Book Now{' '}
+                    {isSelectedServiceFree && <span className="free-indicator">(Free)</span>}
                   </button>
                 </div>
+                {isSelectedServiceFree && (
+                  <p className="context-hint">
+                    Dịch vụ này nằm trong gói hiện tại của bạn. Bạn vẫn có thể đặt lịch như bình
+                    thường và sẽ không bị tính phí khi thanh toán.
+                  </p>
+                )}
               </>
             ) : (
               <div className="empty-state">Chọn một dịch vụ để xem chi tiết</div>

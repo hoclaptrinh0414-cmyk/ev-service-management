@@ -8,12 +8,21 @@ const Cart = () => {
   const navigate = useNavigate();
   const { cartItems, removeFromCart, updateQuantity, getTotalItems, getTotalPrice, clearCart } = useCart();
   const [isOpen, setIsOpen] = useState(false);
+  const totalItems = getTotalItems();
+  const totalPrice = getTotalPrice();
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: 'VND'
     }).format(amount);
+  };
+
+  const formatPriceLabel = (amount, isComplimentary = false) => {
+    if (isComplimentary || amount <= 0) {
+      return 'Free';
+    }
+    return formatCurrency(amount);
   };
 
   const handleConfirmSelection = () => {
@@ -33,8 +42,8 @@ const Cart = () => {
       {/* Cart Icon Button */}
       <div className="cart-icon-container" onClick={() => setIsOpen(!isOpen)}>
         <i className="bi bi-cart3"></i>
-        {getTotalItems() > 0 && (
-          <span className="cart-badge">{getTotalItems()}</span>
+        {totalItems > 0 && (
+          <span className="cart-badge">{totalItems}</span>
         )}
       </div>
 
@@ -66,6 +75,8 @@ const Cart = () => {
                   const itemPrice = isPackage
                     ? (item.totalPriceAfterDiscount || item.basePrice || 0)
                     : (item.basePrice || 0);
+                  const isComplimentary = item.isComplimentary || itemPrice <= 0;
+                  const subtotalAmount = itemPrice * (isPackage ? 1 : item.quantity);
 
                   return (
                     <div key={`${isPackage ? 'pkg' : 'svc'}-${itemId}`} className="cart-item">
@@ -75,7 +86,7 @@ const Cart = () => {
                           {isPackage && <span className="item-type-badge">Package</span>}
                         </div>
                         <div className="cart-item-price">
-                          {formatCurrency(itemPrice)}
+                          {formatPriceLabel(itemPrice, isComplimentary)}
                         </div>
                       </div>
 
@@ -121,7 +132,7 @@ const Cart = () => {
                       </div>
 
                       <div className="cart-item-subtotal">
-                        Subtotal: {formatCurrency(itemPrice * (isPackage ? 1 : item.quantity))}
+                        Subtotal: {formatPriceLabel(subtotalAmount, isComplimentary)}
                       </div>
                     </div>
                   );
@@ -131,7 +142,9 @@ const Cart = () => {
               <div className="cart-footer">
                 <div className="cart-total">
                   <span>Total:</span>
-                  <span className="total-amount">{formatCurrency(getTotalPrice())}</span>
+                  <span className="total-amount">
+                    {formatPriceLabel(totalPrice, totalPrice <= 0)}
+                  </span>
                 </div>
 
                 <button className="btn-clear-cart" onClick={clearCart}>
