@@ -493,7 +493,7 @@ export default function WorkOrders() {
                       </button>
                     )}
 
-                  {selectedWO.status === 'InProgress' &&
+                  {selectedWO.statusName === 'InProgress' &&
                     selectedWO.progress === 100 && (
                       <>
                         <button
@@ -579,7 +579,7 @@ export default function WorkOrders() {
                   </div>
                 </div>
               ) : (
-                selectedWO.status === 'InProgress' && (
+                selectedWO.statusName === 'InProgress' && (
                   <div className='detail-card'>
                     <div className='card-header-detail'>
                       <h2>Apply Checklist Template</h2>
