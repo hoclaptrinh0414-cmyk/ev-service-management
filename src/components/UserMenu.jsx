@@ -1,7 +1,9 @@
 // src/components/UserMenu.jsx
 import React, { useState, useEffect, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import ConfirmDialog from './ui/ConfirmDialog';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
@@ -31,6 +33,16 @@ const Dashboard = (props) => (
   </svg>
 );
 
+const FileText = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+    <polyline points="14 2 14 8 20 8" />
+    <line x1="16" x2="8" y1="13" y2="13" />
+    <line x1="16" x2="8" y1="17" y2="17" />
+    <polyline points="10 9 9 9 8 9" />
+  </svg>
+);
+
 const LogOut = (props) => (
   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
@@ -43,6 +55,7 @@ const UserMenu = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const menuRef = useRef(null);
 
   // Đóng menu khi click ra ngoài
@@ -62,10 +75,13 @@ const UserMenu = () => {
     };
   }, [showDropdown]);
 
-  const handleLogout = () => {
-    if (window.confirm('Bạn có chắc muốn đăng xuất?')) {
-      logout();
-    }
+  const handleLogoutClick = () => {
+    setShowLogoutDialog(true);
+  };
+
+  const handleConfirmLogout = () => {
+    logout(); // Use logout API from useAuth
+    navigate('/login');
   };
 
   // Lấy chữ cái đầu của tên để làm avatar
@@ -83,27 +99,125 @@ const UserMenu = () => {
     action();
   };
 
-  return (
-    <div className="user-menu-wrapper" ref={menuRef}>
-      <button
-        onClick={() => setShowDropdown(!showDropdown)}
-        className="user-menu-trigger"
-      >
-        <div className="user-avatar">
-          {getInitials()}
-        </div>
-        <div className="user-info">
-          <div className="user-name">
-            {user?.fullName || user?.username || 'User'}
-          </div>
-          <div className="user-email">
-            {user?.email || ''}
-          </div>
-        </div>
-      </button>
+  // Logout Dialog Component
+  const LogoutDialog = () => {
+    if (!showLogoutDialog) return null;
 
-      {showDropdown && (
-        <div className="user-dropdown">
+    return ReactDOM.createPortal(
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 999999,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.6)'
+      }}
+      onClick={() => setShowLogoutDialog(false)}
+      >
+        <div
+          style={{
+            position: 'relative',
+            zIndex: 1000000,
+            width: '90%',
+            maxWidth: '450px',
+            borderRadius: '16px',
+            backgroundColor: 'white',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            padding: '40px',
+            margin: '20px'
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div style={{ textAlign: 'center' }}>
+            <div style={{
+              width: '80px',
+              height: '80px',
+              borderRadius: '50%',
+              backgroundColor: '#fee2e2',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 20px'
+            }}>
+              <LogOut style={{ width: '40px', height: '40px', color: '#dc2626' }} />
+            </div>
+            <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '12px', color: '#1f2937' }}>
+              Đăng xuất
+            </h2>
+            <p style={{ color: '#6b7280', fontSize: '15px', marginBottom: '32px', lineHeight: '1.6' }}>
+              Bạn có chắc chắn muốn đăng xuất khỏi hệ thống?
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+              <button
+                onClick={() => setShowLogoutDialog(false)}
+                style={{
+                  padding: '14px 28px',
+                  backgroundColor: '#f3f4f6',
+                  color: '#374151',
+                  borderRadius: '25px',
+                  border: 'none',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  fontSize: '15px'
+                }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = '#e5e7eb'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = '#f3f4f6'}
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleConfirmLogout}
+                style={{
+                  padding: '14px 32px',
+                  backgroundColor: '#dc2626',
+                  color: '#ffffff',
+                  borderRadius: '25px',
+                  border: 'none',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  fontSize: '15px'
+                }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = '#b91c1c'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = '#dc2626'}
+              >
+                Đăng xuất
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>,
+      document.body
+    );
+  };
+
+  return (
+    <>
+      <div className="user-menu-wrapper" ref={menuRef}>
+        <button
+          onClick={() => setShowDropdown(!showDropdown)}
+          className="user-menu-trigger"
+        >
+          <div className="user-avatar">
+            {getInitials()}
+          </div>
+          <div className="user-info">
+            <div className="user-name">
+              {user?.fullName || user?.username || 'User'}
+            </div>
+            <div className="user-email">
+              {user?.email || ''}
+            </div>
+          </div>
+        </button>
+
+        {showDropdown && (
+          <div className="user-dropdown">
           {/* Header */}
           <div className="dropdown-header">
             <div className="header-avatar">
@@ -155,7 +269,7 @@ const UserMenu = () => {
           <div className="dropdown-section">
             <button
               className="dropdown-item logout-item"
-              onClick={() => handleMenuItemClick(handleLogout)}
+              onClick={() => handleMenuItemClick(handleLogoutClick)}
             >
               <LogOut className="item-icon" />
               Đăng xuất
@@ -164,7 +278,7 @@ const UserMenu = () => {
         </div>
       )}
 
-  <style>{`
+        <style>{`
         .user-menu-wrapper {
           position: relative;
           display: inline-block;
@@ -345,7 +459,11 @@ const UserMenu = () => {
           color: #dc2626;
         }
       `}</style>
-    </div>
+      </div>
+
+      {/* Logout Dialog rendered via Portal */}
+      <LogoutDialog />
+    </>
   );
 };
 

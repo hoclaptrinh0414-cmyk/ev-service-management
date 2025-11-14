@@ -13,6 +13,7 @@ import {
   purchasePackageWithPayment,
 } from '../../services/productService';
 import { useSchedule } from '../../contexts/ScheduleContext';
+import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import './ProductCombo.css';
 
 const extractItems = (payload) => {
@@ -57,6 +58,7 @@ const ProductCombo = () => {
   const [activeSubscriptions, setActiveSubscriptions] = useState([]);
   const [loadingSubscriptions, setLoadingSubscriptions] = useState(false);
   const [isPurchasing, setIsPurchasing] = useState(false);
+  const [showAlreadyPurchasedDialog, setShowAlreadyPurchasedDialog] = useState(false);
 
   useEffect(() => {
     const loadPackages = async () => {
@@ -131,55 +133,48 @@ const ProductCombo = () => {
     loadSubscriptions();
   }, [selectedVehicleId]);
 
-  const extractPackageId = (sub) => {
-    const directId =
-      sub.packageId ??
-      sub.PackageId ??
-      sub.maintenancePackageId ??
-      sub.maintenancePackageID ??
-      sub.subscriptionPackageId ??
-      sub.SubscriptionPackageId;
-
-    if (directId) return directId;
-
-    const nestedSources = [
-      sub.package,
-      sub.Package,
-      sub.packageInfo,
-      sub.PackageInfo,
-      sub.packageDetail,
-      sub.PackageDetail,
-      sub.subscription?.package,
-      sub.subscription?.Package,
-    ].filter(Boolean);
-
-    for (const source of nestedSources) {
-      const nestedId =
-        source.packageId ??
-        source.PackageId ??
-        source.id ??
-        source.Id ??
-        source.maintenancePackageId ??
-        source.maintenancePackageID;
-      if (nestedId) return nestedId;
-    }
-
-    return null;
+  // Extract packageCode/packageName for comparison
+  const extractPackageIdentifier = (sub) => {
+    return {
+      packageId: sub.packageId ?? sub.maintenancePackageId ?? sub.subscriptionPackageId,
+      packageCode: sub.packageCode,
+      packageName: sub.packageName
+    };
   };
 
-  const ownedPackageIds = useMemo(() => {
-    const ids = activeSubscriptions
-      .map(extractPackageId)
-      .filter(Boolean)
-      .map((id) => String(id));
-    return new Set(ids);
+  const ownedPackageIdentifiers = useMemo(() => {
+    const identifiers = activeSubscriptions
+      .map(extractPackageIdentifier)
+      .filter(item => item.packageCode || item.packageName || item.packageId);
+    return identifiers;
   }, [activeSubscriptions]);
 
+  // ✅ NEW: Check if combo is owned by matching packageId, packageCode, or packageName
   const selectedComboId = selectedCombo?.packageId ?? selectedCombo?.id;
-  const isComboOwned =
-    selectedVehicleId && selectedComboId
-      ? ownedPackageIds.has(String(selectedComboId))
-      : false;
+  const selectedComboCode = selectedCombo?.packageCode ?? selectedCombo?.code;
+  const selectedComboName = selectedCombo?.packageName ?? selectedCombo?.name;
+
+  const isComboOwned = useMemo(() => {
+    if (!selectedVehicleId || (!selectedComboId && !selectedComboCode && !selectedComboName)) {
+      return false;
+    }
+
+    return ownedPackageIdentifiers.some(item => {
+      // Match by packageId
+      if (selectedComboId && item.packageId && String(item.packageId) === String(selectedComboId)) {
+        return true;
+      }
+      // Match by packageCode
+      if (selectedComboCode && item.packageCode && item.packageCode === selectedComboCode) {
+        return true;
+      }
+      // Match by packageName
+      if (selectedComboName && item.packageName && item.packageName === selectedComboName) {
+        return true;
+      }
+      return false;
+    });
+  }, [selectedVehicleId, selectedComboId, selectedComboCode, selectedComboName, ownedPackageIdentifiers]);
 
   const comboDuration =
     selectedCombo?.validityPeriod ?? selectedCombo?.durationInDays ?? 0;
@@ -200,8 +195,10 @@ const ProductCombo = () => {
       toast.error('Vui lòng chọn xe trước khi thanh toán');
       return;
     }
+
+    // Show dialog if package already owned
     if (isComboOwned) {
-      toast.info('You have bought this combo');
+      setShowAlreadyPurchasedDialog(true);
       return;
     }
 
@@ -270,30 +267,27 @@ const ProductCombo = () => {
 
     return packages.map((pkg, index) => {
       const packageId = pkg.packageId ?? pkg.id;
+      const packageCode = pkg.packageCode ?? pkg.code;
+      const packageName = pkg.packageName ?? pkg.name;
+
       const isActive =
         selectedCombo?.packageId === packageId || selectedCombo?.id === packageId;
-      const owned =
-        selectedVehicleId && ownedPackageIds.has(String(packageId));
+
       return (
         <button
           key={packageId}
-          className={`product-list-item ${isActive ? 'active' : ''} ${owned ? 'owned-item' : ''}`}
+          className={`product-list-item ${isActive ? 'active' : ''}`}
           type="button"
           onClick={() => setSelectedCombo(pkg)}
-          disabled={owned}
-          title={owned ? 'Bạn đã mua gói này cho xe đã chọn' : undefined}
         >
           <span className="product-index">{String(index + 1).padStart(2, '0')}</span>
           <div className="product-meta">
-                <p className="product-name">{pkg.packageName ?? pkg.name}</p>
+            <p className="product-name">{pkg.packageName ?? pkg.name}</p>
             <p className="product-category">{pkg.category ?? pkg.packageCategory}</p>
           </div>
           <div className="product-price-block">
-            {owned && <span className="product-badge bought">Bought</span>}
-            <span className={`product-price ${owned ? 'price-bought' : ''}`}>
-              {owned
-                ? 'Bought'
-                : formatCurrency(pkg.totalPriceAfterDiscount ?? pkg.price ?? 0)}
+            <span className="product-price">
+              {formatCurrency(pkg.totalPriceAfterDiscount ?? pkg.price ?? 0)}
             </span>
           </div>
         </button>
@@ -360,12 +354,8 @@ const ProductCombo = () => {
           <section className="product-detail-card">
             <div className="detail-pill">Select your package</div>
             {selectedCombo && (
-              <span
-                className={`detail-badge ${
-                  isComboOwned ? 'owned' : 'purchase-only'
-                }`}
-              >
-                {isComboOwned ? 'Bought' : 'Combos can only be purchased'}
+              <span className="detail-badge purchase-only">
+                Gói combo chỉ có thể thanh toán
               </span>
             )}
 
@@ -398,19 +388,15 @@ const ProductCombo = () => {
                   </div>
                 </div>
 
-                {isComboOwned && (
-                  <div className="owned-alert">You have bought this combo</div>
-                )}
-
                 <div className="detail-actions">
                   <button
                     type="button"
-                    className={`action-btn solid ${isComboOwned ? 'disabled-owned' : ''}`}
+                    className="action-btn solid"
                     onClick={handleBookNow}
-                    disabled={isComboOwned || isPurchasing}
+                    disabled={isPurchasing}
                   >
                     <i className="bi bi-calendar-plus" />{' '}
-                    {isComboOwned ? 'Bought' : isPurchasing ? 'Processing...' : 'Pay Now'}
+                    {isPurchasing ? 'Đang xử lý...' : 'Thanh toán ngay'}
                   </button>
                 </div>
               </>
@@ -421,6 +407,77 @@ const ProductCombo = () => {
         </div>
         <Cart />
       </div>
+
+      {/* Already Purchased Dialog - Simple notification with only Close button */}
+      {showAlreadyPurchasedDialog && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              zIndex: 9999
+            }}
+            onClick={() => setShowAlreadyPurchasedDialog(false)}
+          />
+          <div style={{
+            position: 'relative',
+            zIndex: 10000,
+            width: '90%',
+            maxWidth: '500px',
+            borderRadius: '12px',
+            backgroundColor: 'white',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+            padding: '32px'
+          }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{
+                width: '64px',
+                height: '64px',
+                borderRadius: '50%',
+                backgroundColor: '#dbeafe',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 16px'
+              }}>
+                <i className="bi bi-info-circle-fill" style={{ fontSize: '32px', color: '#3b82f6' }}></i>
+              </div>
+              <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>
+                Gói đã được mua
+              </h2>
+              <p style={{ color: '#6b7280', fontSize: '14px', marginBottom: '24px' }}>
+                Bạn đã mua gói "{selectedCombo?.packageName || 'này'}" cho xe đã chọn. Vui lòng sử dụng hết gói hiện tại trước khi mua gói mới.
+              </p>
+              <button
+                onClick={() => setShowAlreadyPurchasedDialog(false)}
+                style={{
+                  padding: '12px 32px',
+                  backgroundColor: '#000000',
+                  color: '#ffffff',
+                  borderRadius: '25px',
+                  border: 'none',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  fontSize: '15px'
+                }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = '#1f1f1f'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = '#000000'}
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

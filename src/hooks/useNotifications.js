@@ -116,6 +116,14 @@ export const useNotifications = ({ enabled = true } = {}) => {
       setLoading(true);
       setError(null);
 
+      // Check if user is logged in
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.log('⚠️ No token found, skipping notifications fetch');
+        setNotifications([]);
+        return;
+      }
+
       // Lấy các appointment sắp tới
       const upcomingAppointments = await appointmentService.getUpcomingAppointments(10);
 
@@ -166,10 +174,19 @@ export const useNotifications = ({ enabled = true } = {}) => {
       saveNotificationsToStorage(newNotifications);
     } catch (err) {
       console.error('Error fetching notifications:', err);
-      // Nếu có lỗi, load từ storage
-      const storedNotifications = loadNotificationsFromStorage();
-      setNotifications(storedNotifications);
-      setError(err.message);
+      
+      // If 403 error (no permission), silently ignore and load from storage
+      if (err.message?.includes('403') || err.message?.includes('Forbidden')) {
+        console.log('⚠️ No permission to fetch appointments, using cached notifications');
+        const storedNotifications = loadNotificationsFromStorage();
+        setNotifications(storedNotifications);
+        setError(null); // Don't show error for permission issues
+      } else {
+        // For other errors, load from storage
+        const storedNotifications = loadNotificationsFromStorage();
+        setNotifications(storedNotifications);
+        setError(err.message);
+      }
     } finally {
       setLoading(false);
     }

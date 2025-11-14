@@ -13,7 +13,33 @@ import api from './axiosInterceptor';
  * @param {Object} params - { status, page, pageSize, startDate, endDate }
  */
 export const getStaffAppointments = async (params = {}) => {
-  const { data } = await api.get('/appointment-management/appointments', { params });
+  const { data } = await api.get('/appointment-management', { params });
+  return data;
+};
+
+/**
+ * Lấy danh sách service centers đang hoạt động
+ * GET /service-centers/active
+ */
+export const getActiveServiceCenters = async () => {
+  const { data } = await api.get('/service-centers/active');
+  return data;
+};
+
+/**
+ * Lấy lịch hẹn theo service center và ngày
+ * GET /appointment-management/by-service-center/{serviceCenterId}/date/{slotDate}
+ */
+export const getAppointmentsByDate = async (serviceCenterId, slotDate) => {
+  if (!serviceCenterId) {
+    throw new Error('Missing serviceCenterId for daily appointment fetch');
+  }
+  if (!slotDate) {
+    throw new Error('Missing slotDate (YYYY-MM-DD) for daily appointment fetch');
+  }
+  const { data } = await api.get(
+    `/appointment-management/by-service-center/${serviceCenterId}/date/${slotDate}`,
+  );
   return data;
 };
 
@@ -31,7 +57,10 @@ export const getAppointmentDetail = async (appointmentId) => {
  * POST /appointment-management/{id}/confirm
  */
 export const confirmAppointment = async (appointmentId, confirmData) => {
-  const { data } = await api.post(`/appointment-management/${appointmentId}/confirm`, confirmData);
+  const { data } = await api.post(
+    `/appointment-management/${appointmentId}/confirm`,
+    confirmData,
+  );
   return data;
 };
 
@@ -40,7 +69,9 @@ export const confirmAppointment = async (appointmentId, confirmData) => {
  * POST /appointment-management/{id}/check-in
  */
 export const checkInAppointment = async (appointmentId) => {
-  const { data } = await api.post(`/appointment-management/${appointmentId}/check-in`);
+  const { data } = await api.post(
+    `/appointment-management/${appointmentId}/check-in`,
+  );
   return data;
 };
 
@@ -78,7 +109,9 @@ export const autoSelectTechnician = async (assignData) => {
  * PATCH /work-orders/{id}/assign-technician/{technicianId}
  */
 export const assignTechnician = async (workOrderId, technicianId) => {
-  const { data } = await api.patch(`/work-orders/${workOrderId}/assign-technician/${technicianId}`);
+  const { data } = await api.patch(
+    `/work-orders/${workOrderId}/assign-technician/${technicianId}`,
+  );
   return data;
 };
 
@@ -125,7 +158,10 @@ export const getTemplateDetail = async (templateId) => {
  * POST /work-orders/{id}/apply-checklist
  */
 export const applyChecklistTemplate = async (workOrderId, templateData) => {
-  const { data } = await api.post(`/work-orders/${workOrderId}/apply-checklist`, templateData);
+  const { data } = await api.post(
+    `/work-orders/${workOrderId}/apply-checklist`,
+    templateData,
+  );
   return data;
 };
 
@@ -171,11 +207,12 @@ export const updateChecklistItem = async (itemId, updateData) => {
  * Body: raw string (not JSON object)
  */
 export const quickCompleteItem = async (itemId, notes = '') => {
-  const { data } = await api.patch(`/checklist-items/${itemId}/complete`,
+  const { data } = await api.patch(
+    `/checklist-items/${itemId}/complete`,
     JSON.stringify(notes), // Send as raw JSON string
     {
-      headers: { 'Content-Type': 'application/json' }
-    }
+      headers: { 'Content-Type': 'application/json' },
+    },
   );
   return data;
 };
@@ -194,7 +231,9 @@ export const uncompleteChecklistItem = async (itemId) => {
  * POST /work-orders/{id}/complete-all
  */
 export const bulkCompleteAllItems = async (workOrderId, notes) => {
-  const { data } = await api.post(`/work-orders/${workOrderId}/complete-all`, { notes });
+  const { data } = await api.post(`/work-orders/${workOrderId}/complete-all`, {
+    notes,
+  });
   return data;
 };
 
@@ -203,7 +242,9 @@ export const bulkCompleteAllItems = async (workOrderId, notes) => {
  * GET /checklists/work-orders/{id}/validate
  */
 export const validateChecklist = async (workOrderId) => {
-  const { data } = await api.get(`/checklists/work-orders/${workOrderId}/validate`);
+  const { data } = await api.get(
+    `/checklists/work-orders/${workOrderId}/validate`,
+  );
   return data;
 };
 
@@ -214,7 +255,10 @@ export const validateChecklist = async (workOrderId) => {
  * POST /work-orders/{id}/quality-check
  */
 export const performQualityCheck = async (workOrderId, qcData) => {
-  const { data } = await api.post(`/work-orders/${workOrderId}/quality-check`, qcData);
+  const { data } = await api.post(
+    `/work-orders/${workOrderId}/quality-check`,
+    qcData,
+  );
   return data;
 };
 
@@ -257,12 +301,25 @@ export const getTechnicians = async () => {
   return data;
 };
 
+/**
+ * Lấy thống kê appointment theo trạng thái
+ *
+ */
+export const getAppointmentStatistics = async () => {
+  const { data } = await api.get(
+    '/appointment-management/statistics/by-status',
+  );
+  return data;
+};
+
 export default {
   // Appointments
   getStaffAppointments,
+  getAppointmentsByDate,
   getAppointmentDetail,
   confirmAppointment,
   checkInAppointment,
+  getActiveServiceCenters,
 
   // Work Orders
   searchWorkOrders,
@@ -297,4 +354,7 @@ export default {
 
   // Technicians
   getTechnicians,
+
+  // Statistics
+  getAppointmentStatistics,
 };

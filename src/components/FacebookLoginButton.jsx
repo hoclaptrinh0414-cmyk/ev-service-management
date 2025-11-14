@@ -3,11 +3,21 @@ import React, { useState } from 'react';
 import FacebookLogin from 'react-facebook-login';
 import { authUtils } from '../services/apiService';
 
+// ⚙️ CONFIG: Set to false to disable Facebook Login temporarily
+// ⚠️ Facebook Login requires HTTPS but localhost uses HTTP
+// Note: Will show HTTPS warning in console, but icon will still display
+export const ENABLE_FACEBOOK_LOGIN = true;
+
 // Thay đổi giá trị này thành Facebook App ID thật của bạn
 const FACEBOOK_APP_ID = process.env.REACT_APP_FACEBOOK_APP_ID || "YOUR_FACEBOOK_APP_ID";
 
 const FacebookLoginButton = ({ onSuccess, onError }) => {
   const [loading, setLoading] = useState(false);
+
+  // If Facebook Login is disabled, return null (don't render anything)
+  if (!ENABLE_FACEBOOK_LOGIN) {
+    return null;
+  }
 
   const handleFacebookResponse = async (response) => {
     if (response.accessToken) {

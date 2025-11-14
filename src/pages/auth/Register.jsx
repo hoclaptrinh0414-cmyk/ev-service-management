@@ -18,7 +18,8 @@ const Register = () => {
     phoneNumber: '',
     address: '',
     dateOfBirth: '',
-    gender: 'Male' // Default value
+    gender: 'Male', // Default value
+    acceptTerms: false // Required by backend
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -41,9 +42,15 @@ const Register = () => {
       return false;
     }
 
-    // Password validation
+    // Password length validation
     if (formData.password.length < 6) {
       setError('Mật khẩu phải có ít nhất 6 ký tự.');
+      return false;
+    }
+
+    // Password must contain at least 1 letter (required by backend)
+    if (!/[a-zA-Z]/.test(formData.password)) {
+      setError('Mật khẩu phải chứa ít nhất 1 chữ cái.');
       return false;
     }
 
@@ -57,6 +64,12 @@ const Register = () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
       setError('Email không hợp lệ.');
+      return false;
+    }
+
+    // Terms acceptance validation
+    if (!formData.acceptTerms) {
+      setError('Bạn phải đồng ý với điều khoản sử dụng để đăng ký.');
       return false;
     }
 
@@ -76,7 +89,8 @@ const Register = () => {
     }
 
     try {
-      console.log('Attempting registration with:', { username: formData.username, email: formData.email });
+      console.log('🔍 Full formData being sent:', formData);
+      console.log('✅ acceptTerms value:', formData.acceptTerms);
 
       // Call authService.register()
       const response = await authService.register(formData);
@@ -86,6 +100,9 @@ const Register = () => {
       // Registration successful
       setSuccess('Đăng ký thành công! Chúng tôi đã gửi email xác nhận, vui lòng kiểm tra hộp thư của bạn.');
       toast.success('Đăng ký thành công! Vui lòng kiểm tra email để xác nhận tài khoản.');
+
+      // Save email before clearing form
+      const registeredEmail = formData.email;
 
       // Clear form
       setFormData({
@@ -97,12 +114,13 @@ const Register = () => {
         phoneNumber: '',
         address: '',
         dateOfBirth: '',
-        gender: 'Male'
+        gender: 'Male',
+        acceptTerms: false
       });
 
       // Redirect to login page after 3 seconds
       setTimeout(() => {
-        navigate('/resend-verification', { state: { email: formData.email } });
+        navigate('/login', { state: { message: 'Đăng ký thành công! Vui lòng đăng nhập.', email: registeredEmail } });
       }, 3000);
 
     } catch (error) {
@@ -114,18 +132,38 @@ const Register = () => {
         if (data.message) {
           setError(data.message);
         } else if (data.errors) {
-          // Handle validation errors from backend
-          const errorMessages = Object.values(data.errors).flat().join(', ');
-          setError(errorMessages);
+          // Handle validation errors from backend - display as list
+          const errorMessages = Object.values(data.errors).flat();
+          if (errorMessages.length === 1) {
+            setError(errorMessages[0]);
+          } else {
+            setError(errorMessages.join('\n• '));
+          }
         } else {
           setError('Đăng ký thất bại. Vui lòng thử lại.');
         }
-      } else if (error.message === 'Network error - Cannot connect to server') {
-        setError('Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.');
-      } else if (error.message === 'Request timeout') {
-        setError('Kết nối bị timeout. Vui lòng thử lại.');
+      } else if (error.message) {
+        // Try to parse error message if it's JSON string
+        try {
+          const errorData = JSON.parse(error.message);
+          if (errorData.errors) {
+            const errorMessages = Object.values(errorData.errors).flat();
+            setError(errorMessages.join('\n• '));
+          } else {
+            setError(error.message);
+          }
+        } catch {
+          // Not JSON, use original message
+          if (error.message === 'Network error - Cannot connect to server') {
+            setError('Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.');
+          } else if (error.message === 'Request timeout') {
+            setError('Kết nối bị timeout. Vui lòng thử lại.');
+          } else {
+            setError(error.message);
+          }
+        }
       } else {
-        setError(error.message || 'Đã xảy ra lỗi. Vui lòng thử lại sau.');
+        setError('Đã xảy ra lỗi. Vui lòng thử lại sau.');
       }
     } finally {
       setLoading(false);
@@ -167,7 +205,7 @@ const Register = () => {
                 {error && (
                   <div className="alert alert-danger alert-dismissible fade show" role="alert">
                     <i className="bi bi-exclamation-triangle-fill me-2"></i>
-                    {error}
+                    <div style={{ whiteSpace: 'pre-line' }}>{error}</div>
                   </div>
                 )}
 
@@ -326,6 +364,34 @@ const Register = () => {
                     </select>
                   </div>
 
+                  {/* Terms and Conditions Checkbox */}
+                  <div className="form-check mb-3 text-start">
+                    <input
+                      type="checkbox"
+                      className="form-check-input"
+                      id="acceptTerms"
+                      name="acceptTerms"
+                      checked={formData.acceptTerms}
+                      onChange={(e) => {
+                        console.log('✅ Checkbox changed:', e.target.checked);
+                        setFormData({ ...formData, acceptTerms: e.target.checked });
+                      }}
+                      disabled={loading}
+                      required
+                    />
+                    <label className="form-check-label" htmlFor="acceptTerms" style={{ fontSize: '14px' }}>
+                      Tôi đồng ý với{' '}
+                      <Link to="/terms" target="_blank" style={{ color: '#8B0000' }}>
+                        Điều khoản sử dụng
+                      </Link>
+                      {' '}và{' '}
+                      <Link to="/privacy" target="_blank" style={{ color: '#8B0000' }}>
+                        Chính sách bảo mật
+                      </Link>
+                      {' *'}
+                    </label>
+                  </div>
+
                   <FancyButton
                     type="submit"
                     fullWidth
@@ -343,14 +409,15 @@ const Register = () => {
                   </FancyButton>
                 </form>
 
-                <div className="d-flex justify-content-center gap-3 mb-3">
+                {/* Social Login - Disabled for registration, only available on login page */}
+                {/* <div className="d-flex justify-content-center gap-3 mb-3">
                   <a href="#" className="social-icon" title="Đăng ký với Facebook">
                     <i className="bi bi-facebook fs-4"></i>
                   </a>
                   <a href="#" className="social-icon" title="Đăng ký với Google">
                     <i className="bi bi-google fs-4"></i>
                   </a>
-                </div>
+                </div> */}
 
                 <p className="text-muted">
                   Already have an account?{' '}
