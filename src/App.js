@@ -38,11 +38,6 @@ import Packages from "./pages/customer/Packages";
 import ScheduleServiceNew from "./pages/customer/ScheduleServiceNew";
 import ProductIndividual from "./pages/customer/ProductIndividual";
 import ProductCombo from "./pages/customer/ProductCombo";
-import StaffLayout from "./pages/staff/StaffLayout";
-import StaffAppointments from "./pages/staff/Appointments";
-import StaffCheckIn from "./pages/staff/CheckIn";
-import StaffWorkOrders from "./pages/staff/WorkOrders";
-import StaffSettings from "./pages/staff/Settings";
 import PaymentCallback from "./pages/payment/PaymentCallback";
 import ChatWidget from "./components/ChatWidget";
 
@@ -50,15 +45,31 @@ import ChatWidget from "./components/ChatWidget";
 import PasswordResetTest from "./components/PasswordResetTest";
 import APIDebug from "./components/APIDebug";
 
-// Admin components
-import AdminLayout from "./pages/admin/AdminLayout";
-import AdminDashboard from "./pages/admin/Dashboard";
-import VehicleManagement from "./pages/admin/VehicleManagement";
+// Admin components - Modern redesign with Staff-style layout
+import AdminLayout from "./components/layout/AdminLayout";
+import ProfessionalDashboard from "./pages/admin/ProfessionalDashboard";
+import Vehicles from "./pages/admin/Vehicles";
+import Finance from "./pages/admin/Finance";
+import Settings from "./pages/admin/Settings";
+// Legacy components
 import CustomerManagement from "./pages/admin/CustomerManagement";
 import ServiceSchedule from "./pages/admin/ServiceSchedule";
 import MaintenanceProgress from "./pages/admin/MaintenanceProgress";
 import PartsInventory from "./pages/admin/PartsInventory";
 import StaffManagement from "./pages/admin/StaffManagement";
+
+// Staff components (Reception/Front desk)
+import StaffLayout from "./pages/staff/StaffLayout";
+import StaffAppointments from "./pages/staff/Appointments";
+import StaffCheckIn from "./pages/staff/CheckIn";
+import StaffWorkOrders from "./pages/staff/WorkOrders";
+import StaffSettings from "./pages/staff/Settings";
+
+// Technician components (Maintenance/Repair)
+import TechnicianLayout from "./pages/technician/TechnicianLayout";
+import TechnicianDashboard from "./pages/technician/Dashboard";
+import MyWorkOrders from "./pages/technician/MyWorkOrders";
+import MaintenanceChecklist from "./pages/technician/MaintenanceChecklist";
 
 // Create React Query client
 const queryClient = new QueryClient({
@@ -198,36 +209,55 @@ function App() {
             <Route path="settings" element={<StaffSettings />} />
           </Route>
 
-          {/* Admin routes */}
+          {/* Admin routes - Modern redesign with Staff-style layout */}
           <Route
             path="/admin"
             element={
-              <ProtectedRoute requireRole={["admin", "staff"]}>
+              <ProtectedRoute requireRole={["admin"]}>
                 <AdminLayout />
               </ProtectedRoute>
             }
           >
-            <Route index element={<AdminDashboard />} />
-            <Route path="vehicles" element={<VehicleManagement />} />
+            <Route index element={<ProfessionalDashboard />} />
+            <Route path="vehicles" element={<Vehicles />} />
             <Route path="customers" element={<CustomerManagement />} />
             <Route path="schedule" element={<ServiceSchedule />} />
             <Route path="maintenance" element={<MaintenanceProgress />} />
             <Route path="parts" element={<PartsInventory />} />
             <Route path="staff" element={<StaffManagement />} />
-            <Route
-              path="finance"
-              element={
-                <div className="placeholder">
-                  Financial Report - Coming Soon
-                </div>
-              }
-            />
-            <Route
-              path="settings"
-              element={
-                <div className="placeholder">Settings - Coming Soon</div>
-              }
-            />
+            <Route path="finance" element={<Finance />} />
+            <Route path="settings" element={<Settings />} />
+          </Route>
+
+          {/* Staff routes (Reception/Front desk) */}
+          <Route
+            path="/staff"
+            element={
+              <ProtectedRoute requireRole={["staff"]}>
+                <StaffLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<StaffAppointments isDashboard={true} />} />
+            <Route path="appointments" element={<StaffAppointments />} />
+            <Route path="checkin" element={<StaffCheckIn />} />
+            <Route path="work-orders" element={<StaffWorkOrders />} />
+            <Route path="settings" element={<StaffSettings />} />
+          </Route>
+
+          {/* Technician routes (Maintenance/Repair) */}
+          <Route
+            path="/technician"
+            element={
+              <ProtectedRoute requireRole={["technician"]}>
+                <TechnicianLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<TechnicianDashboard />} />
+            <Route path="dashboard" element={<TechnicianDashboard />} />
+            <Route path="work-orders" element={<MyWorkOrders />} />
+            <Route path="maintenance/:workOrderId" element={<MaintenanceChecklist />} />
           </Route>
 
           {/* Catch all route */}

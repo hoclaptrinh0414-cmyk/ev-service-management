@@ -4,8 +4,23 @@ import { cn } from '../../lib/utils';
 export const Dialog = ({ open, onOpenChange, children }) => {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center">
-      <div className="fixed inset-0 bg-black/40" onClick={() => onOpenChange?.(false)} />
+    <div style={{
+      position: 'fixed',
+      inset: 0,
+      zIndex: 10000,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }}>
+      <div
+        style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          zIndex: 10000
+        }}
+        onClick={() => onOpenChange?.(false)}
+      />
       {children}
     </div>
   );
@@ -23,7 +38,16 @@ export const DialogContent = ({ className = '', onEscapeKeyDown, onPointerDownOu
     <div
       role="dialog"
       aria-modal="true"
-      className={cn('relative z-50 w-full max-w-2xl rounded-xl bg-white shadow-xl', className)}
+      style={{
+        position: 'relative',
+        zIndex: 10001,
+        width: '100%',
+        maxWidth: '42rem',
+        borderRadius: '12px',
+        backgroundColor: 'white',
+        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+      }}
+      className={className}
       onPointerDown={(e) => {
         if (e.target === e.currentTarget) onPointerDownOutside?.(e);
       }}

@@ -42,6 +42,8 @@ const ScheduleServiceNew = () => {
 
   // Step 4: Summary
   const [estimatedCost, setEstimatedCost] = useState(0);
+  const [bookingErrorMessage, setBookingErrorMessage] = useState('');
+  const [showBookingErrorModal, setShowBookingErrorModal] = useState(false);
 
   // Step 5: Payment
   const [paymentMethod, setPaymentMethod] = useState('VNPay');
@@ -68,6 +70,41 @@ const ScheduleServiceNew = () => {
   };
 
   const paymentReturnUrl = buildPaymentReturnUrl();
+
+  const extractBackendErrorMessages = (error) => {
+    const payload = error?.response?.data;
+    const collected = [];
+
+    const pushMessage = (value) => {
+      if (!value) return;
+      if (Array.isArray(value)) {
+        value.forEach(pushMessage);
+        return;
+      }
+      if (typeof value === 'object') {
+        Object.values(value).forEach(pushMessage);
+        return;
+      }
+      if (typeof value === 'string') {
+        collected.push(value);
+      }
+    };
+
+    if (payload) {
+      ['message', 'error', 'title', 'detail', 'description'].forEach((key) => {
+        if (payload[key]) {
+          collected.push(payload[key]);
+        }
+      });
+      pushMessage(payload.errors);
+    }
+
+    if (!collected.length && error?.message) {
+      collected.push(error.message);
+    }
+
+    return [...new Set(collected)].filter(Boolean);
+  };
 
   const resolveCartTotal = () => {
     if (typeof getTotalPrice === 'function') {
@@ -432,10 +469,16 @@ const ScheduleServiceNew = () => {
   };
 
   // ============ STEP 4: CREATE APPOINTMENT & PAYMENT INTENT ============
+  const closeBookingErrorModal = () => {
+    setShowBookingErrorModal(false);
+  };
+
   const handleSubmitAppointment = async () => {
     try {
       setSubmitting(true);
       setIsFreeAppointment(false);
+      setBookingErrorMessage('');
+      setShowBookingErrorModal(false);
 
       // Validation: Check required fields
       if (!user?.customerId) {
@@ -620,19 +663,12 @@ const ScheduleServiceNew = () => {
       console.error('❌ Status code:', error.response?.status);
 
       // Show detailed error to user
-      const errorPayload = error.response?.data;
-      const errorMessage =
-        errorPayload?.message ||
-        errorPayload?.error ||
-        errorPayload?.title ||
-        error.message ||
-        'Unable to create appointment. Please try again.';
+      const backendMessages = extractBackendErrorMessages(error);
+      const composedMessage = backendMessages.join('\n') || 'Unable to create appointment. Please try again.';
 
-      const errorDetails = errorPayload?.errors
-        ? '\n' + JSON.stringify(errorPayload.errors, null, 2)
-        : '';
-
-      toast.error(errorMessage + errorDetails);
+      setBookingErrorMessage(composedMessage);
+      setShowBookingErrorModal(true);
+      toast.error(composedMessage);
     } finally {
       setSubmitting(false);
     }
@@ -723,10 +759,9 @@ const ScheduleServiceNew = () => {
   };
 
   // ============ RENDER HELPERS ============
-  const getTomorrowDate = () => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    return tomorrow.toISOString().split('T')[0];
+  const getEarliestBookingDate = () => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
   };
 
   const selectedVehicle = vehicles.find(v => v.vehicleId === parseInt(selectedVehicleId));
@@ -867,7 +902,7 @@ const ScheduleServiceNew = () => {
                                 console.log('showPicker not available or failed:', error.message);
                               }
                             }}
-                            min={getTomorrowDate()}
+                            min={getEarliestBookingDate()}
                           />
                         </div>
 
@@ -1327,10 +1362,49 @@ const ScheduleServiceNew = () => {
                 )}
               </div>
             </div>
-          </div>
         </div>
       </div>
-    </>
+    </div>
+
+    {showBookingErrorModal && (
+      <>
+        <div className="modal fade show" style={{ display: 'block' }} role="dialog" aria-modal="true">
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header bg-danger text-white">
+                <h5 className="modal-title">
+                  <i className="bi bi-exclamation-octagon me-2"></i>
+                  Khong the tao lich hen
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close btn-close-white"
+                  onClick={closeBookingErrorModal}
+                  aria-label="Close"
+                ></button>
+              </div>
+              <div className="modal-body">
+                {bookingErrorMessage.split('\n').map((msg, index) => (
+                  <p key={index} className="mb-2 text-break">
+                    {msg}
+                  </p>
+                ))}
+                <p className="mb-0 text-muted small">
+                  Vui long dieu chinh thong tin lich hen va thu lai.
+                </p>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={closeBookingErrorModal}>
+                  Dong
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="modal-backdrop fade show"></div>
+      </>
+    )}
+  </>
   );
 };
 

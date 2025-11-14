@@ -12,8 +12,7 @@ export default function StaffLayout() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const menuItems = [
-    { path: "/staff/appointments", label: "Appointments", icon: "bi-calendar-check" },
-    { path: "/staff/checkin", label: "Check-in", icon: "bi-clipboard-check" },
+    { path: "/staff/appointments", label: "Appointment", icon: "bi-speedometer2" },
     { path: "/staff/work-orders", label: "Work Orders", icon: "bi-tools" },
   ];
 
@@ -21,6 +20,8 @@ export default function StaffLayout() {
     logout();
     window.location.href = "/login";
   };
+
+  const isCollapsed = !sidebarOpen;
 
   return (
     <div className="staff-layout">
@@ -64,6 +65,8 @@ export default function StaffLayout() {
                 <Link
                   to={item.path}
                   className={`nav-item ${isActive ? 'active' : ''}`}
+                  title={isCollapsed ? item.label : undefined}
+                  aria-label={item.label}
                 >
                   <i className={`bi ${item.icon}`}></i>
                   {sidebarOpen && <span>{item.label}</span>}
@@ -305,7 +308,7 @@ export default function StaffLayout() {
         /* Tooltip for collapsed sidebar */
         .nav-tooltip {
           position: absolute;
-          left: 80px;
+          left: calc(100% + 12px);
           top: 50%;
           transform: translateY(-50%);
           background: #1a1a1a;

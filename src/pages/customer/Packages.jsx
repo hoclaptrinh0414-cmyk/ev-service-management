@@ -9,6 +9,7 @@ import { appointmentService } from '../../services/appointmentService';
 import packageService from '../../services/packageService';
 import { getActiveSubscriptionsByVehicle } from '../../services/productService';
 import { formatCurrency } from '../../utils/currencyUtils';
+import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import '../Home.css';
@@ -25,6 +26,9 @@ const Packages = () => {
   const [selectedVehicle, setSelectedVehicle] = useState('');
   const [message, setMessage] = useState('');
   const [vehicleSubscriptionsCache, setVehicleSubscriptionsCache] = useState({});
+  const [allPurchasedPackages, setAllPurchasedPackages] = useState(new Set());
+  const [showAlreadyPurchasedDialog, setShowAlreadyPurchasedDialog] = useState(false);
+  const [alreadyPurchasedPackageName, setAlreadyPurchasedPackageName] = useState('');
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -46,6 +50,9 @@ const Packages = () => {
 
       setPackages(packagesData);
       setVehicles(vehiclesData);
+
+      // Load purchased packages for all vehicles
+      await loadAllPurchasedPackages(vehiclesData);
     } catch (error) {
       console.error('Error loading data:', error);
       setMessage('Không thể tải dữ liệu. Vui lòng thử lại.');
@@ -54,11 +61,41 @@ const Packages = () => {
     }
   };
 
+  const loadAllPurchasedPackages = async (vehiclesList) => {
+    try {
+      const purchasedSet = new Set();
+
+      for (const vehicle of vehiclesList) {
+        const vehicleId = vehicle.vehicleId || vehicle.id;
+        const subscriptions = await getVehicleSubscriptions(vehicleId);
+
+        subscriptions.forEach(sub => {
+          const packageId = sub.packageId || sub.maintenancePackageId ||
+                           sub.package?.packageId || sub.subscriptionPackageId;
+          if (packageId) {
+            purchasedSet.add(packageId);
+          }
+        });
+      }
+
+      setAllPurchasedPackages(purchasedSet);
+    } catch (error) {
+      console.error('Error loading purchased packages:', error);
+    }
+  };
+
   const handleNotificationClick = (notification) => {
     markAsRead(notification.id);
   };
 
   const handlePurchaseClick = (pkg) => {
+    // Check if package already purchased
+    if (allPurchasedPackages.has(pkg.packageId)) {
+      setAlreadyPurchasedPackageName(pkg.packageName);
+      setShowAlreadyPurchasedDialog(true);
+      return;
+    }
+
     if (vehicles.length === 0) {
       setMessage('Bạn cần đăng ký xe trước khi mua gói đăng ký');
       setTimeout(() => navigate('/register-vehicle'), 2000);
@@ -107,6 +144,19 @@ const Packages = () => {
     });
   };
 
+  const handleVehicleChange = async (e) => {
+    const vehicleId = e.target.value;
+    setSelectedVehicle(vehicleId);
+    setMessage('');
+
+    if (vehicleId) {
+      const activeSubscriptions = await getVehicleSubscriptions(parseInt(vehicleId));
+      if (hasVehicleSubscribedPackage(activeSubscriptions, selectedPackage.packageId)) {
+        setMessage('⚠️ Xe này đã mua gói này rồi. Vui lòng chọn xe khác hoặc đợi hết hạn gói hiện tại.');
+      }
+    }
+  };
+
   const confirmPurchase = async () => {
     if (!selectedVehicle) {
       setMessage('Vui lòng chọn xe');
@@ -117,7 +167,7 @@ const Packages = () => {
       const vehicleId = parseInt(selectedVehicle);
       const activeSubscriptions = await getVehicleSubscriptions(vehicleId);
       if (hasVehicleSubscribedPackage(activeSubscriptions, selectedPackage.packageId)) {
-        setMessage('Bạn đã mua gói này cho xe đã chọn');
+        setMessage('⚠️ Bạn đã mua gói này cho xe đã chọn. Vui lòng sử dụng hết gói hiện tại trước khi mua gói mới.');
         return;
       }
 
@@ -287,14 +337,24 @@ const Packages = () => {
                       )}
                     </div>
                     <div className="card-footer bg-transparent">
-                      <button
-                        className="btn btn-primary w-100"
-                        onClick={() => handlePurchaseClick(pkg)}
-                        disabled={isPurchasing}
-                      >
-                        <i className="bi bi-cart-plus me-1"></i>
-                        Mua ngay
-                      </button>
+                      {allPurchasedPackages.has(pkg.packageId) ? (
+                        <button
+                          className="btn btn-success w-100"
+                          onClick={() => handlePurchaseClick(pkg)}
+                        >
+                          <i className="bi bi-check-circle-fill me-1"></i>
+                          Đã mua
+                        </button>
+                      ) : (
+                        <button
+                          className="btn btn-primary w-100"
+                          onClick={() => handlePurchaseClick(pkg)}
+                          disabled={isPurchasing}
+                        >
+                          <i className="bi bi-cart-plus me-1"></i>
+                          Mua ngay
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -325,7 +385,7 @@ const Packages = () => {
                   <select
                     className="form-select"
                     value={selectedVehicle}
-                    onChange={(e) => setSelectedVehicle(e.target.value)}
+                    onChange={handleVehicleChange}
                   >
                     <option value="">-- Chọn xe --</option>
                     {vehicles.map(vehicle => (
@@ -358,6 +418,19 @@ const Packages = () => {
           </div>
         </div>
       )}
+
+      {/* Already Purchased Dialog */}
+      <ConfirmDialog
+        open={showAlreadyPurchasedDialog}
+        onOpenChange={setShowAlreadyPurchasedDialog}
+        onConfirm={() => navigate('/my-subscriptions')}
+        onCancel={() => setShowAlreadyPurchasedDialog(false)}
+        title="Gói đã được mua"
+        description={`Bạn đã mua gói "${alreadyPurchasedPackageName}" cho một trong các xe của bạn. Vui lòng sử dụng hết gói hiện tại trước khi mua gói mới.`}
+        confirmText="Xem gói đã mua"
+        cancelText="Đóng"
+        variant="info"
+      />
 
       {/* Footer */}
       <footer className="footer mt-5">
