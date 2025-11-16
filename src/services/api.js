@@ -17,7 +17,7 @@ console.log("🔧 API Configuration:", {
 class UnifiedAPIService {
   constructor() {
     this.baseURL = API_CONFIG.baseURL;
-    this.timeout = API_CONFIG.timeout;
+    this.timeout = API_CONFIG.timeout;s
   }
 
   getHeaders(includeAuth = true) {
