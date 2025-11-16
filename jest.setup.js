@@ -42,7 +42,19 @@ global.mockLocalStorage = localStorageMock;
 // === 3. Mock fetch ===
 global.fetch = jest.fn();
 
-// === 4. Reset sau mỗi test ===
+// === 4. Mock window.scrollTo ===
+Object.defineProperty(window, 'scrollTo', {
+  writable: true,
+  value: jest.fn(),
+});
+
+// === 5. Mock window.confirm ===
+Object.defineProperty(window, 'confirm', {
+  writable: true,
+  value: jest.fn(() => true),
+});
+
+// === 6. Reset sau mỗi test ===
 beforeEach(() => {
   fetch.mockClear();
   localStorageMock.clear();
