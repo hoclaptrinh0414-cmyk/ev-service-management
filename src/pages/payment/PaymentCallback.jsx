@@ -1,7 +1,6 @@
-// src/pages/payment/PaymentCallback.jsx
+﻿// src/pages/payment/PaymentCallback.jsx
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { toast } from 'react-toastify';
 import paymentService from '../../services/paymentService';
 import { useSchedule } from '../../contexts/ScheduleContext';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -9,118 +8,130 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 /**
  * PaymentCallback Page
  * Handle VNPay return after payment
- *
- * VNPay Sandbox Return Format:
- * ?vnp_Amount=100000000
- * &vnp_BankCode=NCB
- * &vnp_ResponseCode=00
- * &vnp_TxnRef=PAY-XXX-XXX
- * &vnp_TransactionNo=13995895
- * &vnp_OrderInfo=Payment+for+appointment
- *
- * Response Code:
- * - 00: Success
- * - 24: Customer canceled
- * - Others: Failed
  */
 const PaymentCallback = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { clearBookingState } = useSchedule();
-  const [processing, setProcessing] = useState(true);
+  const [popup, setPopup] = useState({
+    show: false,
+    title: '',
+    message: '',
+    variant: 'success',
+  });
 
   useEffect(() => {
     handlePaymentCallback();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handlePaymentCallback = async () => {
     try {
-      console.log('🔙 Payment callback received');
+      console.log('Payment callback received');
 
-      // Extract backend-defined params
       const paymentStatus = searchParams.get('status');
       const paymentCode = searchParams.get('paymentCode');
-      
-      console.log('📦 Backend params:', { paymentStatus, paymentCode });
 
-      // Check if payment was successful
+      console.log('Callback params:', { paymentStatus, paymentCode });
+
       if (paymentStatus === 'success') {
-        console.log('✅ Payment successful');
+        console.log('Payment successful');
 
-        // Verify payment status from backend
         if (paymentCode) {
           try {
             const paymentStatusResponse = await paymentService.getPaymentByCodePublic(paymentCode);
             const payment = paymentStatusResponse.data?.data || paymentStatusResponse.data;
 
-            console.log('✅ Payment verification:', payment);
+            console.log('Payment verification:', payment);
 
-            // Clear booking state
             clearBookingState();
 
-            // Show success toast and redirect
-            toast.success('🎉 Payment completed successfully! Your appointment has been confirmed.', {
-              autoClose: 5000,
-              position: 'top-center'
+            setPopup({
+              show: true,
+              title: 'Thanh toan thanh cong',
+              message: 'Cuoc hen cua ban da duoc xac nhan. Dang chuyen den Lich hen cua toi.',
+              variant: 'success',
             });
 
-            // Redirect to a relevant page, e.g., My Appointments
-            navigate('/my-appointments', {
-              replace: true,
-              state: { paymentSuccess: true }
-            });
-
+            setTimeout(() => {
+              navigate('/my-appointments', {
+                replace: true,
+                state: { paymentSuccess: true },
+              });
+            }, 1800);
           } catch (error) {
-            console.error('❌ Payment verification failed:', error);
-            // Even if verification fails, we can assume success from the URL and let user check manually
+            console.error('Payment verification failed:', error);
             clearBookingState();
-            toast.success('🎉 Payment completed! Please check "My Appointments" to see the confirmation.', {
-              autoClose: 5000,
-              position: 'top-center'
+            setPopup({
+              show: true,
+              title: 'Thanh toan da hoan tat',
+              message: 'Khong xac minh duoc tren may chu. Vui long kiem tra o "Lich hen cua toi".',
+              variant: 'warning',
             });
-            navigate('/my-appointments', {
-              replace: true,
-              state: { paymentSuccess: true }
-            });
+            setTimeout(() => {
+              navigate('/my-appointments', {
+                replace: true,
+                state: { paymentSuccess: true },
+              });
+            }, 1800);
           }
         } else {
-           // Should not happen if status is success
           clearBookingState();
-          toast.warning('Payment status is success but no paymentCode provided.');
-          navigate('/services', { replace: true });
+          setPopup({
+            show: true,
+            title: 'Thieu ma thanh toan',
+            message: 'Thanh toan thanh cong nhung khong nhan duoc ma. Vui long kiem tra lai lich hen.',
+            variant: 'warning',
+          });
+          setTimeout(() => {
+            navigate('/services', { replace: true });
+          }, 2000);
         }
       } else if (paymentStatus === 'cancelled' || paymentStatus === 'canceled') {
-        console.log('⚠️ Payment canceled by user');
+        console.log('Payment canceled by user');
 
-        toast.warning('Payment was canceled. Please try again.', {
-          autoClose: 4000
+        setPopup({
+          show: true,
+          title: 'Thanh toan bi huy',
+          message: 'Ban da huy thanh toan. Vui long thu lai.',
+          variant: 'warning',
         });
 
-        navigate('/services', {
-          replace: true,
-          state: { paymentCanceled: true }
-        });
+        setTimeout(() => {
+          navigate('/services', {
+            replace: true,
+            state: { paymentCanceled: true },
+          });
+        }, 2000);
       } else {
-        console.log('❌ Payment failed:', paymentStatus);
+        console.log('Payment failed:', paymentStatus);
 
-        toast.error(`Payment failed (Status: ${paymentStatus}). Please try again.`, {
-          autoClose: 4000
+        setPopup({
+          show: true,
+          title: 'Thanh toan that bai',
+          message: `Trang thai: ${paymentStatus || 'unknown'}. Vui long thu lai.`,
+          variant: 'danger',
         });
 
-        navigate('/services', {
-          replace: true,
-          state: { paymentFailed: true }
-        });
+        setTimeout(() => {
+          navigate('/services', {
+            replace: true,
+            state: { paymentFailed: true },
+          });
+        }, 2000);
       }
     } catch (error) {
-      console.error('❌ Error handling payment callback:', error);
-      toast.error('Error processing payment result');
+      console.error('Error handling payment callback:', error);
+      setPopup({
+        show: true,
+        title: 'Loi xu ly ket qua thanh toan',
+        message: 'Vui long thu lai hoac kiem tra trong "Lich hen cua toi".',
+        variant: 'danger',
+      });
 
       setTimeout(() => {
         navigate('/services', { replace: true });
       }, 3000);
-    } finally {
-      setProcessing(false);
     }
   };
 
@@ -147,6 +158,24 @@ const PaymentCallback = () => {
           </div>
         </div>
       </div>
+      {popup.show && (
+        <div
+          className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+          style={{ backgroundColor: 'rgba(0,0,0,0.4)', zIndex: 1050 }}
+        >
+          <div className="card shadow-lg" style={{ minWidth: '320px', borderRadius: '12px' }}>
+            <div
+              className={`card-header text-white bg-${popup.variant}`}
+              style={{ borderTopLeftRadius: '12px', borderTopRightRadius: '12px' }}
+            >
+              <strong>{popup.title}</strong>
+            </div>
+            <div className="card-body">
+              <p className="mb-0">{popup.message}</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

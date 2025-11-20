@@ -192,6 +192,7 @@ function App() {
             }
           />
           <Route path="/payment/callback" element={<PaymentCallback />} />
+          <Route path="/payment/result" element={<PaymentCallback />} />
           <Route path="/products/individual" element={<ProductIndividual />} />
           <Route path="/products/combo" element={<ProductCombo />} />
           <Route
