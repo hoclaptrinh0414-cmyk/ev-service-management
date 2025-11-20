@@ -8,6 +8,16 @@ import appointmentService from '../../services/appointmentService';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import '../Home.css';
+import './MyAppointments.css';
+
+const statusMap = {
+  Pending: { color: 'warning', text: 'Cho xac nhan', icon: 'clock-history' },
+  Confirmed: { color: 'info', text: 'Da xac nhan', icon: 'check-circle' },
+  InProgress: { color: 'primary', text: 'Dang thuc hien', icon: 'gear' },
+  Completed: { color: 'success', text: 'Hoan thanh', icon: 'check-all' },
+  Cancelled: { color: 'danger', text: 'Da huy', icon: 'x-circle' },
+  NoShow: { color: 'secondary', text: 'Khong den', icon: 'dash-circle' },
+};
 
 const MyAppointments = () => {
   const navigate = useNavigate();
@@ -15,7 +25,13 @@ const MyAppointments = () => {
   const [appointments, setAppointments] = useState([]);
   const [filteredAppointments, setFilteredAppointments] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('all'); // 'all' or 'upcoming'
+  const [message, setMessage] = useState('');
+
+  const [activeTab, setActiveTab] = useState('all'); // 'all' | 'upcoming'
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('dateDesc'); // dateAsc | dateDesc
+
+  // Modals
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
@@ -23,7 +39,6 @@ const MyAppointments = () => {
   const [rescheduleDate, setRescheduleDate] = useState('');
   const [availableSlots, setAvailableSlots] = useState([]);
   const [selectedSlot, setSelectedSlot] = useState(null);
-  const [message, setMessage] = useState('');
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -32,84 +47,111 @@ const MyAppointments = () => {
 
   useEffect(() => {
     filterAppointments();
-  }, [activeTab, appointments]);
+  }, [activeTab, appointments, statusFilter, sortBy]);
 
   const loadAppointments = async () => {
     try {
       setLoading(true);
       const response = await appointmentService.getMyAppointments();
-      const data = Array.isArray(response.data) ? response.data :
-                   Array.isArray(response) ? response : [];
+      const data = Array.isArray(response?.data) ? response.data : Array.isArray(response) ? response : [];
       setAppointments(data);
     } catch (error) {
       console.error('Error loading appointments:', error);
-      setMessage('Không thể tải danh sách lịch hẹn. Vui lòng thử lại.');
+      setMessage('Khong the tai danh sach lich hen. Vui long thu lai.');
     } finally {
       setLoading(false);
     }
   };
 
   const filterAppointments = () => {
-    if (activeTab === 'all') {
-      setFilteredAppointments(appointments);
-    } else {
+    let list = [...appointments];
+
+    if (activeTab !== 'all') {
       const now = new Date();
-      const upcoming = appointments.filter(apt => {
+      list = list.filter((apt) => {
         const aptDate = new Date(apt.appointmentDate || apt.slotDate);
         return aptDate >= now && apt.status !== 'Cancelled' && apt.status !== 'Completed';
       });
-      setFilteredAppointments(upcoming);
     }
+
+    if (statusFilter !== 'all') {
+      list = list.filter(
+        (apt) => (apt.status || '').toLowerCase() === statusFilter.toLowerCase()
+      );
+    }
+
+    list.sort((a, b) => {
+      const aDate = new Date(a.appointmentDate || a.slotDate || 0).getTime();
+      const bDate = new Date(b.appointmentDate || b.slotDate || 0).getTime();
+      return sortBy === 'dateAsc' ? aDate - bDate : bDate - aDate;
+    });
+
+    setFilteredAppointments(list);
   };
 
   const getStatusBadge = (status) => {
-    const statusMap = {
-      'Pending': { color: 'warning', text: 'Chờ xác nhận', icon: 'clock-history' },
-      'Confirmed': { color: 'info', text: 'Đã xác nhận', icon: 'check-circle' },
-      'InProgress': { color: 'primary', text: 'Đang thực hiện', icon: 'gear' },
-      'Completed': { color: 'success', text: 'Hoàn thành', icon: 'check-all' },
-      'Cancelled': { color: 'danger', text: 'Đã hủy', icon: 'x-circle' },
-      'NoShow': { color: 'secondary', text: 'Không đến', icon: 'dash-circle' }
-    };
-    const statusInfo = statusMap[status] || { color: 'secondary', text: status, icon: 'question-circle' };
+    const info = statusMap[status] || { color: 'secondary', text: status || 'Unknown', icon: 'question-circle' };
     return (
-      <span className={`badge bg-${statusInfo.color}`}>
-        <i className={`bi bi-${statusInfo.icon} me-1`}></i>
-        {statusInfo.text}
+      <span className={`badge bg-${info.color}`}>
+        <i className={`bi bi-${info.icon} me-1`}></i>
+        {info.text}
       </span>
     );
+  };
+
+  const formatDate = (value) => {
+    if (!value) return '—';
+    try {
+      return new Date(value).toLocaleDateString('vi-VN');
+    } catch {
+      return value;
+    }
+  };
+
+  const formatTimeRange = (start, end) => {
+    if (!start || !end) return '';
+    return `${start} - ${end}`;
   };
 
   const handleReschedule = async (appointment) => {
     setSelectedAppointment(appointment);
     setShowRescheduleModal(true);
     setMessage('');
-
-    // Load available slots for the center
-    if (appointment.serviceCenterId && rescheduleDate) {
-      try {
-        const response = await appointmentService.getAvailableSlots(
-          appointment.serviceCenterId,
-          rescheduleDate
-        );
-        const slots = Array.isArray(response.data) ? response.data :
-                     Array.isArray(response) ? response : [];
-        setAvailableSlots(slots);
-      } catch (error) {
-        console.error('Error loading slots:', error);
-      }
-    }
+    setAvailableSlots([]);
+    setSelectedSlot(null);
+    setRescheduleDate('');
   };
 
   const handleCancelAppointment = (appointment) => {
     setSelectedAppointment(appointment);
     setShowCancelModal(true);
     setMessage('');
+    setCancelReason('');
   };
+
+  const loadSlotsForReschedule = async () => {
+    if (!selectedAppointment || !rescheduleDate) return;
+
+    try {
+      const response = await appointmentService.getAvailableSlots(
+        selectedAppointment.serviceCenterId,
+        rescheduleDate
+      );
+      const slots = Array.isArray(response?.data) ? response.data : Array.isArray(response) ? response : [];
+      setAvailableSlots(slots);
+    } catch (error) {
+      console.error('Error loading slots:', error);
+      setAvailableSlots([]);
+    }
+  };
+
+  useEffect(() => {
+    loadSlotsForReschedule();
+  }, [rescheduleDate]);
 
   const confirmReschedule = async () => {
     if (!selectedSlot) {
-      setMessage('Vui lòng chọn khung giờ mới.');
+      setMessage('Vui long chon khung gio moi.');
       return;
     }
 
@@ -118,15 +160,15 @@ const MyAppointments = () => {
       await appointmentService.rescheduleAppointment(
         selectedAppointment.appointmentId,
         selectedSlot.slotId,
-        'Khách hàng yêu cầu dời lịch'
+        'Khach hang yeu cau doi lich'
       );
-      setMessage('Dời lịch thành công!');
+      setMessage('Doi lich thanh cong!');
       setShowRescheduleModal(false);
       loadAppointments();
-      setTimeout(() => setMessage(''), 3000);
+      setTimeout(() => setMessage(''), 2500);
     } catch (error) {
       console.error('Error rescheduling:', error);
-      setMessage(error.response?.data?.message || 'Không thể dời lịch. Vui lòng thử lại.');
+      setMessage(error.response?.data?.message || 'Khong the doi lich. Vui long thu lai.');
     } finally {
       setLoading(false);
     }
@@ -134,7 +176,7 @@ const MyAppointments = () => {
 
   const confirmCancel = async () => {
     if (!cancelReason.trim()) {
-      setMessage('Vui lòng nhập lý do hủy lịch.');
+      setMessage('Vui long nhap ly do huy lich.');
       return;
     }
 
@@ -144,33 +186,33 @@ const MyAppointments = () => {
         selectedAppointment.appointmentId,
         cancelReason
       );
-      setMessage('Hủy lịch thành công!');
+      setMessage('Huy lich thanh cong!');
       setShowCancelModal(false);
       setCancelReason('');
       loadAppointments();
-      setTimeout(() => setMessage(''), 3000);
+      setTimeout(() => setMessage(''), 2500);
     } catch (error) {
       console.error('Error cancelling:', error);
-      setMessage(error.response?.data?.message || 'Không thể hủy lịch. Vui lòng thử lại.');
+      setMessage(error.response?.data?.message || 'Khong the huy lich. Vui long thu lai.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleDeleteAppointment = async (appointmentId) => {
-    if (!window.confirm('Bạn có chắc muốn xóa lịch hẹn này? (Chỉ xóa được lịch ở trạng thái Pending)')) {
+    if (!window.confirm('Ban co chac muon xoa lich hen nay? (Chi xoa duoc lich dang Pending)')) {
       return;
     }
 
     try {
       setLoading(true);
       await appointmentService.deleteAppointment(appointmentId);
-      setMessage('Xóa lịch hẹn thành công!');
+      setMessage('Xoa lich hen thanh cong!');
       loadAppointments();
-      setTimeout(() => setMessage(''), 3000);
+      setTimeout(() => setMessage(''), 2500);
     } catch (error) {
       console.error('Error deleting:', error);
-      setMessage(error.response?.data?.message || 'Không thể xóa lịch hẹn. Chỉ có thể xóa lịch ở trạng thái Pending.');
+      setMessage(error.response?.data?.message || 'Khong the xoa lich hen. Chi xoa duoc lich dang Pending.');
     } finally {
       setLoading(false);
     }
@@ -183,27 +225,6 @@ const MyAppointments = () => {
     }
   };
 
-  const loadSlotsForReschedule = async () => {
-    if (!selectedAppointment || !rescheduleDate) return;
-
-    try {
-      const response = await appointmentService.getAvailableSlots(
-        selectedAppointment.serviceCenterId,
-        rescheduleDate
-      );
-      const slots = Array.isArray(response.data) ? response.data :
-                   Array.isArray(response) ? response : [];
-      setAvailableSlots(slots);
-    } catch (error) {
-      console.error('Error loading slots:', error);
-      setAvailableSlots([]);
-    }
-  };
-
-  useEffect(() => {
-    loadSlotsForReschedule();
-  }, [rescheduleDate]);
-
   return (
     <>
       {/* Navbar */}
@@ -214,7 +235,7 @@ const MyAppointments = () => {
               <input
                 type="text"
                 className="form-control search-input"
-                placeholder="Tìm kiếm..."
+                placeholder="Tim kiem..."
               />
               <button type="submit" className="search-btn">
                 <i className="fas fa-search"></i>
@@ -244,26 +265,26 @@ const MyAppointments = () => {
             <div className="collapse navbar-collapse" id="navbarNav">
               <ul className="navbar-nav w-100 justify-content-center">
                 <li className="nav-item">
-                  <Link className="nav-link move" to="/home">TRANG CHỦ</Link>
+                  <Link className="nav-link move" to="/home">TRANG CHU</Link>
                 </li>
                 <li className="nav-item dropdown">
                   <a className="nav-link dropdown-toggle move" href="#" role="button" data-bs-toggle="dropdown">
-                    DỊCH VỤ
+                    DICH VU
                   </a>
                   <ul className="dropdown-menu">
-                    <li><Link className="dropdown-item" to="/my-appointments">Theo dõi & Nhắc nhở</Link></li>
-                    <li><Link className="dropdown-item" to="/schedule-service">Đặt lịch dịch vụ</Link></li>
-                    <li><Link className="dropdown-item" to="/products/combo">Lịch hẹn của tôi</Link></li>
+                    <li><Link className="dropdown-item" to="/my-appointments">Theo doi & Nhac nho</Link></li>
+                    <li><Link className="dropdown-item" to="/schedule-service">Dat lich dich vu</Link></li>
+                    <li><Link className="dropdown-item" to="/products/combo">Lich hen cua toi</Link></li>
                   </ul>
                 </li>
                 <li className="nav-item">
                   <a className="nav-link move" href="#">BLOG</a>
                 </li>
                 <li className="nav-item">
-                  <a className="nav-link move" href="#">GIỚI THIỆU</a>
+                  <a className="nav-link move" href="#">GIOI THIEU</a>
                 </li>
                 <li className="nav-item">
-                  <a className="nav-link move" href="#">LIÊN HỆ</a>
+                  <a className="nav-link move" href="#">LIEN HE</a>
                 </li>
               </ul>
             </div>
@@ -274,42 +295,70 @@ const MyAppointments = () => {
       {/* Main Content */}
       <section style={{ marginTop: '180px', minHeight: '60vh' }}>
         <div className="container">
-          <div className="d-flex justify-content-between align-items-center mb-4">
-            <h2 style={{ fontSize: '1.75rem', fontWeight: 600 }}>
-              <i className="bi bi-calendar-check me-2"></i>
-              Lịch hẹn của tôi
-            </h2>
-            <Link to="/schedule-service" className="btn btn-primary">
+          <div className="d-flex flex-wrap gap-3 justify-content-between align-items-center mb-4">
+            <div>
+              <h2 className="mb-1" style={{ fontSize: '1.75rem', fontWeight: 600 }}>
+                <i className="bi bi-calendar-check me-2"></i>
+                Lich hen cua toi
+              </h2>
+              <p className="text-muted mb-0">Xem, doi lich, huy lich nhanh chong</p>
+            </div>
+            <Link to="/schedule-service" className="btn btn-primary btn-lg">
               <i className="bi bi-plus-circle me-1"></i>
-              Đặt lịch mới
+              Dat lich moi
             </Link>
           </div>
 
           {message && (
-            <div className={`alert ${message.includes('thành công') ? 'alert-success' : 'alert-danger'}`}>
+            <div className={`alert ${message.toLowerCase().includes('thanh cong') ? 'alert-success' : 'alert-danger'}`}>
               {message}
             </div>
           )}
 
-          {/* Tabs */}
-          <ul className="nav nav-tabs mb-4">
-            <li className="nav-item">
+          <div className="appointments-filter-bar d-flex flex-wrap align-items-center gap-3 mb-4">
+            <div className="btn-group" role="group" aria-label="tabs">
               <button
-                className={`nav-link ${activeTab === 'all' ? 'active' : ''}`}
+                className={`btn btn-sm ${activeTab === 'all' ? 'btn-dark' : 'btn-outline-dark'}`}
                 onClick={() => setActiveTab('all')}
               >
-                Tất cả ({appointments.length})
+                Tat ca ({appointments.length})
               </button>
-            </li>
-            <li className="nav-item">
               <button
-                className={`nav-link ${activeTab === 'upcoming' ? 'active' : ''}`}
+                className={`btn btn-sm ${activeTab === 'upcoming' ? 'btn-dark' : 'btn-outline-dark'}`}
                 onClick={() => setActiveTab('upcoming')}
               >
-                Sắp tới
+                Sap toi
               </button>
-            </li>
-          </ul>
+            </div>
+
+            <div className="d-flex align-items-center gap-2">
+              <i className="bi bi-funnel"></i>
+              <select
+                className="form-select form-select-sm"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+              >
+                <option value="all">Trang thai: tat ca</option>
+                <option value="Pending">Cho xac nhan</option>
+                <option value="Confirmed">Da xac nhan</option>
+                <option value="InProgress">Dang thuc hien</option>
+                <option value="Completed">Hoan thanh</option>
+                <option value="Cancelled">Da huy</option>
+              </select>
+            </div>
+
+            <div className="d-flex align-items-center gap-2 ms-auto">
+              <i className="bi bi-sort-down"></i>
+              <select
+                className="form-select form-select-sm"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+              >
+                <option value="dateDesc">Moi nhat</option>
+                <option value="dateAsc">Cu nhat</option>
+              </select>
+            </div>
+          </div>
 
           {loading ? (
             <div className="text-center py-5">
@@ -320,103 +369,100 @@ const MyAppointments = () => {
           ) : filteredAppointments.length === 0 ? (
             <div className="text-center py-5">
               <i className="bi bi-calendar-x" style={{ fontSize: '3rem', color: '#ccc' }}></i>
-              <p className="mt-3 text-muted">Không có lịch hẹn nào</p>
+              <p className="mt-3 text-muted">Khong co lich hen nao</p>
               <Link to="/schedule-service" className="btn btn-primary mt-2">
-                Đặt lịch ngay
+                Dat lich ngay
               </Link>
             </div>
           ) : (
             <div className="row g-3">
-              {filteredAppointments.map(appointment => (
-                <div key={appointment.appointmentId} className="col-12">
-                  <div className="card">
-                    <div className="card-body">
-                      <div className="row align-items-center">
-                        <div className="col-md-3">
-                          <h6 className="mb-1">
-                            <i className="bi bi-hash"></i>
-                            {appointment.appointmentCode || appointment.appointmentId}
-                          </h6>
-                          <small className="text-muted">
-                            <i className="bi bi-calendar me-1"></i>
-                            {new Date(appointment.appointmentDate || appointment.slotDate).toLocaleDateString('vi-VN')}
-                          </small>
-                          <br />
-                          <small className="text-muted">
-                            <i className="bi bi-clock me-1"></i>
-                            {appointment.slotStartTime} - {appointment.slotEndTime}
-                          </small>
-                        </div>
-
-                        <div className="col-md-3">
-                          <small className="text-muted d-block">Xe</small>
-                          <strong>{appointment.vehicleLicensePlate || 'N/A'}</strong>
-                          <br />
-                          <small>{appointment.vehicleModel || ''}</small>
-                        </div>
-
-                        <div className="col-md-3">
-                          <small className="text-muted d-block">Trung tâm</small>
-                          <strong>{appointment.serviceCenterName || 'N/A'}</strong>
-                        </div>
-
-                        <div className="col-md-3 text-end">
-                          <div className="mb-2">
-                            {getStatusBadge(appointment.status)}
+              {filteredAppointments.map((appointment) => {
+                const paymentStatus = appointment.paymentStatus || appointment.paymentIntentStatus || '';
+                return (
+                  <div key={appointment.appointmentId} className="col-12">
+                    <div className="appointment-card">
+                      <div className="appointment-card-header">
+                        <div>
+                          <div className="appointment-code">#{appointment.appointmentCode || appointment.appointmentId}</div>
+                          <div className="appointment-datetime">
+                            <span><i className="bi bi-calendar-event me-1"></i>{formatDate(appointment.appointmentDate || appointment.slotDate)}</span>
+                            <span className="dot-separator"></span>
+                            <span><i className="bi bi-clock me-1"></i>{formatTimeRange(appointment.slotStartTime, appointment.slotEndTime)}</span>
                           </div>
-                          <div className="btn-group btn-group-sm">
-                            {appointment.status === 'Pending' && (
-                              <>
-                                <button
-                                  className="btn btn-outline-primary"
-                                  onClick={() => handleReschedule(appointment)}
-                                  title="Dời lịch"
-                                >
-                                  <i className="bi bi-calendar-event"></i>
-                                </button>
-                                <button
-                                  className="btn btn-outline-danger"
-                                  onClick={() => handleCancelAppointment(appointment)}
-                                  title="Hủy lịch"
-                                >
-                                  <i className="bi bi-x-circle"></i>
-                                </button>
-                                <button
-                                  className="btn btn-outline-secondary"
-                                  onClick={() => handleDeleteAppointment(appointment.appointmentId)}
-                                  title="Xóa lịch"
-                                >
-                                  <i className="bi bi-trash"></i>
-                                </button>
-                              </>
-                            )}
-                            {appointment.status === 'Confirmed' && (
-                              <button
-                                className="btn btn-outline-danger"
-                                onClick={() => handleCancelAppointment(appointment)}
-                                title="Hủy lịch"
-                              >
-                                <i className="bi bi-x-circle"></i> Hủy
-                              </button>
-                            )}
-                          </div>
+                        </div>
+                        <div className="d-flex flex-column align-items-end gap-2">
+                          {getStatusBadge(appointment.status)}
+                          {paymentStatus && (
+                            <span className="payment-pill">
+                              <i className="bi bi-wallet2 me-1"></i>
+                              {paymentStatus}
+                            </span>
+                          )}
                         </div>
                       </div>
 
-                      {appointment.services && appointment.services.length > 0 && (
-                        <div className="mt-2 pt-2 border-top">
-                          <small className="text-muted">Dịch vụ: </small>
-                          {appointment.services.map((service, idx) => (
-                            <span key={idx} className="badge bg-light text-dark me-1">
-                              {service.serviceName || service}
-                            </span>
-                          ))}
+                      <div className="appointment-card-body">
+                        <div className="info-block">
+                          <p className="muted-label mb-1"><i className="bi bi-car-front me-1"></i>Xe</p>
+                          <div className="info-value">{appointment.vehicleLicensePlate || 'N/A'}</div>
+                          <div className="info-sub">{appointment.vehicleModel || ''}</div>
                         </div>
-                      )}
+
+                        <div className="info-block">
+                          <p className="muted-label mb-1"><i className="bi bi-building me-1"></i>Trung tam</p>
+                          <div className="info-value">{appointment.serviceCenterName || 'N/A'}</div>
+                          <div className="info-sub">{appointment.serviceCenterAddress || ''}</div>
+                        </div>
+
+                        <div className="info-block align-items-start">
+                          <p className="muted-label mb-1"><i className="bi bi-tools me-1"></i>Dich vu</p>
+                          {appointment.services && appointment.services.length > 0 ? (
+                            <div className="service-chips">
+                              {appointment.services.map((service, idx) => (
+                                <span key={idx}>{service.serviceName || service.name || service}</span>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="info-sub">Chua co thong tin dich vu</div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="appointment-card-footer">
+                        <div className="action-group">
+                          {(appointment.status === 'Pending' || appointment.status === 'Confirmed') && (
+                            <button
+                              className="btn btn-outline-dark btn-sm"
+                              onClick={() => handleReschedule(appointment)}
+                            >
+                              <i className="bi bi-calendar-range me-1"></i>
+                              Doi lich
+                            </button>
+                          )}
+                          {(appointment.status === 'Pending' || appointment.status === 'Confirmed') && (
+                            <button
+                              className="btn btn-outline-danger btn-sm"
+                              onClick={() => handleCancelAppointment(appointment)}
+                            >
+                              <i className="bi bi-x-circle me-1"></i>
+                              Huy
+                            </button>
+                          )}
+                          {appointment.status === 'Cancelled' && (
+                            <button
+                              className="btn btn-outline-secondary btn-sm"
+                              onClick={() => handleDeleteAppointment(appointment.appointmentId)}
+                            >
+                              <i className="bi bi-trash me-1"></i>
+                              Xoa
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -428,12 +474,12 @@ const MyAppointments = () => {
           <div className="modal-dialog">
             <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title">Dời lịch hẹn</h5>
+                <h5 className="modal-title">Doi lich hen</h5>
                 <button type="button" className="btn-close" onClick={() => setShowRescheduleModal(false)}></button>
               </div>
               <div className="modal-body">
                 <div className="mb-3">
-                  <label className="form-label">Chọn ngày mới</label>
+                  <label className="form-label">Chon ngay moi</label>
                   <input
                     type="date"
                     className="form-control"
@@ -445,9 +491,9 @@ const MyAppointments = () => {
 
                 {availableSlots.length > 0 && (
                   <div>
-                    <label className="form-label">Chọn khung giờ</label>
+                    <label className="form-label">Chon khung gio</label>
                     <div className="row g-2">
-                      {availableSlots.map(slot => (
+                      {availableSlots.map((slot) => (
                         <div key={slot.slotId} className="col-6">
                           <div
                             className={`card ${selectedSlot?.slotId === slot.slotId ? 'border-primary' : ''}`}
@@ -458,7 +504,7 @@ const MyAppointments = () => {
                               <small>{slot.startTime} - {slot.endTime}</small>
                               <br />
                               <span className="badge bg-success badge-sm">
-                                {slot.availableSlots} trống
+                                {slot.availableSlots} trong
                               </span>
                             </div>
                           </div>
@@ -470,10 +516,10 @@ const MyAppointments = () => {
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn btn-secondary" onClick={() => setShowRescheduleModal(false)}>
-                  Hủy
+                  Huy
                 </button>
                 <button type="button" className="btn btn-primary" onClick={confirmReschedule} disabled={loading}>
-                  {loading ? 'Đang xử lý...' : 'Xác nhận dời lịch'}
+                  {loading ? 'Dang xu ly...' : 'Xac nhan doi lich'}
                 </button>
               </div>
             </div>
@@ -487,28 +533,28 @@ const MyAppointments = () => {
           <div className="modal-dialog">
             <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title">Hủy lịch hẹn</h5>
+                <h5 className="modal-title">Huy lich hen</h5>
                 <button type="button" className="btn-close" onClick={() => setShowCancelModal(false)}></button>
               </div>
               <div className="modal-body">
-                <p>Bạn có chắc muốn hủy lịch hẹn này?</p>
+                <p>Ban co chac muon huy lich hen nay?</p>
                 <div className="mb-3">
-                  <label className="form-label">Lý do hủy *</label>
+                  <label className="form-label">Ly do huy *</label>
                   <textarea
                     className="form-control"
                     rows="3"
                     value={cancelReason}
                     onChange={(e) => setCancelReason(e.target.value)}
-                    placeholder="Nhập lý do hủy lịch..."
+                    placeholder="Nhap ly do huy lich..."
                   />
                 </div>
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn btn-secondary" onClick={() => setShowCancelModal(false)}>
-                  Không
+                  Khong
                 </button>
                 <button type="button" className="btn btn-danger" onClick={confirmCancel} disabled={loading}>
-                  {loading ? 'Đang xử lý...' : 'Xác nhận hủy'}
+                  {loading ? 'Dang xu ly...' : 'Xac nhan huy'}
                 </button>
               </div>
             </div>
@@ -520,7 +566,7 @@ const MyAppointments = () => {
       <footer className="footer mt-5">
         <div className="container">
           <div className="footer-bottom">
-            <p>&copy; 2025 Tesla Việt Nam. All rights reserved.</p>
+            <p>&copy; 2025 Tesla Viet Nam. All rights reserved.</p>
           </div>
         </div>
       </footer>

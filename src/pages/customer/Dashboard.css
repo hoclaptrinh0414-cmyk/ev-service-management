@@ -133,13 +133,13 @@
 .vehicle-modal {
        background: #fff;
        border-radius: 20px;
-       max-width: 720px;
+       max-width: 880px;
        width: 100%;
-       padding: 2rem;
+       padding: 2.25rem;
        position: relative;
        max-height: 90vh;
        overflow-y: auto;
-       box-shadow: 0 25px 60px rgba(15, 23, 42, 0.12);
+       box-shadow: 0 25px 60px rgba(15, 23, 42, 0.18);
 }
 
 .vehicle-modal-close {
@@ -157,6 +157,44 @@
        margin-bottom: 0.25rem;
 }
 
+.vehicle-modal-header {
+       display: flex;
+       justify-content: space-between;
+       gap: 1rem;
+       margin-bottom: 1.5rem;
+}
+
+.vehicle-modal-kicker {
+       text-transform: uppercase;
+       letter-spacing: 0.08em;
+       font-size: 0.75rem;
+       color: #6c6c6c;
+       margin: 0;
+}
+
+.vehicle-meta-row {
+       display: flex;
+       gap: 0.5rem;
+       margin-top: 0.4rem;
+}
+
+.pill {
+       display: inline-flex;
+       align-items: center;
+       gap: 0.35rem;
+       background: #eef2ff;
+       color: #242424;
+       padding: 0.4rem 0.8rem;
+       border-radius: 999px;
+       font-weight: 600;
+       font-size: 0.9rem;
+}
+
+.pill-ghost {
+       background: #f6f6f6;
+       color: #4b5563;
+}
+
 .vehicle-modal-subtitle {
        color: #6b6b6b;
        margin-bottom: 1.5rem;
@@ -170,6 +208,35 @@
 
 .vehicle-modal-section {
        margin-bottom: 1.5rem;
+}
+
+.vehicle-modal-grid {
+       display: grid;
+       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+       gap: 1rem;
+}
+
+.vehicle-modal-card {
+       background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+       border: 1px solid #e9e9e9;
+       border-radius: 16px;
+       padding: 1.25rem;
+       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+}
+
+.vehicle-card-header {
+       display: flex;
+       justify-content: space-between;
+       align-items: flex-start;
+       margin-bottom: 0.9rem;
+}
+
+.vehicle-card-kicker {
+       text-transform: uppercase;
+       letter-spacing: 0.07em;
+       font-size: 0.78rem;
+       color: #6c6c6c;
+       margin: 0 0 0.1rem 0;
 }
 
 .vehicle-modal-section h4 {
@@ -224,9 +291,41 @@
        margin-left: 0.5rem;
 }
 
+.combo-list {
+       display: flex;
+       flex-direction: column;
+       gap: 0.8rem;
+}
+
+.combo-item {
+       border: 1px solid #ececec;
+       border-radius: 14px;
+       padding: 0.95rem 1rem;
+       background: #fff;
+       box-shadow: 0 8px 24px rgba(17, 24, 39, 0.05);
+}
+
+.combo-title-row {
+       display: flex;
+       justify-content: space-between;
+       align-items: center;
+       gap: 0.8rem;
+}
+
+.combo-title-row h5 {
+       margin: 0;
+       font-size: 1rem;
+}
+
+.combo-meta {
+       color: #555;
+       margin: 0.35rem 0 0.6rem 0;
+       font-size: 0.95rem;
+}
+
 .subscription-detail-btn {
        margin-top: 0.6rem;
-       background: #111;
+       background: #111827;
        color: #fff;
        border: none;
        border-radius: 999px;
@@ -259,6 +358,19 @@
 .subscription-info-list strong {
        min-width: 120px;
        color: #111;
+}
+
+.subscription-info-grid {
+       display: grid;
+       grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+       gap: 0.75rem 1rem;
+       margin-bottom: 1rem;
+}
+
+.muted-label {
+       margin: 0 0 0.15rem 0;
+       color: #6b7280;
+       font-size: 0.85rem;
 }
 
 .service-row {

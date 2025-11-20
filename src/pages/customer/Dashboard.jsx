@@ -1,4 +1,4 @@
-// src/pages/customer/Dashboard.jsx
+﻿// src/pages/customer/Dashboard.jsx
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
@@ -10,8 +10,8 @@ import {
   getSubscriptionDetail,
   getSubscriptionUsage,
 } from '../../services/productService';
-import GlobalNavbar from '../../components/GlobalNavbar';
-import { ToastContainer, toast } from 'react-toastify';
+import MainLayout from '../../components/layout/MainLayout';
+import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
@@ -133,7 +133,7 @@ const extractUsageEntries = (usage) => {
 };
 
 const formatDate = (value) => {
-  if (!value) return '—';
+  if (!value) return 'â€”';
   try {
     return new Date(value).toLocaleDateString('vi-VN');
   } catch {
@@ -209,7 +209,7 @@ const CustomerDashboard = () => {
   useEffect(() => {
     window.scrollTo(0, 0);
 
-    // Xóa localStorage cũ (không còn dùng nữa)
+    // XÃ³a localStorage cÅ© (khÃ´ng cÃ²n dÃ¹ng ná»¯a)
     localStorage.removeItem('deletedVehicles');
 
     loadDashboardData();
@@ -217,7 +217,7 @@ const CustomerDashboard = () => {
     // Reload data when user navigates back to this page
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        console.log('👁️ Page visible again - reloading data');
+        console.log('ðŸ‘ï¸ Page visible again - reloading data');
         loadDashboardData();
       }
     };
@@ -233,15 +233,15 @@ const CustomerDashboard = () => {
 
       const vehiclesRes = await appointmentService.getMyVehicles();
 
-      console.log('🚗 Vehicles from API:', vehiclesRes);
+      console.log('ðŸš— Vehicles from API:', vehiclesRes);
 
-      // Map vehicles to dashboard format - chỉ filter xe đã xóa từ backend
+      // Map vehicles to dashboard format - chá»‰ filter xe Ä‘Ã£ xÃ³a tá»« backend
       const mappedVehicles = (vehiclesRes.data || [])
         .filter(vehicle => {
-          // Chỉ filter out backend soft-deleted vehicles
+          // Chá»‰ filter out backend soft-deleted vehicles
           const isDeleted = vehicle.isDeleted || vehicle.IsDeleted || false;
           if (isDeleted) {
-            console.log(`🗑️ Filtering out deleted vehicle: ${vehicle.licensePlate}`);
+            console.log(`ðŸ—‘ï¸ Filtering out deleted vehicle: ${vehicle.licensePlate}`);
             return false;
           }
           return true;
@@ -260,8 +260,8 @@ const CustomerDashboard = () => {
       setVehicles(mappedVehicles);
 
     } catch (error) {
-      console.error('❌ Error loading dashboard data:', error);
-      setError('Không thể tải dữ liệu. Vui lòng thử lại sau.');
+      console.error('âŒ Error loading dashboard data:', error);
+      setError('KhÃ´ng thá»ƒ táº£i dá»¯ liá»‡u. Vui lÃ²ng thá»­ láº¡i sau.');
     } finally {
       setLoading(false);
     }
@@ -269,14 +269,14 @@ const CustomerDashboard = () => {
 
   const handleEditVehicle = async (vehicleId, updatedData) => {
     try {
-      console.log('✏️ Attempting to edit vehicle ID:', vehicleId);
+      console.log('âœï¸ Attempting to edit vehicle ID:', vehicleId);
 
-      // Gọi API để update xe trong database
+      // Gá»i API Ä‘á»ƒ update xe trong database
       const response = await appointmentService.updateMyVehicle(vehicleId, updatedData);
-      console.log('✅ Vehicle updated successfully:', response);
+      console.log('âœ… Vehicle updated successfully:', response);
 
-      // Hiển thị thông báo thành công
-      toast.success('✏️ Cập nhật thông tin xe thành công!', {
+      // Hiá»ƒn thá»‹ thÃ´ng bÃ¡o thÃ nh cÃ´ng
+      toast.success('âœï¸ Cáº­p nháº­t thÃ´ng tin xe thÃ nh cÃ´ng!', {
         position: "bottom-right",
         autoClose: 3000,
         hideProgressBar: false,
@@ -285,23 +285,23 @@ const CustomerDashboard = () => {
         draggable: true,
       });
 
-      // Reload lại dữ liệu từ server để đảm bảo đồng bộ
+      // Reload láº¡i dá»¯ liá»‡u tá»« server Ä‘á»ƒ Ä‘áº£m báº£o Ä‘á»“ng bá»™
       setTimeout(() => {
         loadDashboardData();
       }, 500);
 
     } catch (error) {
-      console.error('❌ Error editing vehicle:', error);
+      console.error('âŒ Error editing vehicle:', error);
 
-      // Lấy thông báo lỗi chi tiết
-      let errorMessage = 'Có lỗi xảy ra khi cập nhật xe. Vui lòng thử lại.';
+      // Láº¥y thÃ´ng bÃ¡o lá»—i chi tiáº¿t
+      let errorMessage = 'CÃ³ lá»—i xáº£y ra khi cáº­p nháº­t xe. Vui lÃ²ng thá»­ láº¡i.';
 
       if (error.response?.status === 400) {
-        errorMessage = error.response.data?.message || 'Dữ liệu không hợp lệ.';
+        errorMessage = error.response.data?.message || 'Dá»¯ liá»‡u khÃ´ng há»£p lá»‡.';
       } else if (error.response?.status === 403) {
-        errorMessage = 'Bạn không có quyền sửa xe này.';
+        errorMessage = 'Báº¡n khÃ´ng cÃ³ quyá»n sá»­a xe nÃ y.';
       } else if (error.response?.status === 404) {
-        errorMessage = 'Không tìm thấy xe cần sửa.';
+        errorMessage = 'KhÃ´ng tÃ¬m tháº¥y xe cáº§n sá»­a.';
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       } else if (error.response?.data?.Message) {
@@ -310,7 +310,7 @@ const CustomerDashboard = () => {
         errorMessage = error.message;
       }
 
-      toast.error(`❌ ${errorMessage}`, {
+      toast.error(`âŒ ${errorMessage}`, {
         position: "bottom-right",
         autoClose: 4000,
         hideProgressBar: false,
@@ -325,17 +325,17 @@ const CustomerDashboard = () => {
 
   const handleDeleteVehicle = async (vehicleId) => {
     try {
-      console.log('🗑️ Attempting to delete vehicle ID:', vehicleId);
+      console.log('ðŸ—‘ï¸ Attempting to delete vehicle ID:', vehicleId);
 
-      // Gọi API để xóa xe trong database
+      // Gá»i API Ä‘á»ƒ xÃ³a xe trong database
       const response = await appointmentService.deleteMyVehicle(vehicleId);
-      console.log('✅ Vehicle deleted successfully in database:', response);
+      console.log('âœ… Vehicle deleted successfully in database:', response);
 
-      // Xóa xe khỏi UI sau khi API thành công
+      // XÃ³a xe khá»i UI sau khi API thÃ nh cÃ´ng
       setVehicles(prev => prev.filter(v => v.id !== vehicleId));
 
-      // Hiển thị thông báo thành công
-      toast.success('🗑️ Xóa xe thành công!', {
+      // Hiá»ƒn thá»‹ thÃ´ng bÃ¡o thÃ nh cÃ´ng
+      toast.success('ðŸ—‘ï¸ XÃ³a xe thÃ nh cÃ´ng!', {
         position: "bottom-right",
         autoClose: 3000,
         hideProgressBar: false,
@@ -344,23 +344,23 @@ const CustomerDashboard = () => {
         draggable: true,
       });
 
-      // Reload lại dữ liệu từ server để đảm bảo đồng bộ
+      // Reload láº¡i dá»¯ liá»‡u tá»« server Ä‘á»ƒ Ä‘áº£m báº£o Ä‘á»“ng bá»™
       setTimeout(() => {
         loadDashboardData();
       }, 1000);
 
     } catch (error) {
-      console.error('❌ Error deleting vehicle:', error);
+      console.error('âŒ Error deleting vehicle:', error);
 
-      // Lấy thông báo lỗi chi tiết
-      let errorMessage = 'Có lỗi xảy ra khi xóa xe. Vui lòng thử lại.';
+      // Láº¥y thÃ´ng bÃ¡o lá»—i chi tiáº¿t
+      let errorMessage = 'CÃ³ lá»—i xáº£y ra khi xÃ³a xe. Vui lÃ²ng thá»­ láº¡i.';
 
       if (error.response?.status === 405) {
-        errorMessage = 'Phương thức xóa không được hỗ trợ. Vui lòng liên hệ quản trị viên.';
+        errorMessage = 'PhÆ°Æ¡ng thá»©c xÃ³a khÃ´ng Ä‘Æ°á»£c há»— trá»£. Vui lÃ²ng liÃªn há»‡ quáº£n trá»‹ viÃªn.';
       } else if (error.response?.status === 403) {
-        errorMessage = 'Bạn không có quyền xóa xe này.';
+        errorMessage = 'Báº¡n khÃ´ng cÃ³ quyá»n xÃ³a xe nÃ y.';
       } else if (error.response?.status === 404) {
-        errorMessage = 'Không tìm thấy xe cần xóa.';
+        errorMessage = 'KhÃ´ng tÃ¬m tháº¥y xe cáº§n xÃ³a.';
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       } else if (error.response?.data?.Message) {
@@ -369,7 +369,7 @@ const CustomerDashboard = () => {
         errorMessage = error.message;
       }
 
-      toast.error(`❌ ${errorMessage}`, {
+      toast.error(`âŒ ${errorMessage}`, {
         position: "bottom-right",
         autoClose: 4000,
         hideProgressBar: false,
@@ -407,7 +407,7 @@ const CustomerDashboard = () => {
   const handleViewSubscriptionDetail = async (subscription) => {
     const subscriptionId = subscription?.subscriptionId || subscription?.id;
     if (!subscriptionId) {
-      toast.error('Không tìm thấy thông tin subscription để xem chi tiết.');
+      toast.error('KhÃ´ng tÃ¬m tháº¥y thÃ´ng tin subscription Ä‘á»ƒ xem chi tiáº¿t.');
       return;
     }
 
@@ -438,7 +438,7 @@ const CustomerDashboard = () => {
       setSelectedSubscriptionUsage(usageRes?.data || usageRes);
     } catch (err) {
       console.error('Error loading subscription detail:', err);
-      setSubscriptionDetailError('Không thể tải chi tiết gói. Vui lòng thử lại sau.');
+      setSubscriptionDetailError('KhÃ´ng thá»ƒ táº£i chi tiáº¿t gÃ³i. Vui lÃ²ng thá»­ láº¡i sau.');
     } finally {
       setSubscriptionDetailLoading(false);
     }
@@ -460,17 +460,15 @@ const CustomerDashboard = () => {
   };
 
   return (
-    <>
-      <GlobalNavbar />
-
+    <MainLayout>
       {/* Dashboard Content */}
-      <div className="dashboard-container" style={{ marginTop: '140px', minHeight: '60vh' }}>
+      <div className="dashboard-container" style={{ marginTop: '20px', minHeight: '60vh' }}>
         <div className="container">
           <header className="dashboard-header mb-5">
             <h1 className="mb-2 text-center" style={{ fontSize: '2rem', fontWeight: 600 }}>
-              Welcome  , {user?.fullName || user?.name || user?.username || 'Khách hàng'}!
+              Welcome  , {user?.fullName || user?.name || user?.username || 'KhÃ¡ch hÃ ng'}!
             </h1>
-            {/* <p className="text-muted">Quản lý thông tin xe và lịch dịch vụ của bạn</p> */}
+            {/* <p className="text-muted">Quáº£n lÃ½ thÃ´ng tin xe vÃ  lá»‹ch dá»‹ch vá»¥ cá»§a báº¡n</p> */}
           </header>
 
           <div className="dashboard-content">
@@ -523,267 +521,173 @@ const CustomerDashboard = () => {
       {showVehicleModal && (
         <div className="vehicle-modal-backdrop" role="dialog" aria-modal="true">
           <div className="vehicle-modal">
-            <button
-              type="button"
-              className="vehicle-modal-close"
-              aria-label="Close"
-              onClick={closeVehicleModal}
-            >
-              <i className="bi bi-x-lg"></i>
-            </button>
+            <div className="vehicle-modal-header">
+              <div>
+                <p className="vehicle-modal-kicker">Goi & dich vu</p>
+                <h3 className="vehicle-modal-title">{modalVehicle?.model || 'Vehicle'}</h3>
+                <div className="vehicle-meta-row">
+                  <span className="pill">{modalVehicle?.licensePlate || 'N/A'}</span>
+                  <span className="pill pill-ghost">VIN: {modalVehicle?.vin || 'N/A'}</span>
+                </div>
+              </div>
+              <button type="button" className="vehicle-modal-close" aria-label="Close" onClick={closeVehicleModal}>
+                <i className="bi bi-x-lg"></i>
+              </button>
+            </div>
 
-            <h3 className="vehicle-modal-title">
-              Chi tiết gói & dịch vụ - {modalVehicle?.model}
-            </h3>
-            <p className="vehicle-modal-subtitle">
-              {modalVehicle?.licensePlate} • VIN: {modalVehicle?.vin || 'N/A'}
-            </p>
-
-            {vehicleModalError && (
-              <div className="alert alert-danger">{vehicleModalError}</div>
-            )}
+            {vehicleModalError && <div className="alert alert-danger">{vehicleModalError}</div>}
 
             {vehicleModalLoading ? (
               <div className="vehicle-modal-loading">
                 <div className="spinner-border text-dark" role="status">
-                  <span className="visually-hidden">Đang tải...</span>
+                  <span className="visually-hidden">Dang tai...</span>
                 </div>
               </div>
             ) : (
-              <>
-                <div className="vehicle-modal-section">
-                  <h4>Active combo packages</h4>
+              <div className="vehicle-modal-grid">
+                <div className="vehicle-modal-card">
+                  <div className="vehicle-card-header">
+                    <div>
+                      <p className="vehicle-card-kicker">Goi dang kich hoat</p>
+                      <h4>Active combo packages</h4>
+                    </div>
+                  </div>
                   {modalPackages.length > 0 ? (
-                    <ul className="vehicle-modal-list">
+                    <div className="combo-list">
                       {modalPackages.map(pkg => (
-                        <li key={pkg.subscriptionId || pkg.packageId}>
-                          <div>
-                            <strong>{pkg.packageName || pkg.name}</strong>
-                            <span className="status-badge">
-                              {pkg.statusName || pkg.status || 'Active'}
-                            </span>
+                        <div className="combo-item" key={pkg.subscriptionId || pkg.packageId}>
+                          <div className="combo-title-row">
+                            <h5>{pkg.packageName || pkg.name}</h5>
+                            <span className="status-badge">{pkg.statusName || pkg.status || 'Active'}</span>
                           </div>
-                          <small>
-                            Hiệu lực:{' '}
-                            {pkg.startDate
-                              ? new Date(pkg.startDate).toLocaleDateString('vi-VN')
-                              : '—'}{' '}
-                            -{' '}
-                            {pkg.expiryDate
-                              ? new Date(pkg.expiryDate).toLocaleDateString('vi-VN')
-                              : '—'}
-                          </small>
-                          <button
-                            type="button"
-                            className="subscription-detail-btn"
-                            onClick={() => handleViewSubscriptionDetail(pkg)}
-                          >
-                            {selectedSubscriptionId === (pkg.subscriptionId || pkg.packageId)
-                              ? 'Thu gọn'
-                              : 'Xem chi tiết'}
+                          <div className="combo-meta">
+                            Hieu luc: {pkg.startDate ? new Date(pkg.startDate).toLocaleDateString('vi-VN') : '—'} - {pkg.expiryDate ? new Date(pkg.expiryDate).toLocaleDateString('vi-VN') : '—'}
+                          </div>
+                          <button type="button" className="subscription-detail-btn" onClick={() => handleViewSubscriptionDetail(pkg)}>
+                            {selectedSubscriptionId === (pkg.subscriptionId || pkg.packageId) ? 'Thu gon' : 'Xem chi tiet'}
                           </button>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="vehicle-modal-empty">
-                      No combos are currently active for this vehicle.
-                    </p>
-                  )}
-                </div>
-
-                <div className="vehicle-modal-section">
-                  <h4>Services included in your combos</h4>
-                  {modalServices.length > 0 ? (
-                    <div className="vehicle-modal-tags">
-                      {modalServices.map(service => (
-                        <span
-                          key={
-                            service.serviceId ||
-                            service.maintenanceServiceId ||
-                            service.id
-                          }
-                        >
-                          {service.serviceName || service.name}
-                        </span>
+                        </div>
                       ))}
                     </div>
                   ) : (
-                    <p className="vehicle-modal-empty">
-                      No included services for this vehicle (or no combos purchased).
-                    </p>
+                    <p className="vehicle-modal-empty">Chua co combo dang hoat dong cho xe nay.</p>
                   )}
                 </div>
 
-                {selectedSubscriptionId && (
-                  <div className="vehicle-modal-section">
-                    <h4>Package details: {selectedSubscriptionTitle || 'Subscription'}</h4>
-                    {subscriptionDetailError && (
-                      <div className="alert alert-danger">{subscriptionDetailError}</div>
-                    )}
-                    {subscriptionDetailLoading ? (
-                      <div className="vehicle-modal-loading">
-                        <div className="spinner-border text-dark" role="status">
-                          <span className="visually-hidden">Đang tải...</span>
-                        </div>
-                      </div>
-                    ) : selectedSubscriptionDetail ? (
-                      <>
-                        <ul className="subscription-info-list">
-                          <li>
-                            <strong>Package code:</strong>{' '}
-                            {subscriptionInfo?.subscriptionCode || subscriptionInfo?.code || '—'}
-                          </li>
-                          <li>
-                            <strong>Status:</strong>{' '}
-                            {subscriptionInfo?.statusName || subscriptionInfo?.status || '—'}
-                          </li>
-                          <li>
-                            <strong>Activated:</strong>{' '}
-                            {formatDate(subscriptionInfo?.startDate || subscriptionInfo?.activatedAt)}
-                          </li>
-                          <li>
-                            <strong>Expires:</strong>{' '}
-                            {formatDate(subscriptionInfo?.expiryDate || subscriptionInfo?.endDate)}
-                          </li>
-                        </ul>
-
-                        <div className="vehicle-modal-section">
-                          <h5>Services in this package</h5>
-                          {includedServices.length > 0 ? (
-                            <ul className="vehicle-modal-list">
-                              {includedServices.map((service, index) => (
-                                <li key={service.serviceId || service.id || index}>
-                                  <div className="service-row">
-                                    <span>{service.serviceName || 'Service'}</span>
-                                    <small>
-                                      {service.includedUses != null
-                                        ? `SL: ${service.includedUses}`
-                                        : ''}
-                                      {service.remainingUses != null
-                                        ? ` • Còn lại: ${service.remainingUses}`
-                                        : ''}
-                                    </small>
-                                  </div>
-                                </li>
-                              ))}
-                            </ul>
-                          ) : (
-                            <p className="vehicle-modal-empty">
-                              No service list found for this package.
-                            </p>
-                          )}
-                        </div>
-
-                        <div className="vehicle-modal-section">
-                          <h5>Usage history</h5>
-                          {usageEntries.length > 0 ? (
-                            <ul className="vehicle-modal-list">
-                              {usageEntries.map((entry, index) => (
-                                <li key={entry.usageId || entry.serviceId || index}>
-                                  <div>
-                                    <strong>{entry.serviceName || entry.name || 'Dịch vụ'}</strong>
-                                  </div>
-                                  <small>
-                                    Đã dùng:{' '}
-                                    {entry.usedCount ??
-                                      entry.timesUsed ??
-                                      entry.quantityUsed ??
-                                      entry.usageCount ??
-                                      0}
-                                    {entry.remainingUses ?? entry.remainingCount
-                                      ? ` • Còn lại: ${entry.remainingUses ?? entry.remainingCount}`
-                                      : ''}
-                                    {(entry.lastUsedDate || entry.usedAt) &&
-                                      ` • Lần cuối: ${formatDate(entry.lastUsedDate || entry.usedAt)}`}
-                                  </small>
-                                </li>
-                              ))}
-                            </ul>
-                          ) : (
-                            <p className="vehicle-modal-empty">
-                              No usage data for this package.
-                            </p>
-                          )}
-                        </div>
-                      </>
-                    ) : (
-                      !subscriptionDetailError && (
-                        <p className="vehicle-modal-empty">
-                          Select "View details" to load the package information.
-                        </p>
-                      )
-                    )}
+                <div className="vehicle-modal-card">
+                  <div className="vehicle-card-header">
+                    <div>
+                      <p className="vehicle-card-kicker">Dich vu di kem</p>
+                      <h4>Services included</h4>
+                    </div>
                   </div>
+                  {modalServices.length > 0 ? (
+                    <div className="vehicle-modal-tags">
+                      {modalServices.map(service => (
+                        <span key={service.serviceId || service.maintenanceServiceId || service.id}>{service.serviceName || service.name}</span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="vehicle-modal-empty">Chua co dich vu nao cho xe nay (hoac chua mua combo).</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {selectedSubscriptionId && !vehicleModalLoading && (
+              <div className="vehicle-modal-card">
+                <div className="vehicle-card-header">
+                  <div>
+                    <p className="vehicle-card-kicker">Thong tin goi</p>
+                    <h4>{selectedSubscriptionTitle || 'Subscription'}</h4>
+                  </div>
+                </div>
+
+                {subscriptionDetailError && <div className="alert alert-danger">{subscriptionDetailError}</div>}
+
+                {subscriptionDetailLoading ? (
+                  <div className="vehicle-modal-loading">
+                    <div className="spinner-border text-dark" role="status">
+                      <span className="visually-hidden">Dang tai...</span>
+                    </div>
+                  </div>
+                ) : selectedSubscriptionDetail ? (
+                  <>
+                    <div className="subscription-info-grid">
+                      <div>
+                        <p className="muted-label">Ma goi</p>
+                        <strong>{subscriptionInfo?.subscriptionCode || subscriptionInfo?.code || '—'}</strong>
+                      </div>
+                      <div>
+                        <p className="muted-label">Trang thai</p>
+                        <strong>{subscriptionInfo?.statusName || subscriptionInfo?.status || '—'}</strong>
+                      </div>
+                      <div>
+                        <p className="muted-label">Kich hoat</p>
+                        <strong>{formatDate(subscriptionInfo?.startDate || subscriptionInfo?.activatedAt)}</strong>
+                      </div>
+                      <div>
+                        <p className="muted-label">Het han</p>
+                        <strong>{formatDate(subscriptionInfo?.expiryDate || subscriptionInfo?.endDate)}</strong>
+                      </div>
+                    </div>
+
+                    <div className="vehicle-modal-section">
+                      <h5>Services in this package</h5>
+                      {includedServices.length > 0 ? (
+                        <ul className="vehicle-modal-list">
+                          {includedServices.map((service, index) => (
+                            <li key={service.serviceId || service.id || index}>
+                              <div className="service-row">
+                                <span>{service.serviceName || 'Service'}</span>
+                                <small>
+                                  {service.includedUses != null ? `SL: ${service.includedUses}` : ''}
+                                  {service.remainingUses != null ? ` · Con lai: ${service.remainingUses}` : ''}
+                                </small>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="vehicle-modal-empty">Khong tim thay danh sach dich vu cua goi nay.</p>
+                      )}
+                    </div>
+
+                    <div className="vehicle-modal-section">
+                      <h5>Usage history</h5>
+                      {usageEntries.length > 0 ? (
+                        <ul className="vehicle-modal-list">
+                          {usageEntries.map((entry, index) => (
+                            <li key={entry.usageId || entry.serviceId || index}>
+                              <div>
+                                <strong>{entry.serviceName || entry.name || 'Dich vu'}</strong>
+                              </div>
+                              <small>
+                                Da dung: {entry.usedCount ?? entry.timesUsed ?? entry.quantityUsed ?? entry.usageCount ?? 0}
+                                {entry.remainingUses ?? entry.remainingCount ? ` · Con lai: ${entry.remainingUses ?? entry.remainingCount}` : ''}
+                                {(entry.lastUsedDate || entry.usedAt) ? ` · Lan cuoi: ${formatDate(entry.lastUsedDate || entry.usedAt)}` : ''}
+                              </small>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="vehicle-modal-empty">Chua co lich su su dung cho goi nay.</p>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  !subscriptionDetailError && (
+                    <p className="vehicle-modal-empty">Chon "Xem chi tiet" de tai thong tin goi.</p>
+                  )
                 )}
-              </>
+              </div>
             )}
           </div>
         </div>
       )}
-  {/* Footer */}
-  <footer className="footer">
-        <div className="container">
-          <div className="row">
-            <div className="col-md-4">
-              <h5 className="mb-3" style={{ fontWeight: 600 }}>Navigation</h5>
-              <ul className="nav flex-column">
-                <li className="nav-item">
-                  <Link className="nav-link" to="/home">HOME</Link>
-                </li>
-                <li className="nav-item">
-                  <a className="nav-link" href="#">SERVICES</a>
-                </li>
-                <li className="nav-item">
-                  <a className="nav-link" href="#">BLOG</a>
-                </li>
-                <li className="nav-item">
-                  <a className="nav-link" href="#">ABOUT</a>
-                </li>
-                <li className="nav-item">
-                  <a className="nav-link" href="#">CONTACT</a>
-                </li>
-              </ul>
-            </div>
-            <div className="col-md-4">
-              <h5 className="mb-3" style={{ fontWeight: 600 }}>Contact</h5>
-              <div className="contact-info">
-                <p><i className="fas fa-map-marker-alt"></i> 160 Lã Xuân Oai, TP. Hồ Chí Minh, Việt Nam</p>
-                <p><i className="fas fa-phone"></i> +84 334 171 139</p>
-                <p><i className="fas fa-envelope"></i> support@tesla.vn</p>
-              </div>
-            </div>
-            <div className="col-md-4">
-              <h5 className="mb-3" style={{ fontWeight: 600 }}>Connect with us</h5>
-              <div className="social-icons">
-                <a href="#"><i className="fab fa-facebook-f"></i></a>
-                <a href="#"><i className="fab fa-twitter"></i></a>
-                <a href="#"><i className="fab fa-instagram"></i></a>
-                <a href="#"><i className="fab fa-linkedin-in"></i></a>
-              </div>
-            </div>
-          </div>
-          <div className="footer-bottom">
-            <p>&copy; 2025 Tesla Vietnam. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
-
-      {/* Toast Notifications */}
-      <ToastContainer
-        position="bottom-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-      />
-    </>
+      </MainLayout>
   );
 };
 
 export default CustomerDashboard;
+
