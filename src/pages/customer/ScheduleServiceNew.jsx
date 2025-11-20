@@ -611,6 +611,9 @@ const ScheduleServiceNew = () => {
           paymentUrl: paymentResult?.paymentUrl,
           amount: resolvedAmount
         });
+        if (paymentResult?.paymentCode) {
+          localStorage.setItem('lastPaymentCode', paymentResult.paymentCode);
+        }
 
         setIsFreeAppointment(!requiresPayment);
 

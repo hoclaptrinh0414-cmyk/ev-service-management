@@ -10,8 +10,8 @@ import {
   getSubscriptionDetail,
   getSubscriptionUsage,
 } from '../../services/productService';
-import GlobalNavbar from '../../components/GlobalNavbar';
-import { ToastContainer, toast } from 'react-toastify';
+import MainLayout from '../../components/layout/MainLayout';
+import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
@@ -460,11 +460,9 @@ const CustomerDashboard = () => {
   };
 
   return (
-    <>
-      <GlobalNavbar />
-
+    <MainLayout>
       {/* Dashboard Content */}
-      <div className="dashboard-container" style={{ marginTop: '140px', minHeight: '60vh' }}>
+      <div className="dashboard-container" style={{ marginTop: '20px', minHeight: '60vh' }}>
         <div className="container">
           <header className="dashboard-header mb-5">
             <h1 className="mb-2 text-center" style={{ fontSize: '2rem', fontWeight: 600 }}>
@@ -721,68 +719,7 @@ const CustomerDashboard = () => {
           </div>
         </div>
       )}
-  {/* Footer */}
-  <footer className="footer">
-        <div className="container">
-          <div className="row">
-            <div className="col-md-4">
-              <h5 className="mb-3" style={{ fontWeight: 600 }}>Navigation</h5>
-              <ul className="nav flex-column">
-                <li className="nav-item">
-                  <Link className="nav-link" to="/home">HOME</Link>
-                </li>
-                <li className="nav-item">
-                  <a className="nav-link" href="#">SERVICES</a>
-                </li>
-                <li className="nav-item">
-                  <a className="nav-link" href="#">BLOG</a>
-                </li>
-                <li className="nav-item">
-                  <a className="nav-link" href="#">ABOUT</a>
-                </li>
-                <li className="nav-item">
-                  <a className="nav-link" href="#">CONTACT</a>
-                </li>
-              </ul>
-            </div>
-            <div className="col-md-4">
-              <h5 className="mb-3" style={{ fontWeight: 600 }}>Contact</h5>
-              <div className="contact-info">
-                <p><i className="fas fa-map-marker-alt"></i> 160 Lã Xuân Oai, TP. Hồ Chí Minh, Việt Nam</p>
-                <p><i className="fas fa-phone"></i> +84 334 171 139</p>
-                <p><i className="fas fa-envelope"></i> support@tesla.vn</p>
-              </div>
-            </div>
-            <div className="col-md-4">
-              <h5 className="mb-3" style={{ fontWeight: 600 }}>Connect with us</h5>
-              <div className="social-icons">
-                <a href="#"><i className="fab fa-facebook-f"></i></a>
-                <a href="#"><i className="fab fa-twitter"></i></a>
-                <a href="#"><i className="fab fa-instagram"></i></a>
-                <a href="#"><i className="fab fa-linkedin-in"></i></a>
-              </div>
-            </div>
-          </div>
-          <div className="footer-bottom">
-            <p>&copy; 2025 Tesla Vietnam. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
-
-      {/* Toast Notifications */}
-      <ToastContainer
-        position="bottom-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-      />
-    </>
+      </MainLayout>
   );
 };
 
