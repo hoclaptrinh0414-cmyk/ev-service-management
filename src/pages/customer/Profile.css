@@ -1,0 +1,127 @@
+/* Custom CSS for Profile Page - V5 (Final Grid Layout) */
+
+.profile-page-container {
+  padding-top: 80px; /* Add padding to offset fixed navbar */
+  background: #f5f6f8;
+  min-height: 100vh;
+}
+
+.profile-main-card {
+  max-width: 1180px;
+  margin: 32px auto 40px;
+  padding: 32px 48px; /* Updated padding */
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+}
+
+/* New Grid Layout */
+.profile-layout {
+  display: grid;
+  grid-template-columns: 1.1fr 2fr; /* Ratio for columns */
+  gap: 48px; /* Gap between columns */
+  align-items: start; /* Align content to the top */
+}
+
+.profile-left-column, .profile-right-column {
+  width: 100%; /* Ensure columns take up full grid area width */
+}
+
+.profile-left-column {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.profile-avatar-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.loyalty-block {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* "Corporate" badge style */
+.loyalty-tag {
+  padding: 4px 14px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  height: auto;
+  margin: 0 auto;
+}
+
+.loyalty-label,
+.ant-statistic-title .ant-typography {
+  font-size: 12px !important;
+  color: #888 !important;
+  font-weight: 500 !important;
+  margin-top: 12px; /* Margin for stat labels */
+}
+
+.loyalty-points-value .ant-statistic-content,
+.total-spent-value .ant-statistic-content {
+  font-size: 22px !important;
+  font-weight: 600 !important;
+  color: #111;
+  margin-top: 4px; /* Margin for stat values */
+}
+
+.profile-descriptions .ant-descriptions-item-label, 
+.ant-form-item-label > label {
+  font-weight: 500 !important;
+  color: #555 !important;
+}
+
+.profile-descriptions .ant-descriptions-item-content {
+  font-weight: 400;
+  color: #111;
+  line-height: 1.6;
+}
+
+
+
+/* New Section Title Style */
+.profile-section-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: #9ca3af;
+  font-weight: 600;
+}
+
+.ant-divider-with-text .profile-section-title {
+   margin-bottom: 12px;
+}
+
+
+.profile-email-link {
+  color: #2563eb !important;
+  text-decoration: none;
+  font-weight: 400;
+}
+
+.profile-email-link:hover {
+  text-decoration: underline;
+}
+
+/* Edit button hover effect */
+.edit-profile-btn {
+  transition: all 0.15s ease-out;
+}
+
+.edit-profile-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.25);
+}

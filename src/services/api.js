@@ -9,7 +9,7 @@ const API_CONFIG = {
   },
 };
 
-console.log("🔧 API Configuration:", {
+console.log("API Configuration:", {
   baseURL: API_CONFIG.baseURL,
   appURL: process.env.REACT_APP_APP_URL || "http://localhost:3000",
 });
@@ -17,7 +17,7 @@ console.log("🔧 API Configuration:", {
 class UnifiedAPIService {
   constructor() {
     this.baseURL = API_CONFIG.baseURL;
-    this.timeout = API_CONFIG.timeout;s
+    this.timeout = API_CONFIG.timeout;
   }
 
   getHeaders(includeAuth = true) {
@@ -52,8 +52,8 @@ class UnifiedAPIService {
     config.signal = controller.signal;
 
     try {
-      console.log(`🌐 API Request: ${config.method} ${url}`);
-      console.log("📋 Request config:", {
+      console.log(`API Request: ${config.method} ${url}`);
+      console.log("Request config:", {
         method: config.method,
         headers: config.headers,
         body: (() => {
@@ -69,7 +69,7 @@ class UnifiedAPIService {
       const response = await fetch(url, config);
       clearTimeout(timeoutId);
 
-      console.log(`📡 API Response Status: ${response.status}`, {
+      console.log(`API Response Status: ${response.status}`, {
         ok: response.ok,
         statusText: response.statusText,
       });
@@ -82,7 +82,7 @@ class UnifiedAPIService {
         data = await response.text();
       }
 
-      console.log("📦 API Response Data:", data);
+      console.log("API Response Data:", data);
 
       if (!response.ok) {
         // Attempt refresh token for 401 responses on authenticated routes
@@ -94,7 +94,7 @@ class UnifiedAPIService {
         ) {
           try {
             const newAccessToken = await this.refreshAccessToken();
-            console.log("🔁 Retrying original request with refreshed token");
+            console.log("Retrying original request with refreshed token");
             return this.request(endpoint, options, false);
           } catch (refreshError) {
             console.error("❌ Refresh token flow failed:", refreshError);
@@ -137,7 +137,7 @@ class UnifiedAPIService {
       throw new Error("No refresh token available");
     }
 
-    console.log("🔄 Attempting to refresh access token via fetch client");
+    console.log("Attempting to refresh access token via fetch client");
     const response = await fetch(`${this.baseURL}/auth/refresh`, {
       method: "POST",
       headers: {
@@ -152,7 +152,7 @@ class UnifiedAPIService {
     }
 
     const data = await response.json();
-    console.log("🔄 Refresh response (fetch client):", data);
+    console.log("Refresh response (fetch client):", data);
     const success = data.success || data.Success;
     const payload = data.data || data.Data;
 
@@ -170,7 +170,7 @@ class UnifiedAPIService {
     localStorage.setItem("accessToken", newAccessToken);
     localStorage.setItem("refreshToken", newRefreshToken);
     localStorage.setItem("token", newAccessToken);
-    console.log("✅ Access token refreshed successfully (fetch client)");
+    console.log("Access token refreshed successfully (fetch client)");
     return newAccessToken;
   }
 
@@ -621,6 +621,16 @@ class UnifiedAPIService {
       throw new Error("Payment code is required");
     }
     const response = await this.request(`/payments/by-code/${paymentCode}`);
+    return response;
+  }
+
+  async getPaymentByCodePublic(paymentCode) {
+    if (!paymentCode) {
+      throw new Error("Payment code is required");
+    }
+    const response = await this.request(`/payments/by-code/${paymentCode}`, {
+      auth: false,
+    });
     return response;
   }
 
@@ -1271,6 +1281,8 @@ export const paymentAPI = {
     apiService.createPaymentForAppointment(appointmentId, paymentData),
   mockCompletePayment: (paymentCode, gateway, success, amount) =>
     apiService.mockCompletePayment(paymentCode, gateway, success, amount),
+  getPaymentByCodePublic: (paymentCode) =>
+    apiService.getPaymentByCodePublic(paymentCode),
   getPaymentByCode: (paymentCode) =>
     apiService.getPaymentByCode(paymentCode),
   getPaymentsByInvoice: (invoiceId) =>
