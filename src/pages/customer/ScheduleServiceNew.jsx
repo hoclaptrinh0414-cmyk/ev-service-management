@@ -1,4 +1,4 @@
-// src/pages/customer/ScheduleServiceNew.jsx
+﻿// src/pages/customer/ScheduleServiceNew.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import appointmentService from '../../services/appointmentService';
@@ -130,7 +130,7 @@ const ScheduleServiceNew = () => {
     if (hasBookingState()) {
       const savedState = restoreBookingState();
       if (savedState) {
-        console.log('🔄 Restoring booking state:', savedState);
+        console.log('ðŸ”„ Restoring booking state:', savedState);
 
         // Restore all state
         setCurrentStep(savedState.currentStep);
@@ -159,7 +159,7 @@ const ScheduleServiceNew = () => {
 
   const handleAuthError = (error) => {
     if (error?.response?.status === 401) {
-      toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+      toast.error('PhiÃªn Ä‘Äƒng nháº­p Ä‘Ã£ háº¿t háº¡n. Vui lÃ²ng Ä‘Äƒng nháº­p láº¡i.');
       navigate('/login', { replace: true });
       return true;
     }
@@ -190,23 +190,23 @@ const ScheduleServiceNew = () => {
   }, [currentStep, isAuthenticated]);
 
   useEffect(() => {
-    console.log('⚡ useEffect triggered!');
-    console.log('   → selectedServiceCenterId:', selectedServiceCenterId);
-    console.log('   → selectedDate:', selectedDate);
-    console.log('   → Both exist?', !!(selectedServiceCenterId && selectedDate));
+    console.log('âš¡ useEffect triggered!');
+    console.log('   â†’ selectedServiceCenterId:', selectedServiceCenterId);
+    console.log('   â†’ selectedDate:', selectedDate);
+    console.log('   â†’ Both exist?', !!(selectedServiceCenterId && selectedDate));
 
     if (selectedServiceCenterId && selectedDate) {
-      console.log('✅ Conditions met - calling loadAvailableTimeSlots()');
+      console.log('âœ… Conditions met - calling loadAvailableTimeSlots()');
       loadAvailableTimeSlots();
     } else {
-      console.log('⚠️ Conditions NOT met - skipping API call');
+      console.log('âš ï¸ Conditions NOT met - skipping API call');
     }
   }, [isAuthenticated, selectedServiceCenterId, selectedDate]);
 
   const loadServiceCenters = async () => {
     if (!isAuthenticated) return;
     if (serviceCenters.length > 0) {
-      console.log('⚠️ Service centers already loaded - skipping extra API call');
+      console.log('âš ï¸ Service centers already loaded - skipping extra API call');
       return;
     }
 
@@ -214,12 +214,12 @@ const ScheduleServiceNew = () => {
       setLoading(true);
       // Use getActiveServiceCenters to get only active centers
       const response = await appointmentService.getActiveServiceCenters();
-      console.log('🏢 Service Centers Response:', response);
-      console.log('🏢 Service Centers Data:', response.data);
+      console.log('ðŸ¢ Service Centers Response:', response);
+      console.log('ðŸ¢ Service Centers Data:', response.data);
 
       if (response.data && response.data.length > 0) {
-        console.log('🏢 First Service Center:', response.data[0]);
-        console.log('🏢 Service Center ID field:', response.data[0].serviceCenterId || response.data[0].id || response.data[0].centerId);
+        console.log('ðŸ¢ First Service Center:', response.data[0]);
+        console.log('ðŸ¢ Service Center ID field:', response.data[0].serviceCenterId || response.data[0].id || response.data[0].centerId);
       }
 
       setServiceCenters(response.data || []);
@@ -251,67 +251,67 @@ const ScheduleServiceNew = () => {
 
   const loadAvailableTimeSlots = async () => {
     if (!isAuthenticated) return;
-    console.log('🚀 ========== LOAD TIME SLOTS FUNCTION CALLED ==========');
-    console.log('📍 selectedServiceCenterId:', selectedServiceCenterId);
-    console.log('📅 selectedDate:', selectedDate);
+    console.log('ðŸš€ ========== LOAD TIME SLOTS FUNCTION CALLED ==========');
+    console.log('ðŸ“ selectedServiceCenterId:', selectedServiceCenterId);
+    console.log('ðŸ“… selectedDate:', selectedDate);
 
     if (!selectedServiceCenterId || !selectedDate) {
-      console.warn('⚠️ Missing required params - aborting');
+      console.warn('âš ï¸ Missing required params - aborting');
       return;
     }
 
     try {
       setLoading(true);
 
-      console.log('🔍 [STEP 1] Starting to fetch time slots...');
-      console.log('📍 Center ID (raw):', selectedServiceCenterId);
-      console.log('📍 Center ID (type):', typeof selectedServiceCenterId);
-      console.log('📅 Date (from input):', selectedDate);
+      console.log('ðŸ” [STEP 1] Starting to fetch time slots...');
+      console.log('ðŸ“ Center ID (raw):', selectedServiceCenterId);
+      console.log('ðŸ“ Center ID (type):', typeof selectedServiceCenterId);
+      console.log('ðŸ“… Date (from input):', selectedDate);
 
       // Ensure centerID is a number
       const centerIdNumber = parseInt(selectedServiceCenterId);
-      console.log('📍 Parsed Center ID:', centerIdNumber);
-      console.log('📍 Is Valid Number?', !isNaN(centerIdNumber));
+      console.log('ðŸ“ Parsed Center ID:', centerIdNumber);
+      console.log('ðŸ“ Is Valid Number?', !isNaN(centerIdNumber));
 
       if (isNaN(centerIdNumber)) {
-        console.error('❌ INVALID CENTER ID - Cannot parse to number');
-        console.error('❌ Original value:', selectedServiceCenterId);
+        console.error('âŒ INVALID CENTER ID - Cannot parse to number');
+        console.error('âŒ Original value:', selectedServiceCenterId);
         toast.error('Invalid service center selected. Please try again.');
         return;
       }
 
-      console.log('🌐 [STEP 2] Making API call...');
-      console.log('   → Center ID:', centerIdNumber);
-      console.log('   → Date:', selectedDate);
+      console.log('ðŸŒ [STEP 2] Making API call...');
+      console.log('   â†’ Center ID:', centerIdNumber);
+      console.log('   â†’ Date:', selectedDate);
 
       const response = await appointmentService.getAvailableSlots(
         centerIdNumber,
         selectedDate
       );
 
-      console.log('✅ [STEP 3] Time slots API response received:', response);
-      console.log('📊 Available slots count:', response.data?.length || 0);
+      console.log('âœ… [STEP 3] Time slots API response received:', response);
+      console.log('ðŸ“Š Available slots count:', response.data?.length || 0);
 
       if (response.data && response.data.length > 0) {
-        console.log('✅ [STEP 4] Setting time slots to state:', response.data);
+        console.log('âœ… [STEP 4] Setting time slots to state:', response.data);
         setAvailableTimeSlots(response.data);
       } else {
-        console.warn('⚠️ [STEP 4] No time slots available for this date');
+        console.warn('âš ï¸ [STEP 4] No time slots available for this date');
         setAvailableTimeSlots([]);
         toast.warning('No available time slots for this date. Please select another date.');
       }
     } catch (error) {
-      console.error('❌ ========== ERROR LOADING TIME SLOTS ==========');
-      console.error('❌ Error object:', error);
-      console.error('❌ Error message:', error.message);
-      console.error('❌ Error response:', error.response);
-      console.error('❌ Error data:', error.response?.data);
-      console.error('❌ Error status:', error.response?.status);
-      console.error('❌ Error headers:', error.response?.headers);
+      console.error('âŒ ========== ERROR LOADING TIME SLOTS ==========');
+      console.error('âŒ Error object:', error);
+      console.error('âŒ Error message:', error.message);
+      console.error('âŒ Error response:', error.response);
+      console.error('âŒ Error data:', error.response?.data);
+      console.error('âŒ Error status:', error.response?.status);
+      console.error('âŒ Error headers:', error.response?.headers);
       toast.error(error.response?.data?.message || 'Unable to load available time slots.');
       setAvailableTimeSlots([]);
     } finally {
-      console.log('🏁 [FINAL] Setting loading to false');
+      console.log('ðŸ [FINAL] Setting loading to false');
       setLoading(false);
     }
   };
@@ -322,7 +322,7 @@ const ScheduleServiceNew = () => {
       // Check if user is still authenticated
       const token = localStorage.getItem('accessToken');
       if (!token || !user) {
-        console.warn('⚠️ User not authenticated, redirecting to login');
+        console.warn('âš ï¸ User not authenticated, redirecting to login');
         toast.warning('Please login to continue booking');
         navigate('/login');
         return;
@@ -341,7 +341,7 @@ const ScheduleServiceNew = () => {
       const vehicle = vehicles.find(v => v.vehicleId === parseInt(selectedVehicleId));
       const modelId = vehicle?.modelId || vehicle?.model?.modelId;
 
-      console.log('🔧 Loading services for vehicle:', { vehicle, modelId });
+      console.log('ðŸ”§ Loading services for vehicle:', { vehicle, modelId });
 
       // Load services - always load all active services for now
       let servicesResponse;
@@ -357,9 +357,9 @@ const ScheduleServiceNew = () => {
         const services = response?.data?.items || response?.items || [];
         servicesResponse = { data: services };
 
-        console.log('✅ Services loaded successfully:', services.length, 'services');
+        console.log('âœ… Services loaded successfully:', services.length, 'services');
       } catch (error) {
-        console.error('❌ Error loading services:', error);
+        console.error('âŒ Error loading services:', error);
         if (error.response?.status === 401) {
           toast.error('Session expired. Please login again.');
           navigate('/login');
@@ -370,16 +370,16 @@ const ScheduleServiceNew = () => {
 
       // Load subscriptions (optional - skip for now as API requires special permissions)
       let subscriptionsResponse = { data: [] };
-      console.log('⏭️ Skipping subscriptions (optional feature, not available for all users)');
+      console.log('â­ï¸ Skipping subscriptions (optional feature, not available for all users)');
 
-      console.log('🔧 Services response:', servicesResponse);
-      console.log('🔧 Subscriptions response:', subscriptionsResponse);
+      console.log('ðŸ”§ Services response:', servicesResponse);
+      console.log('ðŸ”§ Subscriptions response:', subscriptionsResponse);
 
       const services = Array.isArray(servicesResponse?.data) ? servicesResponse.data : [];
       const subscriptions = Array.isArray(subscriptionsResponse?.data) ? subscriptionsResponse.data : [];
 
-      console.log('🔧 Setting services:', services);
-      console.log('🔧 Setting subscriptions:', subscriptions);
+      console.log('ðŸ”§ Setting services:', services);
+      console.log('ðŸ”§ Setting subscriptions:', subscriptions);
 
       setAllServices(services);
       setActiveSubscriptions(subscriptions);
@@ -389,7 +389,7 @@ const ScheduleServiceNew = () => {
         toast.warning('No services available for this vehicle model.');
       }
     } catch (error) {
-      console.error('❌ Error loading services/subscriptions:', error);
+      console.error('âŒ Error loading services/subscriptions:', error);
       toast.error('Unable to load services.');
       // Ensure arrays even on error
       setAllServices([]);
@@ -539,10 +539,10 @@ const ScheduleServiceNew = () => {
         return;
       }
 
-      console.log('✅ Validation passed!');
-      console.log('🛒 Cart Items:', cartItems);
-      console.log('📦 Extracted serviceIds:', serviceIds);
-      console.log('📦 Extracted packageId:', packageId);
+      console.log('âœ… Validation passed!');
+      console.log('ðŸ›’ Cart Items:', cartItems);
+      console.log('ðŸ“¦ Extracted serviceIds:', serviceIds);
+      console.log('ðŸ“¦ Extracted packageId:', packageId);
 
       const bookingData = {
         customerId: parseInt(user?.customerId),
@@ -559,7 +559,7 @@ const ScheduleServiceNew = () => {
         source: 'Online'
       };
 
-      console.log('📝 Creating appointment with data:', bookingData);
+      console.log('ðŸ“ Creating appointment with data:', bookingData);
       const appointmentResponse = await appointmentService.createAppointment(bookingData);
       const appointmentResult = normalizeApiResponse(appointmentResponse);
 
@@ -575,13 +575,13 @@ const ScheduleServiceNew = () => {
         throw new Error('Appointment ID missing in response');
       }
 
-      console.log('✅ Appointment created:', { appointmentId, appointmentCode, invoiceId });
+      console.log('âœ… Appointment created:', { appointmentId, appointmentCode, invoiceId });
       toast.success(`Appointment created! Code: ${appointmentCode}`);
 
       // Try to create payment intent
-      console.log('💳 Checking if payment is required for appointment:', appointmentId);
-      console.log('💳 Payment method:', paymentMethod);
-      console.log('💳 Return URL:', paymentReturnUrl);
+      console.log('ðŸ’³ Checking if payment is required for appointment:', appointmentId);
+      console.log('ðŸ’³ Payment method:', paymentMethod);
+      console.log('ðŸ’³ Return URL:', paymentReturnUrl);
 
       try {
         const paymentResponse = await paymentService.createPaymentForAppointment(appointmentId, {
@@ -590,7 +590,7 @@ const ScheduleServiceNew = () => {
         });
 
         const paymentResult = normalizeApiResponse(paymentResponse);
-        console.log('✅ Payment intent created:', paymentResult);
+        console.log('âœ… Payment intent created:', paymentResult);
 
         if (!paymentResult) {
           throw new Error('Invalid response when creating payment intent');
@@ -634,7 +634,7 @@ const ScheduleServiceNew = () => {
           || normalizedErrorMessage.includes('subscription services');
 
         if (freeAppointmentDetected) {
-          console.log('✅ Appointment is FREE (covered by subscription), no payment needed');
+          console.log('âœ… Appointment is FREE (covered by subscription), no payment needed');
           setAppointmentData({
             appointmentId,
             appointmentCode,
@@ -657,13 +657,13 @@ const ScheduleServiceNew = () => {
       }
 
     } catch (error) {
-      console.error('❌ ========== ERROR CREATING APPOINTMENT ==========');
-      console.error('❌ Error object:', error);
-      console.error('❌ Error response:', error.response);
-      console.error('❌ Error data:', error.response?.data);
-      console.error('❌ Error message:', error.response?.data?.message);
-      console.error('❌ Error details:', error.response?.data?.errors);
-      console.error('❌ Status code:', error.response?.status);
+      console.error('âŒ ========== ERROR CREATING APPOINTMENT ==========');
+      console.error('âŒ Error object:', error);
+      console.error('âŒ Error response:', error.response);
+      console.error('âŒ Error data:', error.response?.data);
+      console.error('âŒ Error message:', error.response?.data?.message);
+      console.error('âŒ Error details:', error.response?.data?.errors);
+      console.error('âŒ Status code:', error.response?.status);
 
       // Show detailed error to user
       const backendMessages = extractBackendErrorMessages(error);
@@ -686,7 +686,7 @@ const ScheduleServiceNew = () => {
 
     try {
       setPaymentProcessing(true);
-      console.log('💰 Processing mock payment for:', appointmentData.paymentCode);
+      console.log('ðŸ’° Processing mock payment for:', appointmentData.paymentCode);
 
       // Call mock payment complete
       await paymentService.mockCompletePayment(
@@ -699,14 +699,14 @@ const ScheduleServiceNew = () => {
       toast.success('Payment completed successfully!');
 
       // Verify payment status
-      console.log('🔍 Verifying payment status...');
+      console.log('ðŸ” Verifying payment status...');
       const paymentStatusResponse = await paymentService.getPaymentByCode(appointmentData.paymentCode);
       const paymentStatus = paymentStatusResponse.data?.data || paymentStatusResponse.data;
 
-      console.log('✅ Payment status:', paymentStatus);
+      console.log('âœ… Payment status:', paymentStatus);
 
       if (paymentStatus?.status?.toLowerCase() === 'completed') {
-        toast.success('🎉 Appointment confirmed! Redirecting to your appointments...');
+        toast.success('ðŸŽ‰ Appointment confirmed! Redirecting to your appointments...');
 
         // Redirect after 2 seconds
         setTimeout(() => {
@@ -720,28 +720,35 @@ const ScheduleServiceNew = () => {
       }
 
     } catch (error) {
-      console.error('❌ Payment error:', error);
+      console.error('âŒ Payment error:', error);
       toast.error(error.response?.data?.message || 'Payment failed. Please try again.');
     } finally {
       setPaymentProcessing(false);
     }
   };
-
   const handleRealPayment = () => {
     if (!appointmentData?.paymentUrl) {
       toast.error('Payment URL is not available. The payment gateway may not be configured.');
-      console.error('❌ Payment URL missing:', appointmentData);
+      console.error('Payment URL missing:', appointmentData);
       return;
     }
 
-    // For real payment, redirect to VNPay gateway
-    console.log('🔗 Redirecting to VNPay gateway:', appointmentData.paymentUrl);
+    console.log('Redirecting to VNPay gateway:', appointmentData.paymentUrl);
     toast.info('Redirecting to payment gateway...');
 
-    // Small delay to show toast
     setTimeout(() => {
       window.location.href = appointmentData.paymentUrl;
     }, 500);
+  };
+
+  const handlePayLater = () => {
+    toast.info('You can pay later at the counter or online in My Appointments.', {
+      autoClose: 4000,
+    });
+    navigate('/my-appointments', {
+      replace: true,
+      state: { paymentPending: true },
+    });
   };
 
   const handleConfirmFreeAppointment = () => {
@@ -751,7 +758,7 @@ const ScheduleServiceNew = () => {
     }
 
     setPaymentProcessing(true);
-    toast.success('🎉 Appointment confirmed! No payment required.');
+    toast.success('Appointment confirmed! No payment required.');
     clearBookingState();
     clearCart();
 
@@ -865,8 +872,8 @@ const ScheduleServiceNew = () => {
                             value={selectedServiceCenterId}
                             onChange={(e) => {
                               const selectedId = e.target.value;
-                              console.log('🏢 Service Center Selected:', selectedId);
-                              console.log('🏢 Type:', typeof selectedId);
+                              console.log('ðŸ¢ Service Center Selected:', selectedId);
+                              console.log('ðŸ¢ Type:', typeof selectedId);
                               setSelectedServiceCenterId(selectedId);
                             }}
                           >
@@ -874,7 +881,7 @@ const ScheduleServiceNew = () => {
                             {serviceCenters.map(center => {
                               // Try multiple possible ID field names
                               const centerId = center.serviceCenterId || center.id || center.centerId;
-                              console.log('🏢 Rendering option:', { center, centerId });
+                              console.log('ðŸ¢ Rendering option:', { center, centerId });
                               return (
                                 <option key={centerId} value={centerId}>
                                   {center.name} - {center.address}
@@ -932,7 +939,7 @@ const ScheduleServiceNew = () => {
                                   const slotId = slot.timeSlotId || slot.slotId || slot.id;
                                   const isSelected = selectedTimeSlotId === slotId;
 
-                                  console.log(`🕐 Rendering slot ${index}:`, {
+                                  console.log(`ðŸ• Rendering slot ${index}:`, {
                                     timeSlotId: slot.timeSlotId,
                                     slotId: slot.slotId,
                                     id: slot.id,
@@ -946,13 +953,13 @@ const ScheduleServiceNew = () => {
                                       key={slotId || index}
                                       className={`time-slot ${isSelected ? 'selected' : ''}`}
                                       onClick={() => {
-                                        console.log('🕐 Clicked slot:', { slotId, slot });
+                                        console.log('ðŸ• Clicked slot:', { slotId, slot });
                                         // Toggle: if clicking the same slot, deselect it
                                         if (selectedTimeSlotId === slotId) {
-                                          console.log('🕐 Deselecting time slot:', slotId);
+                                          console.log('ðŸ• Deselecting time slot:', slotId);
                                           setSelectedTimeSlotId('');
                                         } else {
-                                          console.log('🕐 Selecting time slot:', slotId);
+                                          console.log('ðŸ• Selecting time slot:', slotId);
                                           setSelectedTimeSlotId(slotId);
                                         }
                                       }}
@@ -1188,11 +1195,11 @@ const ScheduleServiceNew = () => {
                             <h6 className="mb-3"><i className="bi bi-receipt me-2"></i>Payment Summary</h6>
                             <div className="d-flex justify-content-between mb-2">
                               <span>Invoice Code:</span>
-                              <strong>{appointmentData.invoiceCode || '—'}</strong>
+                              <strong>{appointmentData.invoiceCode || 'â€”'}</strong>
                             </div>
                             <div className="d-flex justify-content-between mb-2">
                               <span>Payment Code:</span>
-                              <strong>{appointmentData.paymentCode || '—'}</strong>
+                              <strong>{appointmentData.paymentCode || 'â€”'}</strong>
                             </div>
                             <hr />
                             <div className="d-flex justify-content-between align-items-center">
@@ -1275,23 +1282,34 @@ const ScheduleServiceNew = () => {
                           {/* Payment Actions */}
                           <div className="payment-actions">
                             {appointmentRequiresPayment ? (
-                              <button
-                                className="btn btn-lg btn-success"
-                                onClick={handleRealPayment}
-                                disabled={paymentProcessing || !appointmentData.paymentUrl}
-                              >
-                                {paymentProcessing ? (
-                                  <>
-                                    <span className="spinner-border spinner-border-sm me-2"></span>
-                                    Processing Payment...
-                                  </>
-                                ) : (
-                                  <>
-                                    <i className="bi bi-credit-card me-2"></i>
-                                    Proceed to Payment
-                                  </>
-                                )}
-                              </button>
+                              <div className="d-flex flex-column flex-md-row gap-3 justify-content-center">
+                                <button
+                                  className="btn btn-lg btn-success"
+                                  onClick={handleRealPayment}
+                                  disabled={paymentProcessing || !appointmentData.paymentUrl}
+                                >
+                                  {paymentProcessing ? (
+                                    <>
+                                      <span className="spinner-border spinner-border-sm me-2"></span>
+                                      Processing Payment...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <i className="bi bi-credit-card me-2"></i>
+                                      Pay Now
+                                    </>
+                                  )}
+                                </button>
+
+                                <button
+                                  className="btn btn-lg btn-outline-secondary"
+                                  onClick={handlePayLater}
+                                  disabled={paymentProcessing}
+                                >
+                                  <i className="bi bi-clock-history me-2"></i>
+                                  Pay Later
+                                </button>
+                              </div>
                             ) : (
                               <button
                                 className="btn btn-lg btn-primary"
@@ -1412,3 +1430,4 @@ const ScheduleServiceNew = () => {
 };
 
 export default ScheduleServiceNew;
+
