@@ -37,26 +37,20 @@ const PaymentCallback = () => {
     try {
       console.log('🔙 Payment callback received');
 
-      // Extract VNPay params
-      const vnpParams = {
-        responseCode: searchParams.get('vnp_ResponseCode'),
-        txnRef: searchParams.get('vnp_TxnRef'), // This is paymentCode
-        amount: searchParams.get('vnp_Amount'),
-        transactionNo: searchParams.get('vnp_TransactionNo'),
-        bankCode: searchParams.get('vnp_BankCode'),
-        orderInfo: searchParams.get('vnp_OrderInfo'),
-      };
-
-      console.log('📦 VNPay params:', vnpParams);
+      // Extract backend-defined params
+      const paymentStatus = searchParams.get('status');
+      const paymentCode = searchParams.get('paymentCode');
+      
+      console.log('📦 Backend params:', { paymentStatus, paymentCode });
 
       // Check if payment was successful
-      if (vnpParams.responseCode === '00') {
+      if (paymentStatus === 'success') {
         console.log('✅ Payment successful');
 
         // Verify payment status from backend
-        if (vnpParams.txnRef) {
+        if (paymentCode) {
           try {
-            const paymentStatusResponse = await paymentService.getPaymentByCode(vnpParams.txnRef);
+            const paymentStatusResponse = await paymentService.getPaymentByCodePublic(paymentCode);
             const payment = paymentStatusResponse.data?.data || paymentStatusResponse.data;
 
             console.log('✅ Payment verification:', payment);
@@ -64,49 +58,38 @@ const PaymentCallback = () => {
             // Clear booking state
             clearBookingState();
 
-            // Show success toast and redirect immediately to schedule (step 1)
+            // Show success toast and redirect
             toast.success('🎉 Payment completed successfully! Your appointment has been confirmed.', {
               autoClose: 5000,
               position: 'top-center'
             });
 
-            // Redirect to Services page after success
-            navigate('/services', {
+            // Redirect to a relevant page, e.g., My Appointments
+            navigate('/my-appointments', {
               replace: true,
               state: { paymentSuccess: true }
             });
 
           } catch (error) {
             console.error('❌ Payment verification failed:', error);
-
-            // Clear booking state anyway
+            // Even if verification fails, we can assume success from the URL and let user check manually
             clearBookingState();
-
-            toast.success('🎉 Payment completed! Your appointment has been confirmed.', {
+            toast.success('🎉 Payment completed! Please check "My Appointments" to see the confirmation.', {
               autoClose: 5000,
               position: 'top-center'
             });
-
-            navigate('/services', {
+            navigate('/my-appointments', {
               replace: true,
               state: { paymentSuccess: true }
             });
           }
         } else {
-          // Clear booking state
+           // Should not happen if status is success
           clearBookingState();
-
-          toast.success('🎉 Payment completed successfully!', {
-            autoClose: 5000,
-            position: 'top-center'
-          });
-
-          navigate('/services', {
-            replace: true,
-            state: { paymentSuccess: true }
-          });
+          toast.warning('Payment status is success but no paymentCode provided.');
+          navigate('/services', { replace: true });
         }
-      } else if (vnpParams.responseCode === '24') {
+      } else if (paymentStatus === 'cancelled' || paymentStatus === 'canceled') {
         console.log('⚠️ Payment canceled by user');
 
         toast.warning('Payment was canceled. Please try again.', {
@@ -118,9 +101,9 @@ const PaymentCallback = () => {
           state: { paymentCanceled: true }
         });
       } else {
-        console.log('❌ Payment failed:', vnpParams.responseCode);
+        console.log('❌ Payment failed:', paymentStatus);
 
-        toast.error(`Payment failed (Code: ${vnpParams.responseCode}). Please try again.`, {
+        toast.error(`Payment failed (Status: ${paymentStatus}). Please try again.`, {
           autoClose: 4000
         });
 
