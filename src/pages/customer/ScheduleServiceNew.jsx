@@ -10,6 +10,7 @@ import { useCart } from '../../contexts/CartContext';
 import { useSchedule } from '../../contexts/ScheduleContext';
 import { toast } from 'react-toastify';
 import GlobalNavbar from '../../components/GlobalNavbar';
+import VehicleHistoryModal from '../../components/VehicleHistoryModal';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import './ScheduleServiceNew.css';
@@ -33,7 +34,7 @@ const ScheduleServiceNew = () => {
   const [selectedDate, setSelectedDate] = useState('');
   const [availableTimeSlots, setAvailableTimeSlots] = useState([]);
   const [selectedTimeSlotId, setSelectedTimeSlotId] = useState('');
-  const [historyModalOpen, setHistoryModalOpen] = useState(false);
+  const [isHistoryModalVisible, setHistoryModalVisible] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState('');
   const [maintenanceHistory, setMaintenanceHistory] = useState([]);
@@ -195,6 +196,8 @@ const ScheduleServiceNew = () => {
       setHistoryLoading(false);
     }
   };
+
+
 
   // ============ STEP 2: LOAD SERVICE CENTERS & TIME SLOTS ============
   useEffect(() => {
@@ -829,61 +832,7 @@ const ScheduleServiceNew = () => {
     }, 1200);
   };
 
-  // History modal JSX
-  const renderHistoryModal = () => {
-    if (!historyModalOpen) return null;
-    return (
-      <>
-        <div className="modal fade show" style={{ display: 'block' }} role="dialog" aria-modal="true">
-          <div className="modal-dialog modal-dialog-centered modal-lg">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Maintenance history</h5>
-                <button type="button" className="btn-close" onClick={() => setHistoryModalOpen(false)}></button>
-              </div>
-              <div className="modal-body">
-                {historyLoading ? (
-                  <div className="text-center py-4">
-                    <div className="spinner-border text-primary" role="status">
-                      <span className="visually-hidden">Loading...</span>
-                    </div>
-                  </div>
-                ) : historyError ? (
-                  <div className="alert alert-danger">{historyError}</div>
-                ) : maintenanceHistory.length === 0 ? (
-                  <div className="text-center text-muted">No maintenance history for this vehicle.</div>
-                ) : (
-                  <div className="history-timeline">
-                    {maintenanceHistory.map((item, idx) => (
-                      <div key={item.historyId || idx} className="history-item">
-                        <div className="history-date">
-                          {new Date(item.serviceDate).toLocaleDateString('vi-VN')}
-                        </div>
-                        <div className="history-body">
-                          <div className="history-title">{item.serviceType}</div>
-                          <div className="history-meta">
-                            <span>Mileage: {item.mileageAtService ?? 'N/A'} km</span>
-                            <span>Cost: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.totalCost || 0)}</span>
-                          </div>
-                          {item.notes && <div className="history-notes text-muted">{item.notes}</div>}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setHistoryModalOpen(false)}>
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="modal-backdrop fade show"></div>
-      </>
-    );
-  };
+
 // ============ RENDER HELPERS ============
   const getEarliestBookingDate = () => {
     const today = new Date();
@@ -953,34 +902,36 @@ const ScheduleServiceNew = () => {
                           </div>
                         ) : (
                           <div className="vehicle-grid">
-                            {vehicles.map(vehicle => (
-                              <div
-                                key={vehicle.vehicleId}
-                                className={`vehicle-card ${selectedVehicleId === vehicle.vehicleId ? 'selected' : ''}`}
-                                onClick={() => setSelectedVehicleId(vehicle.vehicleId)}
-                              >
-                                <i className="bi bi-car-front vehicle-icon"></i>
-                                <div className="vehicle-info">
-                                  <h5>{vehicle.fullModelName || vehicle.modelName}</h5>
-                                  <p className="mb-0">{vehicle.licensePlate}</p>
-                                  {vehicle.year && <small className="text-muted">Year: {vehicle.year}</small>}
-                                </div>
-                              </div>
-                            ))}
-                            {selectedVehicleId && (
-                              <div className="history-cta">
-                                <button
-                                  type="button"
-                                  className="btn btn-outline-secondary btn-sm"
-                                  onClick={() => {
-                                    loadMaintenanceHistory();
-                                    setHistoryModalOpen(true);
-                                  }}
+                            {vehicles.map(vehicle => {
+                              const isSelected = selectedVehicleId === vehicle.vehicleId;
+                              return (
+                                <div
+                                  key={vehicle.vehicleId}
+                                  className={`vehicle-card ${isSelected ? 'selected' : ''}`}
+                                  onClick={() => setSelectedVehicleId(vehicle.vehicleId)}
                                 >
-                                  View maintenance history
-                                </button>
-                              </div>
-                            )}
+                                  <i className="bi bi-car-front vehicle-icon"></i>
+                                  <div className="vehicle-info">
+                                    <h5>{vehicle.fullModelName || vehicle.modelName}</h5>
+                                    <p className="mb-0">{vehicle.licensePlate}</p>
+                                    {vehicle.year && <small className="text-muted">Year: {vehicle.year}</small>}
+                                  </div>
+                                  {isSelected && (
+                                    <button
+                                      type="button"
+                                      className="history-inline"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        loadMaintenanceHistory();
+                                        setHistoryModalVisible(true);
+                                      }}
+                                    >
+                                      View maintenance history
+                                    </button>
+                                  )}
+                                </div>
+                              );
+                            })}
                           </div>
                         )}
                       </div>
@@ -1566,7 +1517,11 @@ const ScheduleServiceNew = () => {
       </>
     )}
 
-    {renderHistoryModal()}
+    <VehicleHistoryModal
+      show={isHistoryModalVisible}
+      onHide={() => setHistoryModalVisible(false)}
+      vehicleId={selectedVehicleId}
+    />
   </>
   );
 };
