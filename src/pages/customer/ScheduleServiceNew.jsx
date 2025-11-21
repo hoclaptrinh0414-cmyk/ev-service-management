@@ -17,7 +17,7 @@ import './ScheduleServiceNew.css';
 const ScheduleServiceNew = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
-  const { cartItems, getTotalPrice, clearCart } = useCart();
+  const { cartItems, getTotalPrice, clearCart, removeFromCart } = useCart();
   const { saveBookingState, restoreBookingState, hasBookingState, clearBookingState } = useSchedule();
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -33,6 +33,10 @@ const ScheduleServiceNew = () => {
   const [selectedDate, setSelectedDate] = useState('');
   const [availableTimeSlots, setAvailableTimeSlots] = useState([]);
   const [selectedTimeSlotId, setSelectedTimeSlotId] = useState('');
+  const [historyModalOpen, setHistoryModalOpen] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState('');
+  const [maintenanceHistory, setMaintenanceHistory] = useState([]);
 
   // Step 3: Service Selection
   const [allServices, setAllServices] = useState([]);
@@ -172,6 +176,23 @@ const ScheduleServiceNew = () => {
       toast.error('Unable to load vehicles. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadMaintenanceHistory = async () => {
+    if (!selectedVehicleId) return;
+    try {
+      setHistoryLoading(true);
+      setHistoryError('');
+      const res = await maintenanceService.getVehicleMaintenanceHistory(selectedVehicleId);
+      const list = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
+      setMaintenanceHistory(list);
+    } catch (err) {
+      console.error('Error loading maintenance history:', err);
+      setHistoryError(err?.response?.data?.message || 'Unable to load maintenance history');
+      setMaintenanceHistory([]);
+    } finally {
+      setHistoryLoading(false);
     }
   };
 
@@ -807,6 +828,62 @@ const ScheduleServiceNew = () => {
       navigate('/my-appointments');
     }, 1200);
   };
+
+  // History modal JSX
+  const renderHistoryModal = () => {
+    if (!historyModalOpen) return null;
+    return (
+      <>
+        <div className="modal fade show" style={{ display: 'block' }} role="dialog" aria-modal="true">
+          <div className="modal-dialog modal-dialog-centered modal-lg">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Maintenance history</h5>
+                <button type="button" className="btn-close" onClick={() => setHistoryModalOpen(false)}></button>
+              </div>
+              <div className="modal-body">
+                {historyLoading ? (
+                  <div className="text-center py-4">
+                    <div className="spinner-border text-primary" role="status">
+                      <span className="visually-hidden">Loading...</span>
+                    </div>
+                  </div>
+                ) : historyError ? (
+                  <div className="alert alert-danger">{historyError}</div>
+                ) : maintenanceHistory.length === 0 ? (
+                  <div className="text-center text-muted">No maintenance history for this vehicle.</div>
+                ) : (
+                  <div className="history-timeline">
+                    {maintenanceHistory.map((item, idx) => (
+                      <div key={item.historyId || idx} className="history-item">
+                        <div className="history-date">
+                          {new Date(item.serviceDate).toLocaleDateString('vi-VN')}
+                        </div>
+                        <div className="history-body">
+                          <div className="history-title">{item.serviceType}</div>
+                          <div className="history-meta">
+                            <span>Mileage: {item.mileageAtService ?? 'N/A'} km</span>
+                            <span>Cost: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.totalCost || 0)}</span>
+                          </div>
+                          {item.notes && <div className="history-notes text-muted">{item.notes}</div>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => setHistoryModalOpen(false)}>
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="modal-backdrop fade show"></div>
+      </>
+    );
+  };
 // ============ RENDER HELPERS ============
   const getEarliestBookingDate = () => {
     const today = new Date();
@@ -890,6 +967,20 @@ const ScheduleServiceNew = () => {
                                 </div>
                               </div>
                             ))}
+                            {selectedVehicleId && (
+                              <div className="history-cta">
+                                <button
+                                  type="button"
+                                  className="btn btn-outline-secondary btn-sm"
+                                  onClick={() => {
+                                    loadMaintenanceHistory();
+                                    setHistoryModalOpen(true);
+                                  }}
+                                >
+                                  View maintenance history
+                                </button>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
@@ -1079,6 +1170,7 @@ const ScheduleServiceNew = () => {
                                 const isPackage = item.isPackage;
                                 const itemName = isPackage ? item.packageName : item.serviceName;
                                 const itemPrice = getCartItemUnitPrice(item);
+                                const idToRemove = isPackage ? item.packageId : item.serviceId;
 
                                 return (
                                   <div key={index} className="cart-item-preview">
@@ -1094,6 +1186,15 @@ const ScheduleServiceNew = () => {
                                         style: 'currency',
                                         currency: 'VND'
                                       }).format(itemPrice * item.quantity)}
+                                    </div>
+                                    <div className="item-actions">
+                                      <button
+                                        type="button"
+                                        className="btn btn-outline-secondary btn-sm"
+                                        onClick={() => removeFromCart(idToRemove, isPackage)}
+                                      >
+                                        Remove
+                                      </button>
                                     </div>
                                   </div>
                                 );
@@ -1464,6 +1565,8 @@ const ScheduleServiceNew = () => {
         <div className="modal-backdrop fade show"></div>
       </>
     )}
+
+    {renderHistoryModal()}
   </>
   );
 };
