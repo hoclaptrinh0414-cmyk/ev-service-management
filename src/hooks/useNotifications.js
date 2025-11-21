@@ -1,266 +1,131 @@
 // src/hooks/useNotifications.js
-import { useState, useEffect, useCallback } from 'react';
-import appointmentService from '../services/appointmentService';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import notificationService from '../services/notificationService';
 
-// Tính khoảng cách ngày giữa 2 ngày
-const getDaysUntil = (dateString) => {
-  const targetDate = new Date(dateString);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  targetDate.setHours(0, 0, 0, 0);
+const mapNotification = (item) => {
+  const id = item.notificationId || item.id;
+  const created = item.createdDate || item.createdAt;
+  const isUnread = item.isRead === false || item.unread === true;
 
-  const diffTime = targetDate - today;
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-  return diffDays;
-};
-
-// Format thời gian hiển thị
-const formatTimeAgo = (days) => {
-  if (days === 0) return 'Hôm nay';
-  if (days === 1) return 'Ngày mai';
-  if (days === 2) return '2 ngày nữa';
-  if (days === 3) return '3 ngày nữa';
-  if (days > 3) return `${days} ngày nữa`;
-  if (days === -1) return 'Hôm qua';
-  if (days < -1) return `${Math.abs(days)} ngày trước`;
-  return `${days} ngày`;
-};
-
-// Tạo notification từ appointment
-const createNotificationFromAppointment = (appointment) => {
-  const daysUntil = getDaysUntil(appointment.appointmentDate);
-
-  // Chỉ tạo notification nếu còn từ 0-3 ngày (bao gồm cả hôm nay)
-  if (daysUntil < 0 || daysUntil > 3) {
-    return null;
-  }
-
-  const appointmentDate = new Date(appointment.appointmentDate);
-  const formattedDate = appointmentDate.toLocaleDateString('vi-VN', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
-
-  let message = '';
-  if (daysUntil === 0) {
-    message = `Lịch bảo dưỡng của bạn là hôm nay (${formattedDate})`;
-  } else if (daysUntil === 1) {
-    message = `Lịch bảo dưỡng của bạn sẽ diễn ra vào ngày mai (${formattedDate})`;
-  } else if (daysUntil === 2) {
-    message = `Lịch bảo dưỡng của bạn còn 2 ngày nữa (${formattedDate})`;
-  } else if (daysUntil === 3) {
-    message = `Lịch bảo dưỡng của bạn còn 3 ngày nữa (${formattedDate})`;
+  let timeLabel = '';
+  if (created) {
+    const date = new Date(created);
+    timeLabel = date.toLocaleString('vi-VN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
   }
 
   return {
-    id: `appointment-${appointment.appointmentId}`,
-    appointmentId: appointment.appointmentId,
-    appointmentCode: appointment.appointmentCode,
-    type: 'appointment_reminder',
-    title: daysUntil === 0 ? 'Lịch bảo dưỡng hôm nay!' : 'Nhắc nhở lịch bảo dưỡng',
-    message,
-    time: formatTimeAgo(daysUntil),
-    createdAt: new Date().toISOString(),
-    unread: true,
-    priority: daysUntil === 0 ? 'high' : daysUntil === 1 ? 'medium' : 'normal'
+    raw: item,
+    id,
+    title: item.subject || item.title || 'Notification',
+    message: item.message || '',
+    time: timeLabel || 'Just now',
+    unread: isUnread,
+    createdAt: created,
   };
 };
 
-export const useNotifications = ({ enabled = true } = {}) => {
+export default function useNotifications({ enabled = true, pollIntervalMs = 120000 } = {}) {
   const [notifications, setNotifications] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Load notifications từ localStorage
-  const loadNotificationsFromStorage = useCallback(() => {
+  const hasToken = useMemo(() => Boolean(localStorage.getItem('token')), []);
+
+  const fetchUnreadCount = useCallback(async () => {
+    if (!enabled || !hasToken) return;
     try {
-      const stored = localStorage.getItem('notifications');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        // Lọc bỏ các notification cũ (quá 7 ngày)
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-        return parsed.filter(n => {
-          const createdAt = new Date(n.createdAt);
-          return createdAt > sevenDaysAgo;
-        });
-      }
-      return [];
-    } catch (error) {
-      console.error('Error loading notifications from storage:', error);
-      return [];
+      const res = await notificationService.getUnreadCount();
+      const count = res?.data?.unreadCount ?? res?.unreadCount ?? 0;
+      setUnreadCount(count);
+    } catch (err) {
+      console.error('Failed to fetch unread count', err);
     }
-  }, []);
+  }, [enabled, hasToken]);
 
-  // Lưu notifications vào localStorage
-  const saveNotificationsToStorage = useCallback((notifs) => {
-    try {
-      localStorage.setItem('notifications', JSON.stringify(notifs));
-    } catch (error) {
-      console.error('Error saving notifications to storage:', error);
-    }
-  }, []);
-
-  // Fetch appointments và tạo notifications
-  const fetchNotifications = useCallback(async () => {
-    if (!enabled) {
-      setLoading(false);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Check if user is logged in
-      const token = localStorage.getItem('token');
-      if (!token) {
-        console.log('⚠️ No token found, skipping notifications fetch');
+  const fetchNotifications = useCallback(
+    async (fetchUnread = false) => {
+      if (!enabled || !hasToken) {
         setNotifications([]);
+        setUnreadCount(0);
+        setLoading(false);
         return;
       }
 
-      // Lấy các appointment sắp tới
-      const upcomingAppointments = await appointmentService.getUpcomingAppointments(10);
-
-      // Load notifications hiện tại từ storage
-      const storedNotifications = loadNotificationsFromStorage();
-
-      // Tạo map để dễ tra cứu
-      const storedNotificationMap = new Map(
-        storedNotifications.map(n => [n.id, n])
-      );
-
-      // Tạo notifications mới từ appointments
-      const newNotifications = [];
-      upcomingAppointments.forEach(appointment => {
-        const notification = createNotificationFromAppointment(appointment);
-        if (notification) {
-          // Nếu notification đã tồn tại, giữ nguyên trạng thái unread
-          const existing = storedNotificationMap.get(notification.id);
-          if (existing) {
-            notification.unread = existing.unread;
-            notification.createdAt = existing.createdAt; // Giữ nguyên thời gian tạo ban đầu
-          }
-          newNotifications.push(notification);
+      try {
+        setLoading(true);
+        setError(null);
+        const res = await notificationService.getNotifications(1, 15, { isRead: false });
+        const items = res?.data?.items || res?.items || res?.data || [];
+        const mapped = items.map(mapNotification);
+        setNotifications(mapped);
+        if (fetchUnread) {
+          const count = res?.data?.totalCount ?? mapped.filter((x) => x.unread).length;
+          setUnreadCount(count);
         }
-      });
-
-      // Thêm các notifications cũ (không phải appointment reminder)
-      storedNotifications.forEach(n => {
-        if (n.type !== 'appointment_reminder') {
-          newNotifications.push(n);
-        }
-      });
-
-      // Sắp xếp theo priority và thời gian
-      newNotifications.sort((a, b) => {
-        const priorityOrder = { high: 0, medium: 1, normal: 2 };
-        const priorityA = priorityOrder[a.priority] || 2;
-        const priorityB = priorityOrder[b.priority] || 2;
-
-        if (priorityA !== priorityB) {
-          return priorityA - priorityB;
-        }
-
-        return new Date(b.createdAt) - new Date(a.createdAt);
-      });
-
-      setNotifications(newNotifications);
-      saveNotificationsToStorage(newNotifications);
-    } catch (err) {
-      console.error('Error fetching notifications:', err);
-      
-      // If 403 error (no permission), silently ignore and load from storage
-      if (err.message?.includes('403') || err.message?.includes('Forbidden')) {
-        console.log('⚠️ No permission to fetch appointments, using cached notifications');
-        const storedNotifications = loadNotificationsFromStorage();
-        setNotifications(storedNotifications);
-        setError(null); // Don't show error for permission issues
-      } else {
-        // For other errors, load from storage
-        const storedNotifications = loadNotificationsFromStorage();
-        setNotifications(storedNotifications);
-        setError(err.message);
+      } catch (err) {
+        console.error('Failed to fetch notifications', err);
+        setError(err?.message || 'Unable to load notifications');
+      } finally {
+        setLoading(false);
       }
-    } finally {
-      setLoading(false);
+    },
+    [enabled, hasToken],
+  );
+
+  const markAsRead = useCallback(async (id) => {
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, unread: false } : n)),
+    );
+    setUnreadCount((c) => Math.max(0, c - 1));
+    try {
+      await notificationService.markAsRead(id);
+    } catch (err) {
+      console.error('Failed to mark notification as read', err);
     }
-  }, [enabled, loadNotificationsFromStorage, saveNotificationsToStorage]);
+  }, []);
 
-  // Mark notification as read
-  const markAsRead = useCallback((notificationId) => {
-    setNotifications(prev => {
-      const updated = prev.map(n =>
-        n.id === notificationId ? { ...n, unread: false } : n
-      );
-      saveNotificationsToStorage(updated);
-      return updated;
-    });
-  }, [saveNotificationsToStorage]);
+  const dismissNotification = useCallback(async (id) => {
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+    try {
+      await notificationService.markAsRead(id);
+    } catch (err) {
+      console.error('Failed to dismiss notification', err);
+    }
+  }, []);
 
-  // Dismiss notification
-  const dismissNotification = useCallback((notificationId) => {
-    setNotifications(prev => {
-      const updated = prev.filter(n => n.id !== notificationId);
-      saveNotificationsToStorage(updated);
-      return updated;
-    });
-  }, [saveNotificationsToStorage]);
+  const markAllAsRead = useCallback(async () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
+    setUnreadCount(0);
+    try {
+      await notificationService.markAllAsRead();
+    } catch (err) {
+      console.error('Failed to mark all notifications as read', err);
+    }
+  }, []);
 
-  // Mark all as read
-  const markAllAsRead = useCallback(() => {
-    setNotifications(prev => {
-      const updated = prev.map(n => ({ ...n, unread: false }));
-      saveNotificationsToStorage(updated);
-      return updated;
-    });
-  }, [saveNotificationsToStorage]);
-
-  // Add custom notification
-  const addNotification = useCallback((notification) => {
-    const newNotification = {
-      id: `custom-${Date.now()}`,
-      type: 'custom',
-      unread: true,
-      createdAt: new Date().toISOString(),
-      time: 'Vừa xong',
-      ...notification
-    };
-
-    setNotifications(prev => {
-      const updated = [newNotification, ...prev];
-      saveNotificationsToStorage(updated);
-      return updated;
-    });
-  }, [saveNotificationsToStorage]);
-
-  // Fetch notifications on mount và refresh mỗi 5 phút
+  // Initial load + polling for unread count
   useEffect(() => {
-    fetchNotifications();
-
-    // Refresh notifications mỗi 5 phút
-    const interval = setInterval(() => {
-      fetchNotifications();
-    }, 5 * 60 * 1000); // 5 phút
-
-    return () => clearInterval(interval);
-  }, [fetchNotifications]);
+    if (!enabled || !hasToken) return;
+    fetchNotifications(true);
+    const intervalId = setInterval(fetchUnreadCount, pollIntervalMs);
+    return () => clearInterval(intervalId);
+  }, [enabled, hasToken, fetchNotifications, fetchUnreadCount, pollIntervalMs]);
 
   return {
     notifications,
+    unreadCount,
     loading,
     error,
+    refresh: fetchNotifications,
     markAsRead,
     dismissNotification,
     markAllAsRead,
-    addNotification,
-    refresh: fetchNotifications
   };
-};
-
-export default useNotifications;
+}

@@ -1305,6 +1305,17 @@ export const invoiceAPI = {
   getInvoiceByCode: (invoiceCode) => apiService.getInvoiceByCode(invoiceCode),
 };
 
+// ============ NOTIFICATION API ============
+export const notificationAPI = {
+  getNotifications: (page = 1, pageSize = 20, params = {}) => {
+    const query = buildQueryString({ page, pageSize, ...params });
+    return apiService.request(`/notifications${query}`);
+  },
+  getUnreadCount: () => apiService.request('/notifications/unread-count'),
+  markAllAsRead: () => apiService.request('/notifications/read-all', { method: 'PUT' }),
+  markAsRead: (id) => apiService.request(`/notifications/${id}/read`, { method: 'PUT' }),
+};
+
 // ============ STAFF MANAGEMENT API ============
 // Generic REST wrapper matching required endpoints
 export const staffAPI = {
