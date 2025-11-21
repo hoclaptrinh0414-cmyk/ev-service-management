@@ -1,355 +1,387 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import AdminBreadcrumb from "../../components/Breadcrumb";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import "./AdminLayout.css";
 
 const NAV_ITEMS = [
-  { to: "/admin", label: "Dashboard", icon: "bi-speedometer2" },
-  { to: "/admin/vehicles", label: "Vehicles", icon: "bi-car-front" },
-  { to: "/admin/customers", label: "Customers", icon: "bi-people" },
-  { to: "/admin/schedule", label: "Schedule", icon: "bi-calendar" },
-  { to: "/admin/maintenance", label: "Maintenance", icon: "bi-tools" },
-  { to: "/admin/parts", label: "Parts", icon: "bi-boxes" },
-  { to: "/admin/staff", label: "Staff", icon: "bi-person-badge" },
-  { to: "/admin/finance", label: "Finance", icon: "bi-graph-up" },
-  { to: "/admin/settings", label: "Settings", icon: "bi-gear" },
-];
-
-const SEARCH_ENTRIES = [
-  ...NAV_ITEMS.map((item) => ({
-    to: item.to,
-    label: item.label,
-    description: `Jump to ${item.label} view`,
-    icon: item.icon,
-  })),
+  { label: "Dashboard", path: "/admin", icon: "bi-speedometer2" },
+  { label: "Customer Management", path: "/admin/customers", icon: "bi-people" },
   {
-    to: "/admin/schedule?modal=new",
-    label: "Create appointment",
-    description: "Open the scheduling dialog",
-    icon: "bi-calendar-plus",
+    label: "Vehicle Management",
+    path: "/admin/vehicles",
+    icon: "bi-car-front",
   },
   {
-    to: "/admin/customers?filter=vip",
-    label: "VIP customers",
-    description: "Review priority accounts",
-    icon: "bi-star",
-  },
-  {
-    to: "/admin/maintenance?view=due",
-    label: "Due maintenance",
-    description: "Check upcoming maintenance jobs",
-    icon: "bi-clipboard-check",
-  },
-  {
-    to: "/admin/parts",
-    label: "Inventory status",
-    description: "Monitor stock levels",
-    icon: "bi-archive",
-  },
-];
-
-const NOTIFICATIONS = [
-  {
-    id: "notif-1",
-    title: "New appointment booked",
-    description: "VF8 premium service scheduled for tomorrow 09:00",
-    time: "2m ago",
+    label: "Service Schedule",
+    path: "/admin/schedule",
     icon: "bi-calendar-check",
   },
   {
-    id: "notif-2",
-    title: "Low stock alert",
-    description: "Battery module BM-204 is below the safety threshold",
-    time: "18m ago",
-    icon: "bi-exclamation-octagon",
-  },
-  {
-    id: "notif-3",
-    title: "Technician update",
-    description: "Team Alpha completed inspection #INV-2318",
-    time: "45m ago",
+    label: "Maintenance Progress",
+    path: "/admin/maintenance",
     icon: "bi-tools",
   },
-];
-
-const MESSAGES = [
+  { label: "Parts Inventory", path: "/admin/parts", icon: "bi-box-seam" },
+  { label: "Staff Management", path: "/admin/staff", icon: "bi-person-badge" },
   {
-    id: "msg-1",
-    sender: "Emma Nguyen",
-    excerpt: "Can we confirm the delivery for order SO-473?",
-    time: "5m ago",
-    icon: "bi-person-circle",
+    label: "Financial Report",
+    path: "/admin/finance",
+    icon: "bi-graph-up-arrow",
   },
-  {
-    id: "msg-2",
-    sender: "Service Desk",
-    excerpt: "Reminder: staff briefing at 16:00 in meeting room",
-    time: "32m ago",
-    icon: "bi-chat-left-text",
-  },
-  {
-    id: "msg-3",
-    sender: "Finance",
-    excerpt: "Upload monthly revenue snapshot before Friday",
-    time: "1h ago",
-    icon: "bi-graph-up",
-  },
+  { label: "Settings", path: "/admin/settings", icon: "bi-gear" },
 ];
 
 const SEARCH_SUGGESTIONS_ID = "admin-search-suggestions";
 
-const LABEL_MAP = {
-  vehicles: "Vehicles",
-  customers: "Customers",
-  schedule: "Schedule",
-  maintenance: "Maintenance",
-  parts: "Parts",
-  staff: "Staff",
-  finance: "Finance",
-  settings: "Settings",
-};
-
-const highlightMatch = (label, query) => {
-  if (!query) return label;
-  const lowerLabel = label.toLowerCase();
-  const lowerQuery = query.toLowerCase();
-  const index = lowerLabel.indexOf(lowerQuery);
-  if (index === -1) return label;
-  const before = label.slice(0, index);
-  const match = label.slice(index, index + query.length);
-  const after = label.slice(index + query.length);
-  return (
-    <>
-      {before}
-      <mark>{match}</mark>
-      {after}
-    </>
-  );
-};
-
-const sanitizeId = (value) => value.replace(/[^a-z0-9]/gi, "-");
-
-const useBreadcrumbs = (pathname) => {
-  const items = [{ label: "Admin", path: "/admin" }];
-  if (pathname.startsWith("/admin/")) {
-    const segments = pathname.replace(/^\/admin\/?/, "").split("/").filter(Boolean);
-    let acc = "/admin";
-    for (const seg of segments) {
-      acc += "/" + seg;
-      items.push({ label: LABEL_MAP[seg] || seg, path: acc });
-    }
-  }
-  return items;
-};
-
 const AdminLayout = () => {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [theme, setTheme] = useState(
+    () => localStorage.getItem("theme") || "light"
+  );
   const location = useLocation();
   const navigate = useNavigate();
-
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "light");
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [activeSuggestion, setActiveSuggestion] = useState(0);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isMessageOpen, setIsMessageOpen] = useState(false);
-
   const searchContainerRef = useRef(null);
   const notificationRef = useRef(null);
   const messageRef = useRef(null);
 
-  const notifications = NOTIFICATIONS;
-  const messages = MESSAGES;
+  const notifications = useMemo(
+    () => [
+      {
+        id: 1,
+        title: "Lịch hẹn mới",
+        description: "Nguyễn An vừa đặt lịch bảo dưỡng Tesla Model 3.",
+        time: "3 phút trước",
+        icon: "bi-calendar-event",
+      },
+      {
+        id: 2,
+        title: "Xe hoàn tất",
+        description: "Volkswagen ID.4 đã hoàn thành quy trình kiểm tra.",
+        time: "1 giờ trước",
+        icon: "bi-check-circle",
+      },
+      {
+        id: 3,
+        title: "Kho linh kiện thấp",
+        description: "Mô-đun pin Panasonic trong kho còn dưới 5 đơn vị.",
+        time: "2 giờ trước",
+        icon: "bi-exclamation-triangle",
+      },
+    ],
+    []
+  );
+
+  const messages = useMemo(
+    () => [
+      {
+        id: 1,
+        sender: "Lê Minh",
+        excerpt: "Nhờ anh xác nhận lịch bảo dưỡng lại giúp em nhé?",
+        time: "5 phút trước",
+        icon: "bi-chat-left-text",
+      },
+      {
+        id: 2,
+        sender: "Trạm Hà Nội",
+        excerpt: "Đã cập nhật bảng giá phụ tùng tuần này.",
+        time: "30 phút trước",
+        icon: "bi-building",
+      },
+    ],
+    []
+  );
+
   const notificationCount = notifications.length;
   const messageCount = messages.length;
 
+  const toggleSidebar = () => {
+    setSidebarCollapsed(!sidebarCollapsed);
+  };
+  // Auto-collapse sidebar on small screens
   useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
+    const handleResize = () => {
+      if (window.innerWidth < 992) {
+        setSidebarCollapsed(true);
+      }
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Apply theme to document root
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === "dark") {
+      root.setAttribute("data-theme", "dark");
+    } else {
+      root.removeAttribute("data-theme");
+    }
     localStorage.setItem("theme", theme);
   }, [theme]);
 
   useEffect(() => {
-    const handleOutsideClick = (event) => {
-      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target)) {
+    const handleClickOutside = (event) => {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(event.target)
+      ) {
         setIsSearchOpen(false);
       }
-      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+
+      if (
+        notificationRef.current &&
+        !notificationRef.current.contains(event.target)
+      ) {
         setIsNotificationOpen(false);
       }
+
       if (messageRef.current && !messageRef.current.contains(event.target)) {
         setIsMessageOpen(false);
       }
     };
 
-    document.addEventListener("mousedown", handleOutsideClick);
-    return () => document.removeEventListener("mousedown", handleOutsideClick);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const filteredSuggestions = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
-    if (!query) {
-      return SEARCH_ENTRIES.slice(0, 6);
-    }
-    return SEARCH_ENTRIES.filter((item) => {
-      const haystack = `${item.label} ${item.description ?? ""} ${item.to}`.toLowerCase();
-      return haystack.includes(query);
-    }).slice(0, 8);
-  }, [searchQuery]);
+  useEffect(() => {
+    setIsSearchOpen(false);
+    setSearchQuery("");
+    setActiveSuggestion(0);
+    setIsNotificationOpen(false);
+    setIsMessageOpen(false);
+  }, [location.pathname]);
 
   useEffect(() => {
     setActiveSuggestion(0);
-  }, [filteredSuggestions.length]);
+  }, [searchQuery]);
 
-  const toggleSidebar = () => setSidebarCollapsed((prev) => !prev);
-  const breadcrumbItems = useBreadcrumbs(location.pathname);
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setIsNotificationOpen(false);
+        setIsMessageOpen(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  const isActive = (path) => {
+    if (!path) return "";
+    const currentPath = location.pathname;
+    return currentPath === path || currentPath.startsWith(`${path}/`)
+      ? "active"
+      : "";
+  };
+
+  const suggestions = useMemo(() => {
+    const term = searchQuery.trim().toLowerCase();
+    if (!term) return [];
+    return NAV_ITEMS.filter(
+      (item) =>
+        item.label.toLowerCase().includes(term) ||
+        item.path.toLowerCase().includes(term)
+    ).slice(0, 7);
+  }, [searchQuery]);
+
+  const currentPageTitle = useMemo(() => {
+    const matchedNav = NAV_ITEMS.find((item) => {
+      if (item.path === "/admin") {
+        return location.pathname === item.path;
+      }
+      return (
+        location.pathname === item.path ||
+        location.pathname.startsWith(`${item.path}/`)
+      );
+    });
+
+    if (matchedNav) {
+      return matchedNav.label;
+    }
+
+    const segments = location.pathname.split("/").filter(Boolean).slice(-1);
+
+    if (!segments.length) return "Dashboard";
+
+    const formatted = segments[0]
+      .replace(/[-_]/g, " ")
+      .replace(/\b\w/g, (char) => char.toUpperCase());
+
+    return formatted;
+  }, [location.pathname]);
+
+  const breadcrumbItems = useMemo(() => {
+    const items = [{ label: "Admin", path: "/admin" }];
+
+    if (currentPageTitle && currentPageTitle !== "Dashboard") {
+      items.push({ label: currentPageTitle, path: location.pathname });
+    }
+
+    return items;
+  }, [currentPageTitle, location.pathname]);
 
   const handleSuggestionSelect = (item) => {
     if (!item) return;
+    navigate(item.path);
     setSearchQuery("");
     setIsSearchOpen(false);
-    navigate(item.to);
+    setActiveSuggestion(0);
+    if (window.innerWidth < 992) {
+      setSidebarCollapsed(true);
+    }
+  };
+
+  const handleSearchChange = (event) => {
+    const { value } = event.target;
+    setSearchQuery(value);
+    setIsSearchOpen(Boolean(value.trim()));
+  };
+
+  const handleSearchFocus = () => {
+    if (searchQuery.trim()) {
+      setIsSearchOpen(true);
+    }
   };
 
   const handleSearchKeyDown = (event) => {
-    if (!filteredSuggestions.length) return;
+    if (!suggestions.length) {
+      if (event.key === "Escape") {
+        setIsSearchOpen(false);
+      }
+      return;
+    }
+
     if (event.key === "ArrowDown") {
       event.preventDefault();
-      setActiveSuggestion((prev) => (prev + 1) % filteredSuggestions.length);
+      setActiveSuggestion((prev) => (prev + 1) % suggestions.length);
     } else if (event.key === "ArrowUp") {
       event.preventDefault();
-      setActiveSuggestion((prev) =>
-        prev === 0 ? filteredSuggestions.length - 1 : prev - 1
+      setActiveSuggestion(
+        (prev) => (prev - 1 + suggestions.length) % suggestions.length
       );
     } else if (event.key === "Enter") {
       event.preventDefault();
-      handleSuggestionSelect(filteredSuggestions[activeSuggestion]);
+      const target =
+        suggestions[Math.min(activeSuggestion, suggestions.length - 1)];
+      handleSuggestionSelect(target);
     } else if (event.key === "Escape") {
       setIsSearchOpen(false);
     }
   };
 
-  const handleSearchFocus = () => setIsSearchOpen(true);
+  const highlightLabel = (label) => {
+    const term = searchQuery.trim();
+    if (!term) return label;
 
-  const handleSearchChange = (event) => {
-    setSearchQuery(event.target.value);
-    setIsSearchOpen(true);
+    const lowerLabel = label.toLowerCase();
+    const lowerTerm = term.toLowerCase();
+    const matchIndex = lowerLabel.indexOf(lowerTerm);
+
+    if (matchIndex === -1) return label;
+
+    return (
+      <>
+        {label.slice(0, matchIndex)}
+        <mark>{label.slice(matchIndex, matchIndex + term.length)}</mark>
+        {label.slice(matchIndex + term.length)}
+      </>
+    );
   };
-
-  const handleClearSearch = () => {
-    setSearchQuery("");
-    setIsSearchOpen(false);
-  };
-
-  const toggleNotifications = () => {
-    setIsNotificationOpen((prev) => {
-      const next = !prev;
-      if (next) setIsMessageOpen(false);
-      return next;
-    });
-  };
-
-  const toggleMessages = () => {
-    setIsMessageOpen((prev) => {
-      const next = !prev;
-      if (next) setIsNotificationOpen(false);
-      return next;
-    });
-  };
-
-  const activeSuggestionId =
-    isSearchOpen && filteredSuggestions[activeSuggestion]
-      ? `suggestion-${sanitizeId(filteredSuggestions[activeSuggestion].to)}`
-      : undefined;
 
   return (
     <div className="dashboard-container">
-      <aside className={`sidebar ${sidebarCollapsed ? "collapsed" : ""}`} aria-label="Sidebar">
+      {/* Sidebar */}
+      <div className={`sidebar ${sidebarCollapsed ? "collapsed" : ""}`}>
         <div className="sidebar-header">
-          <h2 className="sidebar-title">EV Service</h2>
+          <h2>EV Service Admin</h2>
         </div>
         <ul>
           {NAV_ITEMS.map((item) => (
-            <li key={item.to}>
-              <NavLink
-                end={item.to === "/admin"}
-                to={item.to}
-                className={({ isActive }) => (isActive ? "active" : "")}
-              >
+            <li key={item.path}>
+              <Link to={item.path} className={isActive(item.path)}>
                 <i className={`bi ${item.icon}`} aria-hidden="true"></i>
                 <span>{item.label}</span>
-              </NavLink>
+              </Link>
             </li>
           ))}
         </ul>
-      </aside>
+      </div>
 
-      <div className="header">
+      {/* Overlay for small screens */}
+      <div
+        className={`sidebar-overlay ${sidebarCollapsed ? "" : "active"}`}
+        onClick={() => setSidebarCollapsed(true)}
+        aria-hidden="true"
+      />
+
+      {/* Header */}
+      <div className={`header ${sidebarCollapsed ? "full-width" : ""}`}>
         <div className="left-controls">
           <button
             className="toggle-sidebar"
             onClick={toggleSidebar}
             aria-label="Toggle sidebar"
-            type="button"
           >
-            <i className="bi bi-list" aria-hidden="true"></i>
+            ☰
           </button>
-          <Link to="/admin" className="app-brand" aria-label="Admin home">
-            <img src="/logo192.png" alt="Logo" />
+          <Link
+            to="/admin"
+            className="app-brand"
+            aria-label="CRM Management home"
+          >
+            <img src="/logo192.png" alt="CRM Management logo" />
           </Link>
           <div className="search-bar" ref={searchContainerRef}>
-            <i className="bi bi-search" aria-hidden="true"></i>
             <input
-              type="search"
-              placeholder="Search modules, pages, or actions..."
+              type="text"
+              placeholder="Tìm kiếm khách hàng, báo cáo, hoặc cài đặt..."
               value={searchQuery}
               onChange={handleSearchChange}
               onFocus={handleSearchFocus}
               onKeyDown={handleSearchKeyDown}
-              aria-label="Quick search"
+              aria-label="Tìm kiếm nhanh"
               aria-expanded={isSearchOpen}
-              aria-controls={SEARCH_SUGGESTIONS_ID}
-              aria-autocomplete="list"
-              aria-activedescendant={activeSuggestionId}
               aria-haspopup="listbox"
               role="combobox"
+              aria-autocomplete="list"
+              aria-controls={SEARCH_SUGGESTIONS_ID}
             />
-            {searchQuery && (
-              <button
-                type="button"
-                className="btn btn-sm btn-link"
-                onClick={handleClearSearch}
-                aria-label="Clear search"
-              >
-                <i className="bi bi-x-circle" aria-hidden="true"></i>
-              </button>
-            )}
-            {isSearchOpen && filteredSuggestions.length > 0 && (
+            {isSearchOpen && suggestions.length > 0 && (
               <ul
                 id={SEARCH_SUGGESTIONS_ID}
                 className="search-suggestions"
                 role="listbox"
               >
-                {filteredSuggestions.map((item, index) => (
+                {suggestions.map((item, index) => (
                   <li
-                    key={item.to}
-                    id={`suggestion-${sanitizeId(item.to)}`}
+                    key={item.path}
                     role="option"
-                    className={`search-suggestion ${index === activeSuggestion ? "active" : ""}`}
+                    className={`search-suggestion ${
+                      index === activeSuggestion ? "active" : ""
+                    }`}
                     aria-selected={index === activeSuggestion}
                     onMouseDown={(event) => {
                       event.preventDefault();
                       handleSuggestionSelect(item);
                     }}
-                    onMouseEnter={() => setActiveSuggestion(index)}
                   >
-                    <i className={`bi ${item.icon || "bi-search"}`} aria-hidden="true"></i>
+                    <i className={`bi ${item.icon}`} aria-hidden="true"></i>
                     <div className="search-suggestion__content">
                       <span className="search-suggestion__label">
-                        {highlightMatch(item.label, searchQuery)}
+                        {highlightLabel(item.label)}
                       </span>
-                      <span className="search-suggestion__path">{item.to}</span>
+                      <span className="search-suggestion__path">
+                        {item.path}
+                      </span>
                     </div>
-                    <span className="search-suggestion__hint">Enter</span>
+                    <span className="search-suggestion__hint">Enter ↵</span>
                   </li>
                 ))}
               </ul>
@@ -357,35 +389,70 @@ const AdminLayout = () => {
           </div>
         </div>
         <div className="header-center">
-          <AdminBreadcrumb items={breadcrumbItems} />
+          <nav className="page-trail" aria-label="Breadcrumb">
+            {breadcrumbItems.map((item, index) => {
+              const isLast = index === breadcrumbItems.length - 1;
+              return (
+                <span key={item.path} className="page-trail__segment">
+                  {index > 0 && (
+                    <i className="bi bi-chevron-right" aria-hidden="true"></i>
+                  )}
+                  {isLast ? (
+                    <span className="page-trail__current">{item.label}</span>
+                  ) : (
+                    <Link to={item.path} className="page-trail__link">
+                      {item.label}
+                    </Link>
+                  )}
+                </span>
+              );
+            })}
+          </nav>
         </div>
         <div className="user-profile">
-          <div className="header-quick-actions" role="toolbar" aria-label="Quick actions">
+          <div
+            className="header-quick-actions"
+            role="toolbar"
+            aria-label="Thông báo và tin nhắn"
+          >
             <div
-              className={`header-quick-action ${isNotificationOpen ? "is-open" : ""}`}
+              className={`header-quick-action ${
+                isNotificationOpen ? "is-open" : ""
+              }`}
               ref={notificationRef}
             >
               <button
                 type="button"
-                className={`header-quick-action-btn ${isNotificationOpen ? "active" : ""}`}
+                className={`header-quick-action-btn ${
+                  isNotificationOpen ? "active" : ""
+                }`}
                 aria-label={
                   notificationCount > 0
-                    ? `View ${notificationCount} notifications`
-                    : "View notifications"
+                    ? `Có ${notificationCount} thông báo mới`
+                    : "Xem thông báo"
                 }
                 title={
                   notificationCount > 0
-                    ? `${notificationCount} unread`
-                    : "No new notifications"
+                    ? `${notificationCount} thông báo chưa đọc`
+                    : "Không có thông báo mới"
                 }
                 aria-haspopup="dialog"
                 aria-expanded={isNotificationOpen}
                 aria-controls="header-notifications-panel"
-                onClick={toggleNotifications}
+                onClick={() => {
+                  setIsNotificationOpen((prev) => {
+                    const next = !prev;
+                    if (!prev) setIsMessageOpen(false);
+                    return next;
+                  });
+                }}
               >
                 <i className="bi bi-bell" aria-hidden="true"></i>
                 {notificationCount > 0 && (
-                  <span className="header-quick-action-badge" aria-hidden="true">
+                  <span
+                    className="header-quick-action-badge"
+                    aria-hidden="true"
+                  >
                     {notificationCount > 99 ? "99+" : notificationCount}
                   </span>
                 )}
@@ -395,12 +462,13 @@ const AdminLayout = () => {
                   className="header-popover"
                   id="header-notifications-panel"
                   role="dialog"
+                  aria-label="Thông báo mới"
                 >
                   <div className="header-popover__header">
-                    <span>Notifications</span>
+                    <span>Thông báo</span>
                     {notificationCount > 0 && (
                       <span className="header-popover__badge">
-                        {`${notificationCount} new`}
+                        {notificationCount} mới
                       </span>
                     )}
                   </div>
@@ -408,46 +476,70 @@ const AdminLayout = () => {
                     <ul className="header-popover__list">
                       {notifications.map((item) => (
                         <li key={item.id} className="header-popover__item">
-                          <i className={`bi ${item.icon}`} aria-hidden="true"></i>
+                          <i
+                            className={`bi ${item.icon}`}
+                            aria-hidden="true"
+                          ></i>
                           <div className="header-popover__item-body">
-                            <span className="header-popover__item-title">{item.title}</span>
-                            <span className="header-popover__item-desc">{item.description}</span>
-                            <time className="header-popover__item-meta">{item.time}</time>
+                            <span className="header-popover__item-title">
+                              {item.title}
+                            </span>
+                            <span className="header-popover__item-desc">
+                              {item.description}
+                            </span>
+                            <time className="header-popover__item-meta">
+                              {item.time}
+                            </time>
                           </div>
                         </li>
                       ))}
                     </ul>
                   ) : (
-                    <div className="header-popover__empty">All clear for now</div>
+                    <div className="header-popover__empty">
+                      Không có thông báo mới
+                    </div>
                   )}
                 </div>
               )}
             </div>
             <div
-              className={`header-quick-action ${isMessageOpen ? "is-open" : ""}`}
+              className={`header-quick-action ${
+                isMessageOpen ? "is-open" : ""
+              }`}
               ref={messageRef}
             >
               <button
                 type="button"
-                className={`header-quick-action-btn ${isMessageOpen ? "active" : ""}`}
+                className={`header-quick-action-btn ${
+                  isMessageOpen ? "active" : ""
+                }`}
                 aria-label={
                   messageCount > 0
-                    ? `View ${messageCount} messages`
-                    : "View messages"
+                    ? `Có ${messageCount} tin nhắn mới`
+                    : "Xem tin nhắn"
                 }
                 title={
                   messageCount > 0
-                    ? `${messageCount} unread`
-                    : "No new messages"
+                    ? `${messageCount} tin nhắn chưa đọc`
+                    : "Không có tin nhắn mới"
                 }
                 aria-haspopup="dialog"
                 aria-expanded={isMessageOpen}
                 aria-controls="header-messages-panel"
-                onClick={toggleMessages}
+                onClick={() => {
+                  setIsMessageOpen((prev) => {
+                    const next = !prev;
+                    if (!prev) setIsNotificationOpen(false);
+                    return next;
+                  });
+                }}
               >
                 <i className="bi bi-chat-dots" aria-hidden="true"></i>
                 {messageCount > 0 && (
-                  <span className="header-quick-action-badge" aria-hidden="true">
+                  <span
+                    className="header-quick-action-badge"
+                    aria-hidden="true"
+                  >
                     {messageCount > 99 ? "99+" : messageCount}
                   </span>
                 )}
@@ -457,12 +549,13 @@ const AdminLayout = () => {
                   className="header-popover"
                   id="header-messages-panel"
                   role="dialog"
+                  aria-label="Tin nhắn mới"
                 >
                   <div className="header-popover__header">
-                    <span>Messages</span>
+                    <span>Tin nhắn</span>
                     {messageCount > 0 && (
                       <span className="header-popover__badge">
-                        {`${messageCount} unread`}
+                        {messageCount} chưa đọc
                       </span>
                     )}
                   </div>
@@ -470,17 +563,28 @@ const AdminLayout = () => {
                     <ul className="header-popover__list">
                       {messages.map((item) => (
                         <li key={item.id} className="header-popover__item">
-                          <i className={`bi ${item.icon}`} aria-hidden="true"></i>
+                          <i
+                            className={`bi ${item.icon}`}
+                            aria-hidden="true"
+                          ></i>
                           <div className="header-popover__item-body">
-                            <span className="header-popover__item-title">{item.sender}</span>
-                            <span className="header-popover__item-desc">{item.excerpt}</span>
-                            <time className="header-popover__item-meta">{item.time}</time>
+                            <span className="header-popover__item-title">
+                              {item.sender}
+                            </span>
+                            <span className="header-popover__item-desc">
+                              {item.excerpt}
+                            </span>
+                            <time className="header-popover__item-meta">
+                              {item.time}
+                            </time>
                           </div>
                         </li>
                       ))}
                     </ul>
                   ) : (
-                    <div className="header-popover__empty">Inbox is up to date</div>
+                    <div className="header-popover__empty">
+                      Không có tin nhắn mới
+                    </div>
                   )}
                 </div>
               )}
@@ -490,12 +594,23 @@ const AdminLayout = () => {
             className="btn btn-sm btn-outline-secondary theme-toggle"
             onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
             type="button"
-            aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+            aria-label={
+              theme === "dark"
+                ? "Chuyển sang giao diện sáng"
+                : "Chuyển sang giao diện tối"
+            }
           >
-            <i className={`bi ${theme === "dark" ? "bi-sun" : "bi-moon"}`} aria-hidden="true"></i>
-            <span>{theme === "dark" ? "Light" : "Dark"}</span>
+            <i
+              className={`bi ${theme === "dark" ? "bi-sun" : "bi-moon"}`}
+              aria-hidden="true"
+            ></i>
+            <span>{theme === "dark" ? "Sáng" : "Tối"}</span>
           </button>
-          <button type="button" className="user-account" aria-label="Open user menu">
+          <button
+            type="button"
+            className="user-account"
+            aria-label="Mở menu tài khoản Admin"
+          >
             <span className="user-account__avatar" aria-hidden="true">
               <img src="https://via.placeholder.com/40" alt="" />
             </span>
@@ -508,7 +623,10 @@ const AdminLayout = () => {
         </div>
       </div>
 
-      <div className={`content-wrapper ${sidebarCollapsed ? "full-width" : ""}`}>
+      {/* Main Content */}
+      <div
+        className={`content-wrapper ${sidebarCollapsed ? "full-width" : ""}`}
+      >
         <Outlet />
       </div>
     </div>
