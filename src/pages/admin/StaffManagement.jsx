@@ -8,16 +8,16 @@ import './StaffManagement.css';
 // Mock seed to show UI without backend
 const MOCK_STAFF = [
   {
-    id: 1,
-    fullName: 'Quách Thành Đạt',
-    email: 'dat.nguyen@example.com',
-    role: 'tech',
+    id: 101,
+    fullName: 'Nguyễn Minh An',
+    email: 'an.nguyen@example.com',
+    role: 'admin',
     openTasks: 2,
     status: 'active',
     avatarUrl: 'https://i.pravatar.cc/64?u=an.nguyen@example.com',
   },
   {
-    id: 2,
+    id: 102,
     fullName: 'Trần Quốc Bảo',
     email: 'bao.tran@example.com',
     role: 'staff',
@@ -26,7 +26,7 @@ const MOCK_STAFF = [
     avatarUrl: 'https://i.pravatar.cc/64?u=bao.tran@example.com',
   },
   {
-    id: 3,
+    id: 103,
     fullName: 'Lê Thu Hà',
     email: 'ha.le@example.com',
     role: 'staff',
@@ -35,7 +35,7 @@ const MOCK_STAFF = [
     avatarUrl: 'https://i.pravatar.cc/64?u=ha.le@example.com',
   },
   {
-    id: 4,
+    id: 104,
     fullName: 'Phạm Anh Dũng',
     email: 'dung.pham@example.com',
     role: 'staff',
@@ -44,7 +44,7 @@ const MOCK_STAFF = [
     avatarUrl: 'https://i.pravatar.cc/64?u=dung.pham@example.com',
   },
   {
-    id: 5,
+    id: 105,
     fullName: 'Võ Quỳnh Như',
     email: 'nhu.vo@example.com',
     role: 'staff',
@@ -53,7 +53,7 @@ const MOCK_STAFF = [
     avatarUrl: 'https://i.pravatar.cc/64?u=nhu.vo@example.com',
   },
   {
-    id: 6,
+    id: 106,
     fullName: 'Đỗ Hải Nam',
     email: 'nam.do@example.com',
     role: 'staff',
@@ -91,7 +91,7 @@ const StaffModal = ({ open, mode, initial, onClose, onSubmit }) => {
   }, [initial, open]);
 
   if (!open) return null;
-  const title = mode === 'edit' ? 'Edit Staff' : 'Thêm nhân viên mới';
+  const title = mode === 'edit' ? 'Edit Staff' : 'Add Staff';
 
   const handleChange = (e) => {
     const { name, value } = e.target;
