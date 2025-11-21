@@ -5,14 +5,12 @@ import "./AdminLayout.css";
 
 const NAV_ITEMS = [
   { to: "/admin", label: "Dashboard", icon: "bi-speedometer2" },
-  { to: "/admin/vehicles", label: "Vehicles", icon: "bi-car-front" },
   { to: "/admin/customers", label: "Customers", icon: "bi-people" },
-  { to: "/admin/schedule", label: "Schedule", icon: "bi-calendar" },
-  { to: "/admin/maintenance", label: "Maintenance", icon: "bi-tools" },
+  { to: "/admin/work-orders", label: "Work Orders", icon: "bi-clipboard-check" },
   { to: "/admin/parts", label: "Parts", icon: "bi-boxes" },
-  { to: "/admin/staff", label: "Staff", icon: "bi-person-badge" },
+  { to: "/admin/technicians", label: "Technicians", icon: "bi-people-fill" },
   { to: "/admin/finance", label: "Finance", icon: "bi-graph-up" },
-  { to: "/admin/settings", label: "Settings", icon: "bi-gear" },
+  { to: "/admin/vehicles", label: "Vehicles", icon: "bi-car-front" },
 ];
 
 const SEARCH_ENTRIES = [

@@ -43,17 +43,14 @@
  */
 
 import axios from "axios";
-
-const API_BASE_URL =
-  process.env.REACT_APP_API_URL || "https://57013b70a404.ngrok-free.app/api";
+import { API_BASE_URL, DEFAULT_API_HEADERS } from "./config";
 
 // Tạo axios instance
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
   timeout: 30000, // Tăng lên 30s để xử lý appointment
   headers: {
-    "Content-Type": "application/json",
-    "ngrok-skip-browser-warning": "true",
+    ...DEFAULT_API_HEADERS,
   },
 });
 
@@ -149,8 +146,7 @@ axiosInstance.interceptors.response.use(
           { refreshToken },
           {
             headers: {
-              "Content-Type": "application/json",
-              "ngrok-skip-browser-warning": "true",
+              ...DEFAULT_API_HEADERS,
             },
           }
         );

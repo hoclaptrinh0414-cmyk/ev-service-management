@@ -33,7 +33,7 @@ const FancyButton = ({
         <span className="bottom-key-2" />
       </button>
 
-      <style jsx>{`
+      <style>{`
         .fancy-button {
           background-color: ${isDark ? 'transparent' : '#fff'};
           border: 2px solid ${isDark ? '#000' : '#007bff'};

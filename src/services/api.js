@@ -1,26 +1,53 @@
 // src/services/api.js - COMPLETE FILE - COPY TOÀN BỘ FILE NÀY
+import { API_BASE_URL, APP_BASE_URL, DEFAULT_API_HEADERS } from "./config";
+
 const API_CONFIG = {
-  baseURL:
-    process.env.REACT_APP_API_URL || "https://57013b70a404.ngrok-free.app/api",
-  timeout: 15000,
+  baseURL: API_BASE_URL,
+  timeout: 60000,
   headers: {
-    "Content-Type": "application/json",
-    "ngrok-skip-browser-warning": "true",
+    ...DEFAULT_API_HEADERS,
   },
 };
 
+const API_SOURCE_STORAGE_KEY = "apiBaseUrl";
+
 console.log("🔧 API Configuration:", {
-  baseURL: API_CONFIG.baseURL,
-  appURL: process.env.REACT_APP_APP_URL || "http://localhost:3000",
+  baseURL: API_BASE_URL,
+  appURL: APP_BASE_URL,
 });
 
 class UnifiedAPIService {
   constructor() {
     this.baseURL = API_CONFIG.baseURL;
     this.timeout = API_CONFIG.timeout;
+    this.ensureApiSourceSync();
+  }
+
+  ensureApiSourceSync() {
+    if (typeof window === "undefined") {
+      return true;
+    }
+
+    const storedBase = localStorage.getItem(API_SOURCE_STORAGE_KEY);
+    if (storedBase && storedBase !== API_BASE_URL) {
+      console.warn("⚠️ API base URL changed, clearing stored credentials", {
+        previous: storedBase,
+        current: API_BASE_URL,
+      });
+      this.clearAuth();
+      localStorage.setItem(API_SOURCE_STORAGE_KEY, API_BASE_URL);
+      return false;
+    }
+
+    if (!storedBase) {
+      localStorage.setItem(API_SOURCE_STORAGE_KEY, API_BASE_URL);
+    }
+
+    return true;
   }
 
   getHeaders(includeAuth = true) {
+    this.ensureApiSourceSync();
     const headers = { ...API_CONFIG.headers };
 
     if (includeAuth) {
@@ -468,8 +495,31 @@ class UnifiedAPIService {
   }
 
   // Legacy methods for backward compatibility
+  // ============ ADMIN VEHICLE METHODS ============
   async getCustomerVehicles(params = {}) {
-    return this.getMyVehicles();
+    const queryString = buildQueryString(params);
+    const response = await this.request(`/customer-vehicles${queryString}`);
+    return response;
+  }
+
+  async getCustomerVehicleDetail(vehicleId) {
+    const response = await this.request(`/customer-vehicles/${vehicleId}`);
+    return response;
+  }
+
+  async updateCustomerVehicle(vehicleId, vehicleData) {
+    const response = await this.request(`/customer-vehicles/${vehicleId}`, {
+      method: "PUT",
+      body: JSON.stringify(vehicleData),
+    });
+    return response;
+  }
+
+  async deleteCustomerVehicle(vehicleId) {
+    const response = await this.request(`/customer-vehicles/${vehicleId}`, {
+      method: "DELETE",
+    });
+    return response;
   }
 
   async getVehicle(vehicleId) {
@@ -867,6 +917,73 @@ class UnifiedAPIService {
     return response;
   }
 
+  // ============ INVENTORY METHODS ============
+  async getInventory(params = {}) {
+    const queryString = buildQueryString(params);
+    const response = await this.request(`/inventory${queryString}`);
+    return response;
+  }
+
+  async getInventoryItem(partId, serviceCenterId) {
+    const response = await this.request(`/inventory/part/${partId}/center/${serviceCenterId}`);
+    return response;
+  }
+
+  async getLowStockAlerts() {
+    const response = await this.request('/inventory/low-stock-alerts');
+    return response;
+  }
+
+  async getTotalValue() {
+    const response = await this.request('/inventory/total-value');
+    return response;
+  }
+
+  async reserveStock(data) {
+    const response = await this.request('/inventory/reserve', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return response;
+  }
+
+  async releaseStock(data) {
+    const response = await this.request('/inventory/release', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return response;
+  }
+
+  async createTransaction(data) {
+    const response = await this.request('/stock-transactions', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return response;
+  }
+
+  async getTransactions(params = {}) {
+    const queryString = buildQueryString(params);
+    const response = await this.request(`/stock-transactions${queryString}`);
+    return response;
+  }
+
+  async getTransaction(id) {
+    const response = await this.request(`/stock-transactions/${id}`);
+    return response;
+  }
+
+  async getRecentTransactions(partId) {
+    const response = await this.request(`/stock-transactions/part/${partId}/recent`);
+    return response;
+  }
+
+  async getMovementSummary() {
+    const response = await this.request('/stock-transactions/movement-summary');
+    return response;
+  }
+
   // ============ UTILITY METHODS ============
   isAuthenticated() {
     const token = localStorage.getItem("token");
@@ -897,6 +1014,7 @@ class UnifiedAPIService {
     localStorage.removeItem("user");
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
+    localStorage.removeItem(API_SOURCE_STORAGE_KEY);
     console.log("Auth data cleared from localStorage");
   }
 
@@ -904,6 +1022,7 @@ class UnifiedAPIService {
     localStorage.setItem("token", token);
     localStorage.setItem("user", JSON.stringify(user));
     localStorage.setItem("accessToken", token);
+    localStorage.setItem(API_SOURCE_STORAGE_KEY, API_BASE_URL);
     console.log("Auth data saved to localStorage");
   }
 
@@ -1186,8 +1305,14 @@ export const vehicleAPI = {
     apiService.updateVehicle(vehicleId, vehicleData),
   deleteVehicle: (vehicleId) => apiService.deleteVehicle(vehicleId),
   canDeleteVehicle: (vehicleId) => apiService.canDeleteVehicle(vehicleId),
-  // Legacy methods
+
+  // Admin methods
   getCustomerVehicles: (params) => apiService.getCustomerVehicles(params),
+  getCustomerVehicleDetail: (id) => apiService.getCustomerVehicleDetail(id),
+  updateCustomerVehicle: (id, data) => apiService.updateCustomerVehicle(id, data),
+  deleteCustomerVehicle: (id) => apiService.deleteCustomerVehicle(id),
+
+  // Legacy methods
   getVehicle: (vehicleId) => apiService.getVehicle(vehicleId),
 };
 
@@ -1274,6 +1399,21 @@ export const paymentAPI = {
     apiService.getPaymentByCode(paymentCode),
   getPaymentsByInvoice: (invoiceId) =>
     apiService.getPaymentsByInvoice(invoiceId),
+};
+
+// ============ INVENTORY API ============
+export const inventoryAPI = {
+  getInventory: (params) => apiService.getInventory(params),
+  getInventoryItem: (partId, serviceCenterId) => apiService.getInventoryItem(partId, serviceCenterId),
+  getLowStockAlerts: () => apiService.getLowStockAlerts(),
+  getTotalValue: () => apiService.getTotalValue(),
+  reserveStock: (data) => apiService.reserveStock(data),
+  releaseStock: (data) => apiService.releaseStock(data),
+  createTransaction: (data) => apiService.createTransaction(data),
+  getTransactions: (params) => apiService.getTransactions(params),
+  getTransaction: (id) => apiService.getTransaction(id),
+  getRecentTransactions: (partId) => apiService.getRecentTransactions(partId),
+  getMovementSummary: () => apiService.getMovementSummary(),
 };
 
 export const invoiceAPI = {

@@ -675,7 +675,10 @@ const CustomerManagement = () => {
       });
     } catch (error) {
       console.error("Không thể tải thống kê khách hàng", error);
-      setStatsError("Không thể tải thống kê khách hàng.");
+      const errorMessage = error.message.includes("timeout")
+        ? "Không thể tải thống kê: Server không phản hồi."
+        : "Không thể tải thống kê khách hàng.";
+      setStatsError(errorMessage);
     } finally {
       setStatsLoading(false);
     }
@@ -690,7 +693,10 @@ const CustomerManagement = () => {
       setMaintenanceCustomers(mapped);
     } catch (error) {
       console.error("Không thể tải danh sách khách cần bảo dưỡng", error);
-      setMaintenanceError("Không thể tải danh sách khách cần bảo dưỡng.");
+      const errorMessage = error.message.includes("timeout")
+        ? "Không thể tải danh sách bảo dưỡng: Server không phản hồi."
+        : "Không thể tải danh sách khách cần bảo dưỡng.";
+      setMaintenanceError(errorMessage);
       setMaintenanceCustomers([]);
     }
   };
@@ -801,9 +807,10 @@ const CustomerManagement = () => {
       if (!initialLoadComplete) {
         setCustomers([]);
       }
-      setListError(
-        error?.message ?? "Không thể tải danh sách khách hàng từ server."
-      );
+      const errorMessage = error.message.includes("timeout")
+        ? "Lỗi tải danh sách khách hàng: Server không phản hồi."
+        : error?.message ?? "Không thể tải danh sách khách hàng từ server.";
+      setListError(errorMessage);
     } finally {
       setListLoading(false);
     }
@@ -1231,12 +1238,20 @@ const CustomerManagement = () => {
               </thead>
               <tbody>
                 {showInitialLoader ? (
-                  <tr>
-                    <td colSpan={9} className="text-center text-muted">
-                      <div className="loading-spinner" />
-                      Đang tải dữ liệu khách hàng...
-                    </td>
-                  </tr>
+                  Array.from({ length: skeletonRowCount }).map((_, idx) => (
+                    <tr key={`skeleton-${idx}`}>
+                      <td colSpan={9} className="p-0">
+                        <div className="skeleton-row-full">
+                          <span className="skeleton-block skeleton-block--medium" />
+                          <span className="skeleton-block skeleton-block--large" />
+                          <span className="skeleton-block" />
+                          <span className="skeleton-block" />
+                          <span className="skeleton-block" />
+                          <span className="skeleton-block" />
+                        </div>
+                      </td>
+                    </tr>
+                  ))
                 ) : customers.length ? (
                   customers.map((customer, index) => {
                     const resolvedId = resolveCustomerId(customer, `customer-${index}`);
@@ -1964,6 +1979,43 @@ const CustomerManagement = () => {
 
         .toast-close:hover {
           color: var(--brand-text);
+        }
+
+        .skeleton-row-full {
+          display: flex;
+          align-items: center;
+          padding: 1.25rem 1rem;
+          gap: 1rem;
+          width: 100%;
+        }
+
+        .skeleton-block {
+          background: linear-gradient(
+            90deg,
+            #f0f0f0 25%,
+            #e0e0e0 50%,
+            #f0f0f0 75%
+          );
+          background-size: 200% 100%;
+          animation: skeleton-loading 1.5s infinite linear;
+          border-radius: 6px;
+          height: 1.25rem;
+          flex: 1;
+        }
+        .skeleton-block--medium {
+          flex-basis: 15%;
+        }
+        .skeleton-block--large {
+          flex-basis: 25%;
+        }
+
+        @keyframes skeleton-loading {
+          0% {
+            background-position: 200% 0;
+          }
+          100% {
+            background-position: -200% 0;
+          }
         }
 
         @media (max-width: 992px) {

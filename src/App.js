@@ -59,6 +59,9 @@ import ServiceSchedule from "./pages/admin/ServiceSchedule";
 import MaintenanceProgress from "./pages/admin/MaintenanceProgress";
 import PartsInventory from "./pages/admin/PartsInventory";
 import StaffManagement from "./pages/admin/StaffManagement";
+import WorkOrderManagement from "./pages/admin/WorkOrderManagement";
+import TechnicianManagement from "./pages/admin/TechnicianManagement";
+import FinancialReports from "./pages/admin/FinancialReports";
 
 // Create React Query client
 const queryClient = new QueryClient({
@@ -81,157 +84,154 @@ function App() {
               <Router>
                 <div className="App">
                   <Routes>
-          {/* Redirect root to login */}
-          <Route path="/" element={<Navigate to="/login" replace />} />
+                    {/* Redirect root to login */}
+                    <Route path="/" element={<Navigate to="/login" replace />} />
 
-          {/* Auth routes */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/reset-password-success" element={<ResetPasswordSuccess />} />
-          <Route path="/verify-email" element={<EmailVerificationPage />} />
-          <Route path="/resend-verification" element={<ResendVerification />} />
+                    {/* Auth routes */}
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/register" element={<Register />} />
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
+                    <Route path="/reset-password-success" element={<ResetPasswordSuccess />} />
+                    <Route path="/verify-email" element={<EmailVerificationPage />} />
+                    <Route path="/resend-verification" element={<ResendVerification />} />
 
-          {/* Test routes */}
-          <Route path="/test-password-reset" element={<PasswordResetTest />} />
-          <Route path="/api-debug" element={<APIDebug />} />
+                    {/* Test routes */}
+                    <Route path="/test-password-reset" element={<PasswordResetTest />} />
+                    <Route path="/api-debug" element={<APIDebug />} />
 
-          {/* Protected routes - Customer */}
-          <Route path="/services" element={<Services />} />
+                    {/* Protected routes - Customer */}
+                    <Route path="/services" element={<Services />} />
 
-          <Route
-            path="/home"
-            element={
-              <ProtectedRoute>
-                <Home />
-              </ProtectedRoute>
-            }
-          />
+                    <Route
+                      path="/home"
+                      element={
+                        <ProtectedRoute>
+                          <Home />
+                        </ProtectedRoute>
+                      }
+                    />
 
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <CustomerDashboard />
-              </ProtectedRoute>
-            }
-          />
+                    <Route
+                      path="/dashboard"
+                      element={
+                        <ProtectedRoute>
+                          <CustomerDashboard />
+                        </ProtectedRoute>
+                      }
+                    />
 
-          <Route
-            path="/register-vehicle"
-            element={
-              <ProtectedRoute>
-                <RegisterVehicle />
-              </ProtectedRoute>
-            }
-          />
+                    <Route
+                      path="/register-vehicle"
+                      element={
+                        <ProtectedRoute>
+                          <RegisterVehicle />
+                        </ProtectedRoute>
+                      }
+                    />
 
-          <Route
-            path="/track-reminder"
-            element={
-              <ProtectedRoute>
-                <TrackReminder />
-              </ProtectedRoute>
-            }
-          />
+                    <Route
+                      path="/track-reminder"
+                      element={
+                        <ProtectedRoute>
+                          <TrackReminder />
+                        </ProtectedRoute>
+                      }
+                    />
 
-          <Route
-            path="/schedule-service"
-            element={
-              <ProtectedRoute>
-                <ScheduleServiceNew />
-              </ProtectedRoute>
-            }
-          />
+                    <Route
+                      path="/schedule-service"
+                      element={
+                        <ProtectedRoute>
+                          <ScheduleServiceNew />
+                        </ProtectedRoute>
+                      }
+                    />
 
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            }
-          />
+                    <Route
+                      path="/profile"
+                      element={
+                        <ProtectedRoute>
+                          <Profile />
+                        </ProtectedRoute>
+                      }
+                    />
 
-          <Route
-            path="/my-appointments"
-            element={
-              <ProtectedRoute>
-                <MyAppointments />
-              </ProtectedRoute>
-            }
-          />
+                    <Route
+                      path="/my-appointments"
+                      element={
+                        <ProtectedRoute>
+                          <MyAppointments />
+                        </ProtectedRoute>
+                      }
+                    />
 
-          <Route
-            path="/my-subscriptions"
-            element={
-              <ProtectedRoute>
-                <MySubscriptions />
-              </ProtectedRoute>
-            }
-          />
+                    <Route
+                      path="/my-subscriptions"
+                      element={
+                        <ProtectedRoute>
+                          <MySubscriptions />
+                        </ProtectedRoute>
+                      }
+                    />
 
-          <Route
-            path="/packages"
-            element={
-              <ProtectedRoute>
-                <Packages />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/payment/callback" element={<PaymentCallback />} />
-          <Route path="/products/individual" element={<ProductIndividual />} />
-          <Route path="/products/combo" element={<ProductCombo />} />
-          <Route
-            path="/staff"
-            element={
-              <ProtectedRoute requireRole={["staff", "admin"]}>
-                <StaffLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<Navigate to="/staff/appointments" replace />} />
-            <Route path="appointments" element={<StaffAppointments />} />
-            <Route path="checkin" element={<StaffCheckIn />} />
-            <Route path="work-orders" element={<StaffWorkOrders />} />
-            <Route path="settings" element={<StaffSettings />} />
-          </Route>
+                    <Route
+                      path="/packages"
+                      element={
+                        <ProtectedRoute>
+                          <Packages />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route path="/payment/callback" element={<PaymentCallback />} />
+                    <Route path="/products/individual" element={<ProductIndividual />} />
+                    <Route path="/products/combo" element={<ProductCombo />} />
 
-          {/* Admin routes */}
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute requireRole={["admin", "staff"]}>
-                <AdminLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<AdminDashboard />} />
-            <Route path="vehicles" element={<VehicleManagement />} />
-            <Route path="customers" element={<CustomerManagement />} />
-            <Route path="schedule" element={<ServiceSchedule />} />
-            <Route path="maintenance" element={<MaintenanceProgress />} />
-            <Route path="parts" element={<PartsInventory />} />
-            <Route path="staff" element={<StaffManagement />} />
-            <Route
-              path="finance"
-              element={
-                <div className="placeholder">
-                  Financial Report - Coming Soon
-                </div>
-              }
-            />
-            <Route
-              path="settings"
-              element={
-                <div className="placeholder">Settings - Coming Soon</div>
-              }
-            />
-          </Route>
+                    {/* Staff routes */}
+                    <Route
+                      path="/staff"
+                      element={
+                        <ProtectedRoute requireRole={["staff", "admin"]}>
+                          <StaffLayout />
+                        </ProtectedRoute>
+                      }
+                    >
+                      <Route index element={<Navigate to="/staff/appointments" replace />} />
+                      <Route path="appointments" element={<StaffAppointments />} />
+                      <Route path="checkin" element={<StaffCheckIn />} />
+                      <Route path="work-orders" element={<StaffWorkOrders />} />
+                      <Route path="settings" element={<StaffSettings />} />
+                    </Route>
 
-          {/* Catch all route */}
-                  <Route path="*" element={<Navigate to="/login" replace />} />
+                    {/* Admin routes */}
+                    <Route
+                      path="/admin"
+                      element={
+                        <ProtectedRoute requireRole={["admin", "staff"]}>
+                          <AdminLayout />
+                        </ProtectedRoute>
+                      }
+                    >
+                      <Route index element={<AdminDashboard />} />
+                      <Route path="vehicles" element={<VehicleManagement />} />
+                      <Route path="customers" element={<CustomerManagement />} />
+                      <Route path="schedule" element={<ServiceSchedule />} />
+                      <Route path="maintenance" element={<MaintenanceProgress />} />
+                      <Route path="parts" element={<PartsInventory />} />
+                      <Route path="staff" element={<StaffManagement />} />
+                      <Route path="work-orders" element={<WorkOrderManagement />} />
+                      <Route path="technicians" element={<TechnicianManagement />} />
+                      <Route path="finance" element={<FinancialReports />} />
+                      <Route
+                        path="settings"
+                        element={
+                          <div className="placeholder">Settings - Coming Soon</div>
+                        }
+                      />
+                    </Route>
+
+                    {/* Catch all route */}
+                    <Route path="*" element={<Navigate to="/login" replace />} />
                   </Routes>
                   <ChatWidget />
                 </div>

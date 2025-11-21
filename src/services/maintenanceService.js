@@ -1,7 +1,6 @@
 // src/services/maintenanceService.js
 import axios from 'axios';
-
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5153/api';
+import { API_BASE_URL } from './config';
 
 export const maintenanceService = {
   // Get all maintenance services with pagination and filters
