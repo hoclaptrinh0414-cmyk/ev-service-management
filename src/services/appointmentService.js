@@ -259,16 +259,37 @@ export const appointmentService = {
    * Lấy khung giờ trống
    * GET /api/lookup/time-slots/available
    */
+  /**
+   * L???y khung gi??? tr??`ng
+   * GET /api/lookup/time-slots/available
+   */
   async getAvailableSlots(serviceCenterId, date) {
     try {
       const response = await lookupAPI.getAvailableTimeSlots(serviceCenterId, date);
-      console.log('✅ Get available time slots success:', response);
+      console.log('?o. Get available time slots success:', response);
       return response;
     } catch (error) {
-      console.error('❌ Get available time slots failed:', error);
+      console.error('??O Get available time slots failed:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Active package subscriptions for a vehicle
+   * GET /api/package-subscriptions/active-by-vehicle/{vehicleId}
+   */
+  async getActiveSubscriptionsByVehicle(vehicleId) {
+    try {
+      const response = await apiService.getActiveSubscriptionsByVehicle(vehicleId);
+      console.log('Get active subscriptions by vehicle success:', response);
+      return response;
+    } catch (error) {
+      console.error('Get active subscriptions by vehicle failed:', error);
       throw error;
     }
   }
 };
 
+
 export default appointmentService;
+

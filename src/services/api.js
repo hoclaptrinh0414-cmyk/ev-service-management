@@ -762,6 +762,17 @@ class UnifiedAPIService {
     return response;
   }
 
+  // 6.x Active subscriptions by vehicle
+  async getActiveSubscriptionsByVehicle(vehicleId) {
+    if (!vehicleId) {
+      throw new Error("Vehicle ID is required to fetch active subscriptions");
+    }
+    const response = await this.request(
+      `/package-subscriptions/active-by-vehicle/${vehicleId}`
+    );
+    return response;
+  }
+
 
   // 6.4. Time slots available (khung giờ trống)
   async getAvailableTimeSlots(serviceCenterId, date) {

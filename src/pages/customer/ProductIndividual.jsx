@@ -43,7 +43,7 @@ const buildCartPayload = (service) => {
 const ProductIndividual = () => {
   const navigate = useNavigate();
   const { addToCart, clearCart } = useCart();
-  const { bookingState } = useSchedule();
+  const { bookingState, saveBookingState } = useSchedule();
 
   const [services, setServices] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -180,6 +180,13 @@ const ProductIndividual = () => {
   const handleBookNow = () => {
     const cartItem = buildCartItem();
     if (!cartItem) return;
+    if (selectedVehicleId) {
+      saveBookingState({
+        currentStep: 2, // skip vehicle step
+        selectedVehicleId,
+        selectedServiceIds: [cartItem.serviceId],
+      });
+    }
     clearCart();
     addToCart(cartItem);
     toast.success(

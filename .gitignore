@@ -27,3 +27,7 @@ coverage/
 CON
 AUX
 NUL
+
+# Ignore documentation and text files
+*.md
+*.txt

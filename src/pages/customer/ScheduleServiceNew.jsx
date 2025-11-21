@@ -107,14 +107,8 @@ const ScheduleServiceNew = () => {
   };
 
   const resolveCartTotal = () => {
-    if (typeof getTotalPrice === 'function') {
-      return getTotalPrice();
-    }
-
     return cartItems.reduce((total, item) => {
-      const price = item.isPackage
-        ? (item.totalPriceAfterDiscount || item.basePrice || 0)
-        : (item.basePrice || 0);
+      const price = getCartItemUnitPrice(item);
       const quantity = item.isPackage ? 1 : item.quantity || 1;
       return total + (price * quantity);
     }, 0);
@@ -368,18 +362,23 @@ const ScheduleServiceNew = () => {
         servicesResponse = { data: [] };
       }
 
-      // Load subscriptions (optional - skip for now as API requires special permissions)
-      let subscriptionsResponse = { data: [] };
-      console.log('â­ï¸ Skipping subscriptions (optional feature, not available for all users)');
+            // Load subscriptions for selected vehicle to mark covered services
+      let subscriptions = [];
+      try {
+        const subsRes = await appointmentService.getActiveSubscriptionsByVehicle(selectedVehicleId);
+        subscriptions = Array.isArray(subsRes?.data) ? subsRes.data : Array.isArray(subsRes) ? subsRes : [];
+      } catch (err) {
+        console.warn('Subscriptions not loaded for vehicle (may be none)', err?.message);
+        subscriptions = [];
+      }
 
-      console.log('ðŸ”§ Services response:', servicesResponse);
-      console.log('ðŸ”§ Subscriptions response:', subscriptionsResponse);
+      console.log('Services response:', servicesResponse);
+      console.log('Subscriptions response:', subscriptions);
 
       const services = Array.isArray(servicesResponse?.data) ? servicesResponse.data : [];
-      const subscriptions = Array.isArray(subscriptionsResponse?.data) ? subscriptionsResponse.data : [];
 
-      console.log('ðŸ”§ Setting services:', services);
-      console.log('ðŸ”§ Setting subscriptions:', subscriptions);
+      console.log('Setting services:', services);
+      console.log('Setting subscriptions:', subscriptions);
 
       setAllServices(services);
       setActiveSubscriptions(subscriptions);
@@ -431,6 +430,19 @@ const ScheduleServiceNew = () => {
       }
     });
     setEstimatedCost(total);
+  };
+
+  const getCartItemUnitPrice = (item) => {
+    const base = item.isPackage
+      ? (item.totalPriceAfterDiscount || item.basePrice || 0)
+      : (item.basePrice || 0);
+    const serviceId = item.serviceId || item.id;
+    const covered = !item.isPackage && (
+      isServiceCoveredBySubscription(serviceId) ||
+      item.isIncluded === true ||
+      item.isIncludedFromPackage === true
+    );
+    return covered ? 0 : base;
   };
 
   // ============ NAVIGATION BETWEEN STEPS ============
@@ -578,7 +590,27 @@ const ScheduleServiceNew = () => {
       console.log('âœ… Appointment created:', { appointmentId, appointmentCode, invoiceId });
       toast.success(`Appointment created! Code: ${appointmentCode}`);
 
-      // Try to create payment intent
+      // If total cost is 0 -> skip payment intent
+      const cartAmount = resolveCartTotal();
+      if (cartAmount <= 0) {
+        setAppointmentData({
+          appointmentId,
+          appointmentCode,
+          invoiceId,
+          invoiceCode: appointmentResult?.invoiceCode || null,
+          paymentIntentId: null,
+          paymentId: null,
+          paymentCode: null,
+          paymentUrl: null,
+          amount: 0
+        });
+        setIsFreeAppointment(true);
+        setCurrentStep(5);
+        toast.success('Appointment is covered. No payment needed.');
+        return;
+      }
+
+// Try to create payment intent
       console.log('ðŸ’³ Checking if payment is required for appointment:', appointmentId);
       console.log('ðŸ’³ Payment method:', paymentMethod);
       console.log('ðŸ’³ Return URL:', paymentReturnUrl);
@@ -597,10 +629,10 @@ const ScheduleServiceNew = () => {
         }
 
         const resolvedAmount = paymentResult?.amount ?? estimatedCost ?? resolveCartTotal();
-        const requiresPayment = !!paymentResult?.paymentUrl && resolvedAmount > 0;
+        const requiresPayment = resolvedAmount > 0 && !!paymentResult?.paymentUrl;
 
         // Save appointment and payment data
-        setAppointmentData({
+        const newAppointmentData = {
           appointmentId,
           appointmentCode,
           invoiceId: paymentResult?.invoiceId || invoiceId,
@@ -610,20 +642,27 @@ const ScheduleServiceNew = () => {
           paymentCode: paymentResult?.paymentCode,
           paymentUrl: paymentResult?.paymentUrl,
           amount: resolvedAmount
-        });
+        };
+
+        setAppointmentData(newAppointmentData);
         if (paymentResult?.paymentCode) {
           localStorage.setItem('lastPaymentCode', paymentResult.paymentCode);
         }
 
-        setIsFreeAppointment(!requiresPayment);
+        // N?u không c?n thanh toán, xác nh?n luôn và k?t thúc
+        if (!requiresPayment || resolvedAmount <= 0) {
+          setIsFreeAppointment(true);
+          setCurrentStep(5);
+          toast.success('Appointment is covered. Finalizing your booking...');
+          handleConfirmFreeAppointment(newAppointmentData);
+          return;
+        }
+
+        setIsFreeAppointment(false);
 
         // Move to payment step
         setCurrentStep(5);
-        if (requiresPayment) {
-          toast.info('Please complete payment to confirm your appointment');
-        } else {
-          toast.success('Appointment is covered. Click Book Now to finalize your schedule.');
-        }
+        toast.info('Please complete payment to confirm your appointment');
 
       } catch (paymentError) {
         // Check if error is "no payment required" (free appointment)
@@ -742,7 +781,7 @@ const ScheduleServiceNew = () => {
   };
 
   const handlePayLater = () => {
-    toast.info('You can pay later at the counter or online in My Appointments.', {
+    toast.info("You can pay later at the counter or online in My Appointments.", {
       autoClose: 4000,
     });
     navigate('/my-appointments', {
@@ -751,9 +790,10 @@ const ScheduleServiceNew = () => {
     });
   };
 
-  const handleConfirmFreeAppointment = () => {
-    if (!appointmentData?.appointmentId) {
-      toast.error('Không tìm thấy thông tin cuộc hẹn để xác nhận. Vui lòng thử lại.');
+  const handleConfirmFreeAppointment = (dataOverride = null) => {
+    const target = dataOverride || appointmentData;
+    if (!target?.appointmentId) {
+      toast.error('Cannot find appointment info to confirm. Please try again.');
       return;
     }
 
@@ -767,8 +807,7 @@ const ScheduleServiceNew = () => {
       navigate('/my-appointments');
     }, 1200);
   };
-
-  // ============ RENDER HELPERS ============
+// ============ RENDER HELPERS ============
   const getEarliestBookingDate = () => {
     const today = new Date();
     return today.toISOString().split('T')[0];
@@ -938,6 +977,9 @@ const ScheduleServiceNew = () => {
                                 {availableTimeSlots.map((slot, index) => {
                                   const slotId = slot.timeSlotId || slot.slotId || slot.id;
                                   const isSelected = selectedTimeSlotId === slotId;
+                                  const isAvailable =
+                                    slot.isAvailable !== false &&
+                                    (slot.availableSlots === undefined || Number(slot.availableSlots) > 0);
 
                                   console.log(`ðŸ• Rendering slot ${index}:`, {
                                     timeSlotId: slot.timeSlotId,
@@ -951,7 +993,8 @@ const ScheduleServiceNew = () => {
                                   return (
                                     <div
                                       key={slotId || index}
-                                      className={`time-slot ${isSelected ? 'selected' : ''}`}
+                                      className={`time-slot ${isSelected ? 'selected' : ''} ${!isAvailable ? 'disabled-slot' : ''}`}
+                                      style={{ pointerEvents: isAvailable ? 'auto' : 'none', opacity: isAvailable ? 1 : 0.5 }}
                                       onClick={() => {
                                         console.log('ðŸ• Clicked slot:', { slotId, slot });
                                         // Toggle: if clicking the same slot, deselect it
@@ -1035,9 +1078,7 @@ const ScheduleServiceNew = () => {
                               {cartItems.map((item, index) => {
                                 const isPackage = item.isPackage;
                                 const itemName = isPackage ? item.packageName : item.serviceName;
-                                const itemPrice = isPackage
-                                  ? (item.totalPriceAfterDiscount || item.basePrice || 0)
-                                  : (item.basePrice || 0);
+                                const itemPrice = getCartItemUnitPrice(item);
 
                                 return (
                                   <div key={index} className="cart-item-preview">
@@ -1067,10 +1108,8 @@ const ScheduleServiceNew = () => {
                                   currency: 'VND'
                                 }).format(
                                   cartItems.reduce((total, item) => {
-                                    const price = item.isPackage
-                                      ? (item.totalPriceAfterDiscount || item.basePrice || 0)
-                                      : (item.basePrice || 0);
-                                    return total + (price * item.quantity);
+                                    const price = getCartItemUnitPrice(item);
+                                    return total + (price * (item.quantity || 1));
                                   }, 0)
                                 )}
                               </span>
@@ -1195,11 +1234,11 @@ const ScheduleServiceNew = () => {
                             <h6 className="mb-3"><i className="bi bi-receipt me-2"></i>Payment Summary</h6>
                             <div className="d-flex justify-content-between mb-2">
                               <span>Invoice Code:</span>
-                              <strong>{appointmentData.invoiceCode || 'â€”'}</strong>
+                              <strong>{appointmentData.invoiceCode || '-'}</strong>
                             </div>
                             <div className="d-flex justify-content-between mb-2">
                               <span>Payment Code:</span>
-                              <strong>{appointmentData.paymentCode || 'â€”'}</strong>
+                              <strong>{appointmentData.paymentCode || '-'}</strong>
                             </div>
                             <hr />
                             <div className="d-flex justify-content-between align-items-center">
@@ -1313,18 +1352,18 @@ const ScheduleServiceNew = () => {
                             ) : (
                               <button
                                 className="btn btn-lg btn-primary"
-                                onClick={handleConfirmFreeAppointment}
+                                onClick={() => handleConfirmFreeAppointment()}
                                 disabled={paymentProcessing}
                               >
                                 {paymentProcessing ? (
                                   <>
                                     <span className="spinner-border spinner-border-sm me-2"></span>
-                                    Booking...
+                                    Completing...
                                   </>
                                 ) : (
                                   <>
-                                    <i className="bi bi-calendar-check me-2"></i>
-                                    Book Now
+                                    <i className="bi bi-check2-circle me-2"></i>
+                                    Hoàn t?t
                                   </>
                                 )}
                               </button>
@@ -1430,4 +1469,19 @@ const ScheduleServiceNew = () => {
 };
 
 export default ScheduleServiceNew;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

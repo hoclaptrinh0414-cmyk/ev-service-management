@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../contexts/AuthContext';
 import ConfirmDialog from './ui/ConfirmDialog';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
@@ -79,9 +79,16 @@ const UserMenu = () => {
     setShowLogoutDialog(true);
   };
 
-  const handleConfirmLogout = () => {
-    logout(); // Use logout API from useAuth
-    navigate('/login');
+  const handleConfirmLogout = async () => {
+    try {
+      await logout(); // calls /api/auth/logout under the hood
+      navigate('/login', { replace: true });
+    } catch (err) {
+      console.error('Logout failed:', err);
+      navigate('/login', { replace: true });
+    } finally {
+      setShowLogoutDialog(false);
+    }
   };
 
   // Lấy chữ cái đầu của tên để làm avatar
