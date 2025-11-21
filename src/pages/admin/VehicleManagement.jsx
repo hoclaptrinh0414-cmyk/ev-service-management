@@ -374,7 +374,7 @@ const VehicleManagement = () => {
         </div>
       )}
 
-      <style jsx>{`
+  <style>{`
         .loading {
           text-align: center;
           padding: 3rem;

@@ -32,6 +32,7 @@ import APIDebug from "./components/APIDebug";
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/Dashboard";
 import VehicleManagement from "./pages/admin/VehicleManagement";
+import CustomerManagement from "./pages/admin/CustomerManagement";
 
 function App() {
   return (
@@ -40,7 +41,7 @@ function App() {
         <Routes>
           {/* Redirect root to login */}
           <Route path="/" element={<Navigate to="/login" replace />} />
-          
+
           {/* Auth routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -48,11 +49,11 @@ function App() {
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/verify-email" element={<EmailVerificationPage />} />
           <Route path="/resend-verification" element={<ResendVerification />} />
-          
+
           {/* Test routes */}
           <Route path="/test-password-reset" element={<PasswordResetTest />} />
           <Route path="/api-debug" element={<APIDebug />} />
-          
+
           {/* Protected routes - Customer */}
           <Route
             path="/home"
@@ -91,8 +92,8 @@ function App() {
           />
 
           {/* Admin routes */}
-          <Route 
-            path="/admin" 
+          <Route
+            path="/admin"
             element={
               <ProtectedRoute>
                 <AdminLayout />
@@ -101,36 +102,53 @@ function App() {
           >
             <Route index element={<AdminDashboard />} />
             <Route path="vehicles" element={<VehicleManagement />} />
-            <Route 
-              path="customers" 
-              element={<div className="placeholder">Customer Management - Coming Soon</div>} 
+            <Route path="customers" element={<CustomerManagement />} />
+            <Route
+              path="schedule"
+              element={
+                <div className="placeholder">
+                  Service Schedule - Coming Soon
+                </div>
+              }
             />
-            <Route 
-              path="schedule" 
-              element={<div className="placeholder">Service Schedule - Coming Soon</div>} 
+            <Route
+              path="maintenance"
+              element={
+                <div className="placeholder">
+                  Maintenance Progress - Coming Soon
+                </div>
+              }
             />
-            <Route 
-              path="maintenance" 
-              element={<div className="placeholder">Maintenance Progress - Coming Soon</div>} 
+            <Route
+              path="parts"
+              element={
+                <div className="placeholder">Parts Inventory - Coming Soon</div>
+              }
             />
-            <Route 
-              path="parts" 
-              element={<div className="placeholder">Parts Inventory - Coming Soon</div>} 
+            <Route
+              path="staff"
+              element={
+                <div className="placeholder">
+                  Staff Management - Coming Soon
+                </div>
+              }
             />
-            <Route 
-              path="staff" 
-              element={<div className="placeholder">Staff Management - Coming Soon</div>} 
+            <Route
+              path="finance"
+              element={
+                <div className="placeholder">
+                  Financial Report - Coming Soon
+                </div>
+              }
             />
-            <Route 
-              path="finance" 
-              element={<div className="placeholder">Financial Report - Coming Soon</div>} 
-            />
-            <Route 
-              path="settings" 
-              element={<div className="placeholder">Settings - Coming Soon</div>} 
+            <Route
+              path="settings"
+              element={
+                <div className="placeholder">Settings - Coming Soon</div>
+              }
             />
           </Route>
-          
+
           {/* Catch all route */}
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
