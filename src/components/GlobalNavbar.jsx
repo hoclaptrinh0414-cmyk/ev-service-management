@@ -13,19 +13,15 @@ const GlobalNavbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const navigateWithTransition = useNavigateWithTransition();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
-  // Luôn gọi hook (required by React hooks rules)
-  // Hook sẽ tự kiểm tra token bên trong
   const { notifications, markAsRead, dismissNotification } = useNotifications({
     enabled: isAuthenticated,
   });
 
-  // Hide navbar on auth pages and staff pages
   const hideNavbarPaths = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email', '/resend-verification'];
 
-  // Ẩn navbar cho tất cả trang staff
-  if (hideNavbarPaths.includes(location.pathname) || location.pathname.startsWith('/staff')) {
+  if (hideNavbarPaths.includes(location.pathname)) {
     return null;
   }
 
@@ -38,8 +34,70 @@ const GlobalNavbar = () => {
 
   const handleNavigateHome = (e) => {
     e.preventDefault();
-    navigateWithTransition('/home');
+    let homePath = '/';
+    if (isAuthenticated) {
+        switch (user.role) {
+            case 'admin':
+                homePath = '/admin';
+                break;
+            case 'staff':
+                homePath = '/staff';
+                break;
+            case 'technician':
+                homePath = '/technician';
+                break;
+            default:
+                homePath = '/home';
+        }
+    }
+    navigateWithTransition(homePath);
   };
+  
+  const getNavLinks = () => {
+    const commonLinks = [
+        { path: '/services', label: 'Services' },
+        { path: '/blog', label: 'Blog' },
+        { path: '/about', label: 'About' },
+        { path: '/contact', label: 'Contact' },
+    ];
+  
+    if (!isAuthenticated) {
+        return commonLinks;
+    }
+
+    switch (user.role) {
+        case 'admin':
+            return [
+                { path: '/admin', label: 'Dashboard' },
+                { path: '/admin/schedule', label: 'Schedule' },
+                { path: '/admin/customers', label: 'Customers' },
+                { path: '/admin/vehicles', label: 'Vehicles' },
+                { path: '/admin/staff', label: 'Staff' },
+                { path: '/admin/finance', label: 'Finance' },
+            ];
+        case 'staff':
+            return [
+                { path: '/staff/appointments', label: 'Appointments' },
+                { path: '/staff/work-orders', label: 'Work Orders' },
+                { path: '/staff/checkin', label: 'Check-In' },
+            ];
+        case 'technician':
+            return [
+                { path: '/technician', label: 'Dashboard' },
+                { path: '/technician/work-orders', label: 'My Work Orders' },
+            ];
+        default: // customer
+            return [
+                { path: '/home', label: 'Home' },
+                { path: '/my-appointments', label: 'Appointments' },
+                { path: '/schedule-service', label: 'Schedule Service' },
+                { path: '/services', label: 'Services' },
+                { path: '/blog', label: 'Blog' },
+            ];
+    }
+  };
+
+  const navLinks = getNavLinks();
 
   return (
     <nav className="navbar navbar-expand-lg static-navbar-custom global-navbar">
@@ -54,22 +112,27 @@ const GlobalNavbar = () => {
         {/* Center Menu (Desktop only) */}
         <div className="d-none d-lg-block navbar-col-center">
           <ul className="navbar-nav main-menu-minimal">
-            <li className="nav-item"><Link className="nav-link move" to="/services">SERVICES</Link></li>
-            <li className="nav-item"><a className="nav-link move" href="#">BLOG</a></li>
-            <li className="nav-item"><a className="nav-link move" href="#">ABOUT</a></li>
-            <li className="nav-item"><a className="nav-link move" href="#">CONTACT</a></li>
+            {navLinks.map(link => (
+              <li className="nav-item" key={link.path}>
+                  <Link className="nav-link move" to={link.path}>{link.label.toUpperCase()}</Link>
+              </li>
+            ))}
           </ul>
         </div>
 
         {/* Right Side: User Menu & Notifications */}
         <div className="nav-icons-minimal navbar-col-right d-flex align-items-center">
-          <UserMenu />
-          <NotificationDropdown
-            notifications={notifications}
-            onMarkRead={markAsRead}
-            onDismiss={dismissNotification}
-            onNotificationClick={handleNotificationClick}
-          />
+          {isAuthenticated && (
+            <>
+              <UserMenu />
+              <NotificationDropdown
+                notifications={notifications}
+                onMarkRead={markAsRead}
+                onDismiss={dismissNotification}
+                onNotificationClick={handleNotificationClick}
+              />
+            </>
+          )}
         </div>
 
         {/* Mobile Toggle */}
@@ -80,10 +143,11 @@ const GlobalNavbar = () => {
         {/* Mobile Menu */}
         <div className="collapse navbar-collapse" id="globalNavbarNav">
           <ul className="navbar-nav ms-auto text-center d-lg-none">
-            <li className="nav-item"><Link className="nav-link move" to="/services">SERVICES</Link></li>
-            <li className="nav-item"><a className="nav-link move" href="#">BLOG</a></li>
-            <li className="nav-item"><a className="nav-link move" href="#">ABOUT</a></li>
-            <li className="nav-item"><a className="nav-link move" href="#">CONTACT</a></li>
+            {navLinks.map(link => (
+              <li className="nav-item" key={link.path}>
+                <Link className="nav-link move" to={link.path}>{link.label.toUpperCase()}</Link>
+              </li>
+            ))}
           </ul>
         </div>
       </div>

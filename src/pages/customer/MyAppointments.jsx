@@ -1,14 +1,12 @@
 // src/pages/customer/MyAppointments.jsx
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import UserMenu from '../../components/UserMenu';
-import NotificationDropdown from '../../components/NotificationDropdown';
-import useNotifications from '../../hooks/useNotifications';
 import appointmentService from '../../services/appointmentService';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import '../Home.css';
 import './MyAppointments.css';
+import MainLayout from '../../components/layout/MainLayout';
 
 const statusMap = {
   pending: { color: 'warning', text: 'Pending confirmation', icon: 'clock-history' },
@@ -35,7 +33,6 @@ const canonicalStatus = (status) => {
 
 const MyAppointments = () => {
   const navigate = useNavigate();
-  const { notifications, markAsRead, dismissNotification } = useNotifications();
   const [appointments, setAppointments] = useState([]);
   const [filteredAppointments, setFilteredAppointments] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -298,82 +295,10 @@ const MyAppointments = () => {
     }
   };
 
-  const handleNotificationClick = (notification) => {
-    markAsRead(notification.id);
-    if (notification.type === 'appointment_reminder' && notification.appointmentId) {
-      navigate('/my-appointments');
-    }
-  };
-
   return (
-    <>
-      {/* Navbar */}
-      <nav className="navbar navbar-expand-lg navbar-custom scrolled">
-        <div className="container d-flex flex-column">
-          <div className="d-flex justify-content-between align-items-center w-100 top-navbar">
-            <form className="search-form">
-              <input
-                type="text"
-                className="form-control search-input"
-                placeholder="Tim kiem..."
-              />
-              <button type="submit" className="search-btn">
-                <i className="fas fa-search"></i>
-              </button>
-            </form>
-
-            <Link style={{ fontSize: '2rem' }} className="navbar-brand" to="/home">
-              Tesla
-            </Link>
-
-            <div className="nav-icons d-flex align-items-center">
-              <UserMenu />
-              <NotificationDropdown
-                notifications={notifications}
-                onMarkRead={markAsRead}
-                onDismiss={dismissNotification}
-                onNotificationClick={handleNotificationClick}
-              />
-            </div>
-          </div>
-
-          <div className="bottom-navbar">
-            <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-              <span className="navbar-toggler-icon"></span>
-            </button>
-
-            <div className="collapse navbar-collapse" id="navbarNav">
-              <ul className="navbar-nav w-100 justify-content-center">
-                <li className="nav-item">
-                  <Link className="nav-link move" to="/home">TRANG CHU</Link>
-                </li>
-                <li className="nav-item dropdown">
-                  <a className="nav-link dropdown-toggle move" href="#" role="button" data-bs-toggle="dropdown">
-                    DICH VU
-                  </a>
-                  <ul className="dropdown-menu">
-                    <li><Link className="dropdown-item" to="/my-appointments">Theo doi & Nhac nho</Link></li>
-                    <li><Link className="dropdown-item" to="/schedule-service">Dat lich dich vu</Link></li>
-                    <li><Link className="dropdown-item" to="/products/combo">Lich hen cua toi</Link></li>
-                  </ul>
-                </li>
-                <li className="nav-item">
-                  <a className="nav-link move" href="#">BLOG</a>
-                </li>
-                <li className="nav-item">
-                  <a className="nav-link move" href="#">GIOI THIEU</a>
-                </li>
-                <li className="nav-item">
-                  <a className="nav-link move" href="#">LIEN HE</a>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </nav>
-
+    <MainLayout>
       {/* Main Content */}
-      <section style={{ marginTop: '180px', minHeight: '60vh' }}>
+      <section style={{ marginTop: '20px', minHeight: '60vh' }}>
         <div className="container">
           <div className="d-flex flex-wrap gap-3 justify-content-between align-items-center mb-4">
             <div>
@@ -728,16 +653,7 @@ const MyAppointments = () => {
           </div>
         </div>
       )}
-
-      {/* Footer */}
-      <footer className="footer mt-5">
-        <div className="container">
-          <div className="footer-bottom">
-            <p>&copy; 2025 Tesla Viet Nam. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
-    </>
+    </MainLayout>
   );
 };
 

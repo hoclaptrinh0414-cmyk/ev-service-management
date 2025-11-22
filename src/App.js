@@ -40,6 +40,7 @@ import ProductIndividual from "./pages/customer/ProductIndividual";
 import ProductCombo from "./pages/customer/ProductCombo";
 import PaymentCallback from "./pages/payment/PaymentCallback";
 import Blog from "./pages/Blog";
+import BlogPost from "./pages/BlogPost";
 import ChatWidget from "./components/ChatWidget";
 
 // Import test components
@@ -130,6 +131,7 @@ function App() {
                     {/* Public routes */}
                     <Route path="/services" element={<Services />} />
                     <Route path="/blog" element={<Blog />} />
+                    <Route path="/blog/:postId" element={<BlogPost />} />
 
                     {/* Protected routes - Customer */}
                     <Route
