@@ -1,3 +1,7 @@
+// hiệu ứng hạt nền -> nhưng hiện tại không sử dụng được
+
+
+
 import { useEffect, useRef } from 'react';
 import { Renderer, Camera, Geometry, Program, Mesh } from 'ogl';
 

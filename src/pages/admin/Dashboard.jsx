@@ -7,7 +7,7 @@ import ProgressStat from "../../components/dashboard/ProgressStat";
 import TrendAreaChart from "../../components/dashboard/TrendAreaChart";
 import { motion } from "framer-motion";
 import DonutChart from "../../components/dashboard/DonutChart";
-import { appointmentsAPI, customersAPI, vehicleAPI } from "../../services/apiService";
+import { appointmentsAPI, customersAPI, vehicleAPI } from "../../services/api";
 
 const COLOR_PALETTE = [
   "#0d6efd",

@@ -12,7 +12,11 @@ export default function StaffLayout() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const menuItems = [
-    { path: "/staff/appointments", label: "Appointment", icon: "bi-speedometer2" },
+    {
+      path: "/staff/appointments",
+      label: "Appointment",
+      icon: "bi-speedometer2",
+    },
     { path: "/staff/work-orders", label: "Work Orders", icon: "bi-tools" },
   ];
 
@@ -26,7 +30,9 @@ export default function StaffLayout() {
   return (
     <div className="staff-layout">
       {/* Sidebar */}
-      <aside className={`staff-sidebar ${sidebarOpen ? 'expanded' : 'collapsed'}`}>
+      <aside
+        className={`staff-sidebar ${sidebarOpen ? "expanded" : "collapsed"}`}
+      >
         {/* Header - Click to toggle sidebar */}
         <div
           className="sidebar-header clickable-header"
@@ -64,7 +70,7 @@ export default function StaffLayout() {
               >
                 <Link
                   to={item.path}
-                  className={`nav-item ${isActive ? 'active' : ''}`}
+                  className={`nav-item ${isActive ? "active" : ""}`}
                   title={isCollapsed ? item.label : undefined}
                   aria-label={item.label}
                 >
@@ -83,16 +89,16 @@ export default function StaffLayout() {
         <div className="sidebar-footer">
           <div
             className="user-section clickable"
-            onClick={() => navigate('/staff/settings')}
+            onClick={() => navigate("/staff/settings")}
             title="Account Settings"
           >
-            <div className="user-avatar">
-              {user?.FullName?.[0] || "ST"}
-            </div>
+            <div className="user-avatar">{user?.FullName?.[0] || "ST"}</div>
             {sidebarOpen && (
               <div className="user-info">
                 <p className="user-name">{user?.FullName || "Staff Member"}</p>
-                <p className="user-email">{user?.Email || "staff@company.com"}</p>
+                <p className="user-email">
+                  {user?.Email || "staff@company.com"}
+                </p>
               </div>
             )}
           </div>

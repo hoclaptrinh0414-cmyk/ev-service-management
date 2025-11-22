@@ -1,6 +1,6 @@
 // src/pages/admin/VehicleManagement.jsx - HOÀN CHỈNH - THAY THẾ FILE CŨ
 import React, { useState, useEffect } from 'react';
-import { vehicleAPI } from '../../services/apiService';
+import { vehicleAPI } from '../../services/api';
 
 const VehicleManagement = () => {
   const [vehicles, setVehicles] = useState([]);
@@ -12,13 +12,16 @@ const VehicleManagement = () => {
   const [totalPages, setTotalPages] = useState(1);
   const pageSize = 10;
 
+  useEffect(() => {
+    fetchVehicles();
+  }, [currentPage, searchTerm, filterStatus]);
 
   const fetchVehicles = async () => {
     setLoading(true);
     setError('');
     
     try {
-      console.log('Fetching vehicles from API...');
+      console.log('🚗 Fetching vehicles from API...');
       
       // Tạo params cho API
       const params = {
@@ -36,11 +39,11 @@ const VehicleManagement = () => {
         params.maintenanceStatus = filterStatus;
       }
 
-      console.log('Request params:', params);
+      console.log('📋 Request params:', params);
 
       // GỌI API THẬT
       const response = await vehicleAPI.getCustomerVehicles(params);
-      console.log('API Response:', response);
+      console.log('✅ API Response:', response);
       
       // Xử lý response
       if (response.success && response.data) {
@@ -49,17 +52,17 @@ const VehicleManagement = () => {
         
         setVehicles(Array.isArray(vehicleData) ? vehicleData : []);
         setTotalPages(pages);
-        console.log(`Loaded ${vehicleData.length} vehicles`);
+        console.log(`✅ Loaded ${vehicleData.length} vehicles`);
       } else if (Array.isArray(response)) {
         setVehicles(response);
         setTotalPages(1);
-        console.log(`Loaded ${response.length} vehicles`);
+        console.log(`✅ Loaded ${response.length} vehicles`);
       } else {
         throw new Error('Invalid response format');
       }
 
     } catch (error) {
-      console.error('Error fetching vehicles:', error);
+      console.error('❌ Error fetching vehicles:', error);
       
       if (error.message === 'Network error - Cannot connect to server') {
         setError('Không thể kết nối đến server. Đang hiển thị dữ liệu mẫu.');
@@ -166,12 +169,6 @@ const VehicleManagement = () => {
     return '#dc3545';
   };
 
-  // Trigger data load on first mount and when filters/pagination change
-  useEffect(() => {
-    fetchVehicles();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, filterStatus, searchTerm]);
-
   if (loading) {
     return (
       <div className="loading">
@@ -186,7 +183,7 @@ const VehicleManagement = () => {
   return (
     <div className="vehicle-management">
       <div className="section-header">
-        <h2>Quản lý Xe Điện</h2>
+        <h2>🚗 Quản lý Xe Điện</h2>
         <button className="btn-add">
           <i className="bi bi-plus-circle me-2"></i>
           Thêm xe mới
@@ -274,15 +271,15 @@ const VehicleManagement = () => {
           <thead>
             <tr>
               <th>STT</th>
-              <th>Tên khách hàng</th>
-              <th>Model xe (Full)</th>
-              <th>Biển số</th>
-              <th>Sửa chữa lần cuối</th>
-              <th>Bảo dưỡng tiếp theo</th>
-              <th>Km đã chạy</th>
-              <th>Sức khỏe pin</th>
-              <th>Trạng thái</th>
-              <th>Thao tác</th>
+              <th>👤 Tên khách hàng</th>
+              <th>🚗 Model xe (Full)</th>
+              <th>🔖 Biển số</th>
+              <th>🔧 Sửa chữa lần cuối</th>
+              <th>📅 Bảo dưỡng tiếp theo</th>
+              <th>📏 Km đã chạy</th>
+              <th>🔋 Sức khỏe pin</th>
+              <th>📊 Trạng thái</th>
+              <th>⚙️ Thao tác</th>
             </tr>
           </thead>
           <tbody>

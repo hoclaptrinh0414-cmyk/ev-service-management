@@ -1,3 +1,6 @@
+// Thanh ngang có màu -> Tỷ lệ % hoàn thành
+
+
 import React from "react";
 
 const ProgressStat = ({ label, value = 70, color = "#000" }) => {

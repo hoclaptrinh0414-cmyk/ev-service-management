@@ -1,4 +1,4 @@
-// src/components/APIDebug.jsx - COPY TOÀN BỘ FILE NÀY
+// debug API - test API
 import React, { useState, useEffect } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';

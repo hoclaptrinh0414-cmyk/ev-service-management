@@ -1,3 +1,8 @@
+// Ô vuông lớn có số to -> Chỉ số quan trọng (KPI)
+
+
+
+
 import React from "react";
 
 const StatCard = ({

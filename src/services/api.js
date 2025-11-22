@@ -1,4 +1,5 @@
 // src/services/api.js - COMPLETE FILE - COPY TOÀN BỘ FILE NÀY
+
 const API_CONFIG = {
   baseURL:
     process.env.REACT_APP_API_URL || "https://57013b70a404.ngrok-free.app/api",
@@ -48,7 +49,7 @@ class UnifiedAPIService {
     };
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+    const timeoutId = setTimeout(() => controller.abort(), this.timeout); // nếu server trả lời quá lâu hủy request
     config.signal = controller.signal;
 
     try {
@@ -90,7 +91,10 @@ class UnifiedAPIService {
           response.status === 401 &&
           includeAuth &&
           retryWithRefresh &&
-          !(endpoint.startsWith("/auth/") || endpoint.startsWith("/customer-registration/"))
+          !(
+            endpoint.startsWith("/auth/") ||
+            endpoint.startsWith("/customer-registration/")
+          )
         ) {
           try {
             const newAccessToken = await this.refreshAccessToken();
@@ -103,7 +107,9 @@ class UnifiedAPIService {
         }
 
         const error = new Error(
-          (data && data.message) || data || `HTTP error! status: ${response.status}`
+          (data && data.message) ||
+            data ||
+            `HTTP error! status: ${response.status}`
         );
         error.response = { status: response.status, data };
         throw error;
@@ -590,13 +596,10 @@ class UnifiedAPIService {
     if (appointmentId === undefined || appointmentId === null) {
       throw new Error("Appointment ID is required to create payment");
     }
-    const response = await this.request(
-      `/appointments/${appointmentId}/pay`,
-      {
-        method: "POST",
-        body: JSON.stringify(paymentData),
-      }
-    );
+    const response = await this.request(`/appointments/${appointmentId}/pay`, {
+      method: "POST",
+      body: JSON.stringify(paymentData),
+    });
     return response;
   }
 
@@ -638,9 +641,7 @@ class UnifiedAPIService {
     if (invoiceId === undefined || invoiceId === null) {
       throw new Error("Invoice ID is required");
     }
-    const response = await this.request(
-      `/payments/by-invoice/${invoiceId}`
-    );
+    const response = await this.request(`/payments/by-invoice/${invoiceId}`);
     return response;
   }
 
@@ -761,7 +762,6 @@ class UnifiedAPIService {
     });
     return response;
   }
-
 
   // 6.4. Time slots available (khung giờ trống)
   async getAvailableTimeSlots(serviceCenterId, date) {
@@ -1283,8 +1283,7 @@ export const paymentAPI = {
     apiService.mockCompletePayment(paymentCode, gateway, success, amount),
   getPaymentByCodePublic: (paymentCode) =>
     apiService.getPaymentByCodePublic(paymentCode),
-  getPaymentByCode: (paymentCode) =>
-    apiService.getPaymentByCode(paymentCode),
+  getPaymentByCode: (paymentCode) => apiService.getPaymentByCode(paymentCode),
   getPaymentsByInvoice: (invoiceId) =>
     apiService.getPaymentsByInvoice(invoiceId),
 };
@@ -1295,44 +1294,364 @@ export const invoiceAPI = {
 };
 
 // ============ STAFF MANAGEMENT API ============
-// Generic REST wrapper matching required endpoints
+// Matching user-management endpoints from BE guide
+// Uses: GET /api/users, GET /api/users/{id}, PUT /api/users/{id}, DELETE /api/users/{id}
+// Create uses: POST /api/auth/register (AdminOnly)
 export const staffAPI = {
-  // GET /api/staff?search=&role=&status=&page=&pageSize=
-  list: (params = {}) => {
-    const queryString = buildQueryString(params);
-    return apiService.request(`/staff${queryString}`);
+  // GET /api/users - Lấy danh sách tất cả người dùng
+  list: async (params = {}) => {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value === undefined || value === null || value === "") return;
+      searchParams.append(key, value);
+    });
+    const queryString = searchParams.toString();
+
+    // Sử dụng đúng endpoint từ hướng dẫn BE
+    const response = await apiService.request(
+      `/users${queryString ? `?${queryString}` : ""}`
+    );
+
+    console.log("[staffAPI.list] Raw response:", response);
+
+    // BE trả về: { success: true, data: [...] }
+    let items = [];
+
+    if (response?.success && Array.isArray(response?.data)) {
+      // Case 1: { success: true, data: [...] }
+      items = response.data;
+    } else if (Array.isArray(response?.data)) {
+      // Case 2: { data: [...] }
+      items = response.data;
+    } else if (Array.isArray(response)) {
+      // Case 3: [...]
+      items = response;
+    } else if (response?.items) {
+      // Case 4: { items: [...] }
+      items = response.items;
+    }
+
+    console.log("[staffAPI.list] Extracted items count:", items.length);
+
+    // Normalize data structure
+    const normalize = (user) => ({
+      id: user?.userId ?? user?.id,
+      userId: user?.userId ?? user?.id,
+      username: user?.username,
+      fullName: user?.fullName || user?.name,
+      email: user?.email,
+      phoneNumber: user?.phoneNumber,
+      roleId: user?.roleId ?? user?.RoleId,
+      roleName: user?.roleName ?? user?.RoleName,
+      hireDate: user?.hireDate,
+      salary: user?.salary,
+      department: user?.department, // ✅ Giữ lại để hiển thị nếu cần
+      employeeCode: user?.employeeCode, // ✅ Giữ lại để hiển thị nếu cần
+      isActive:
+        user?.isActive !== undefined
+          ? user.isActive
+          : user?.status !== undefined
+          ? String(user.status).toLowerCase() !== "inactive"
+          : true,
+    });
+
+    const normalizedItems = items.map(normalize);
+    console.log("[staffAPI.list] Normalized items:", normalizedItems);
+
+    return {
+      items: normalizedItems,
+      total: response?.total ?? items.length,
+    };
   },
-  // GET /api/staff/:id
-  getById: (id) => {
-    if (id === undefined || id === null) throw new Error("Staff ID is required");
-    return apiService.request(`/staff/${id}`);
+
+  // GET /api/users/{id} - Lấy chi tiết một người dùng
+  getById: async (id) => {
+    if (id === undefined || id === null) throw new Error("User ID is required");
+    const response = await apiService.request(`/users/${id}`);
+    const user = response?.data ?? response;
+
+    // Normalize user data
+    return {
+      id: user?.userId ?? user?.id,
+      userId: user?.userId ?? user?.id,
+      username: user?.username,
+      fullName: user?.fullName || user?.name,
+      email: user?.email,
+      phoneNumber: user?.phoneNumber,
+      roleId: user?.roleId,
+      roleName: user?.roleName,
+      hireDate: user?.hireDate,
+      salary: user?.salary,
+      isActive: user?.isActive !== undefined ? user.isActive : true,
+    };
   },
-  // POST /api/staff
-  create: (data) =>
-    apiService.request(`/staff`, {
+
+  // POST /api/auth/register - Tạo người dùng mới (AdminOnly)
+  create: async (data) => {
+    const body = {
+      username: data.username,
+      password: data.password,
+      fullName: data.fullName,
+      email: data.email,
+      phoneNumber: data.phoneNumber || "",
+      roleId: Number(data.roleId),
+      hireDate: data.hireDate || new Date().toISOString().split("T")[0],
+      salary: Number(data.salary) || 0,
+    };
+
+    console.log("Creating user with data:", body);
+
+    return apiService.request(`/auth/register`, {
       method: "POST",
-      body: JSON.stringify(data),
-    }),
-  // PUT /api/staff/:id
-  update: (id, data) => {
-    if (id === undefined || id === null) throw new Error("Staff ID is required");
-    return apiService.request(`/staff/${id}`, {
+      body: JSON.stringify(body),
+    });
+  },
+
+  // PUT /api/users/{id} - Cập nhật thông tin người dùng
+  update: async (id, data) => {
+    if (id === undefined || id === null) throw new Error("User ID is required");
+
+    const body = {
+      fullName: data.fullName,
+      email: data.email,
+      phoneNumber: data.phoneNumber || "",
+      roleId: Number(data.roleId),
+      isActive: data.isActive !== undefined ? data.isActive : true,
+    };
+
+    // Chỉ gửi hireDate và salary nếu có giá trị
+    if (data.hireDate) {
+      body.hireDate = data.hireDate;
+    }
+    if (data.salary !== undefined && data.salary !== null) {
+      body.salary = Number(data.salary);
+    }
+
+    console.log(`Updating user ${id} with data:`, body);
+
+    return apiService.request(`/users/${id}`, {
       method: "PUT",
-      body: JSON.stringify(data),
+      body: JSON.stringify(body),
     });
   },
-  // DELETE /api/staff/:id
-  remove: (id) => {
-    if (id === undefined || id === null) throw new Error("Staff ID is required");
-    return apiService.request(`/staff/${id}`, { method: "DELETE" });
-  },
-  // PATCH /api/staff/:id/status
-  updateStatus: (id, status) => {
-    if (id === undefined || id === null) throw new Error("Staff ID is required");
-    return apiService.request(`/staff/${id}/status`, {
-      method: "PATCH",
-      body: JSON.stringify({ status }),
+
+  // DELETE /api/users/{id} - Xóa người dùng
+  remove: async (id) => {
+    if (id === undefined || id === null) throw new Error("User ID is required");
+
+    console.log(`Deleting user ${id}`);
+
+    return apiService.request(`/users/${id}`, {
+      method: "DELETE",
     });
+  },
+};
+
+// Financial Reports API - Quản lý báo cáo tài chính
+export const financialReportsAPI = {
+  // Revenue Reports - /api/financial-reports/revenue
+  getRevenue: async (params = {}) => {
+    const queryString = new URLSearchParams(
+      Object.entries(params).filter(
+        ([_, v]) => v !== undefined && v !== null && v !== ""
+      )
+    ).toString();
+    console.log("[financialReportsAPI.getRevenue] Params:", params);
+    const response = await apiService.request(
+      `/financial-reports/revenue${queryString ? `?${queryString}` : ""}`
+    );
+    console.log("[financialReportsAPI.getRevenue] Response:", response);
+    return response?.data || response;
+  },
+
+  getRevenueToday: async () => {
+    console.log("[financialReportsAPI.getRevenueToday] Calling API...");
+    const response = await apiService.request(
+      "/financial-reports/revenue/today"
+    );
+    console.log("[financialReportsAPI.getRevenueToday] Response:", response);
+    return response?.data || response;
+  },
+
+  getRevenueThisMonth: async () => {
+    console.log("[financialReportsAPI.getRevenueThisMonth] Calling API...");
+    const response = await apiService.request(
+      "/financial-reports/revenue/this-month"
+    );
+    console.log(
+      "[financialReportsAPI.getRevenueThisMonth] Response:",
+      response
+    );
+    return response?.data || response;
+  },
+
+  compareRevenue: async (params = {}) => {
+    const queryString = new URLSearchParams(
+      Object.entries(params).filter(
+        ([_, v]) => v !== undefined && v !== null && v !== ""
+      )
+    ).toString();
+    const response = await apiService.request(
+      `/financial-reports/revenue/compare${
+        queryString ? `?${queryString}` : ""
+      }`
+    );
+    return response?.data || response;
+  },
+
+  // Payment Reports - /api/financial-reports/payments
+  getPayments: async (params = {}) => {
+    const queryString = new URLSearchParams(
+      Object.entries(params).filter(
+        ([_, v]) => v !== undefined && v !== null && v !== ""
+      )
+    ).toString();
+    console.log("[financialReportsAPI.getPayments] Params:", params);
+    const response = await apiService.request(
+      `/financial-reports/payments${queryString ? `?${queryString}` : ""}`
+    );
+    console.log("[financialReportsAPI.getPayments] Response:", response);
+    return response?.data || response;
+  },
+
+  getPaymentsToday: async () => {
+    console.log("[financialReportsAPI.getPaymentsToday] Calling API...");
+    const response = await apiService.request(
+      "/financial-reports/payments/today"
+    );
+    console.log("[financialReportsAPI.getPaymentsToday] Response:", response);
+    return response?.data || response;
+  },
+
+  comparePaymentGateways: async (params = {}) => {
+    const queryString = new URLSearchParams(
+      Object.entries(params).filter(
+        ([_, v]) => v !== undefined && v !== null && v !== ""
+      )
+    ).toString();
+    const response = await apiService.request(
+      `/financial-reports/payments/gateway-comparison${
+        queryString ? `?${queryString}` : ""
+      }`
+    );
+    return response?.data || response;
+  },
+
+  // Invoice Reports - /api/financial-reports/invoices
+  getInvoices: async (params = {}) => {
+    const queryString = new URLSearchParams(
+      Object.entries(params).filter(
+        ([_, v]) => v !== undefined && v !== null && v !== ""
+      )
+    ).toString();
+    console.log("[financialReportsAPI.getInvoices] Params:", params);
+    const response = await apiService.request(
+      `/financial-reports/invoices${queryString ? `?${queryString}` : ""}`
+    );
+    console.log("[financialReportsAPI.getInvoices] Response:", response);
+    return response?.data || response;
+  },
+
+  getInvoicesThisMonth: async () => {
+    console.log("[financialReportsAPI.getInvoicesThisMonth] Calling API...");
+    const response = await apiService.request(
+      "/financial-reports/invoices/this-month"
+    );
+    console.log(
+      "[financialReportsAPI.getInvoicesThisMonth] Response:",
+      response
+    );
+    return response?.data || response;
+  },
+
+  getOutstandingInvoices: async (centerId) => {
+    const queryString = centerId ? `?centerId=${centerId}` : "";
+    console.log("[financialReportsAPI.getOutstandingInvoices] Calling API...");
+    const response = await apiService.request(
+      `/financial-reports/invoices/outstanding${queryString}`
+    );
+    console.log(
+      "[financialReportsAPI.getOutstandingInvoices] Response:",
+      response
+    );
+    return response?.data || response;
+  },
+
+  getDiscountAnalysis: async (params = {}) => {
+    const queryString = new URLSearchParams(
+      Object.entries(params).filter(
+        ([_, v]) => v !== undefined && v !== null && v !== ""
+      )
+    ).toString();
+    const response = await apiService.request(
+      `/financial-reports/invoices/discount-analysis${
+        queryString ? `?${queryString}` : ""
+      }`
+    );
+    return response?.data || response;
+  },
+};
+
+// General Reports API - /api/reports
+export const reportsAPI = {
+  // Revenue Report (Version 2) - /api/reports/revenue
+  getRevenue: async (params = {}) => {
+    const queryString = new URLSearchParams(
+      Object.entries(params).filter(
+        ([_, v]) => v !== undefined && v !== null && v !== ""
+      )
+    ).toString();
+    console.log("[reportsAPI.getRevenue] Params:", params);
+    const response = await apiService.request(
+      `/reports/revenue${queryString ? `?${queryString}` : ""}`
+    );
+    console.log("[reportsAPI.getRevenue] Response:", response);
+    return response?.data || response;
+  },
+
+  // Profit Report - /api/reports/profit
+  getProfit: async (params = {}) => {
+    const queryString = new URLSearchParams(
+      Object.entries(params).filter(
+        ([_, v]) => v !== undefined && v !== null && v !== ""
+      )
+    ).toString();
+    console.log("[reportsAPI.getProfit] Params:", params);
+    const response = await apiService.request(
+      `/reports/profit${queryString ? `?${queryString}` : ""}`
+    );
+    console.log("[reportsAPI.getProfit] Response:", response);
+    return response?.data || response;
+  },
+
+  // Popular Services - /api/reports/services-popular
+  getPopularServices: async (params = {}) => {
+    const queryString = new URLSearchParams(
+      Object.entries(params).filter(
+        ([_, v]) => v !== undefined && v !== null && v !== ""
+      )
+    ).toString();
+    console.log("[reportsAPI.getPopularServices] Params:", params);
+    const response = await apiService.request(
+      `/reports/services-popular${queryString ? `?${queryString}` : ""}`
+    );
+    console.log("[reportsAPI.getPopularServices] Response:", response);
+    return response?.data || response;
+  },
+
+  // Summary Reports
+  getToday: async () => {
+    console.log("[reportsAPI.getToday] Calling API...");
+    const response = await apiService.request("/reports/today");
+    console.log("[reportsAPI.getToday] Response:", response);
+    return response?.data || response;
+  },
+
+  getThisMonth: async () => {
+    console.log("[reportsAPI.getThisMonth] Calling API...");
+    const response = await apiService.request("/reports/this-month");
+    console.log("[reportsAPI.getThisMonth] Response:", response);
+    return response?.data || response;
   },
 };
 

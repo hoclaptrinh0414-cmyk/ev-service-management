@@ -13,6 +13,8 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import CheckIn from './CheckIn';
+import CreateAppointmentModal from './CreateAppointmentModal';
+import CancelUpdateAppointmentModal from './CancelUpdateAppointmentModal';
 
 const getLocalTodayISO = () => {
   const now = new Date();
@@ -103,6 +105,12 @@ export default function Appointments({ isDashboard = false }) {
   const [checkInPrompt, setCheckInPrompt] = useState({
     open: false,
     appointment: null,
+  });
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [cancelUpdateModal, setCancelUpdateModal] = useState({
+    show: false,
+    appointment: null,
+    mode: 'cancel', // 'cancel' or 'update'
   });
 
   // Added Logic Pagination
@@ -641,33 +649,60 @@ export default function Appointments({ isDashboard = false }) {
       )}
 
       {!isDashboard && (
-        <div className='service-center-filter'>
-          <label>Trung tâm:</label>
-          {serviceCenterLoading ? (
-            <span className='service-center-status'>Đang tải...</span>
-          ) : serviceCenters.length > 0 ? (
-            <select
-              value={serviceCenterId ?? ''}
-              onChange={handleServiceCenterChange}
-            >
-              {serviceCenters.map((center) => {
-                const centerId = center.centerId || center.serviceCenterId || center.id;
-                const centerName = center.centerName || center.name || center.serviceCenterName || center.centerCode || `Center ${centerId}`;
-                return (
-                  <option key={centerId} value={centerId}>
-                    {centerName}
-                  </option>
-                );
-              })}
-            </select>
-          ) : (
-            <span className='service-center-status empty'>
-              Không có trung tâm hoạt động
-            </span>
-          )}
-          {serviceCenterError && (
-            <p className='service-center-error'>{serviceCenterError}</p>
-          )}
+        <div className='service-center-filter' style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <label>Trung tâm:</label>
+            {serviceCenterLoading ? (
+              <span className='service-center-status'>Đang tải...</span>
+            ) : serviceCenters.length > 0 ? (
+              <select
+                value={serviceCenterId ?? ''}
+                onChange={handleServiceCenterChange}
+              >
+                {serviceCenters.map((center) => {
+                  const centerId = center.centerId || center.serviceCenterId || center.id;
+                  const centerName = center.centerName || center.name || center.serviceCenterName || center.centerCode || `Center ${centerId}`;
+                  return (
+                    <option key={centerId} value={centerId}>
+                      {centerName}
+                    </option>
+                  );
+                })}
+              </select>
+            ) : (
+              <span className='service-center-status empty'>
+                Không có trung tâm hoạt động
+              </span>
+            )}
+            {serviceCenterError && (
+              <p className='service-center-error'>{serviceCenterError}</p>
+            )}
+          </div>
+
+          <button
+            onClick={() => setShowCreateModal(true)}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 20px',
+              borderRadius: '25px',
+              border: 'none',
+              background: '#000',
+              color: '#fff',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: '500',
+              transition: 'all 0.2s ease',
+              whiteSpace: 'nowrap',
+              width: 'auto'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.background = '#333'}
+            onMouseOut={(e) => e.currentTarget.style.background = '#000'}
+          >
+            <i className="bi bi-plus-lg"></i>
+            Tạo lịch hẹn
+          </button>
         </div>
       )}
 
@@ -2077,6 +2112,26 @@ export default function Appointments({ isDashboard = false }) {
             display: none;
           }
       `}</style>
+
+      {/* Create Appointment Modal */}
+      <CreateAppointmentModal
+        show={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSuccess={() => {
+          fetchAppointments();
+        }}
+      />
+
+      {/* Cancel/Update Appointment Modal */}
+      <CancelUpdateAppointmentModal
+        show={cancelUpdateModal.show}
+        onClose={() => setCancelUpdateModal({ show: false, appointment: null, mode: 'cancel' })}
+        onSuccess={() => {
+          fetchAppointments();
+        }}
+        appointment={cancelUpdateModal.appointment}
+        mode={cancelUpdateModal.mode}
+      />
     </div>
   );
 }

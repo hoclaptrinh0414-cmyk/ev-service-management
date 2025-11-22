@@ -1,3 +1,6 @@
+// biểu đồ đường mini - đường gấp khúc nhỏ mờ -> Xu hướng tăng/giảm nhanh
+
+
 import React, { useMemo } from "react";
 
 // Sparkline with subtle gradient fill (no external deps)

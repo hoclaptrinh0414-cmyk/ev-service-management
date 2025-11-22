@@ -3,6 +3,9 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'react-toastify';
 import staffService from '../../services/staffService';
 import { useAuth } from '../../contexts/AuthContext';
+import TechnicianCandidatesModal from './TechnicianCandidatesModal';
+import AddServicesModal from './AddServicesModal';
+import DeliveryPaymentModal from './DeliveryPaymentModal';
 
 const resolveServiceCenterId = (user) =>
   user?.serviceCenterId ||
@@ -49,6 +52,9 @@ export default function WorkOrders() {
   const [existingQC, setExistingQC] = useState(null);
   const [canCustomerRate, setCanCustomerRate] = useState(false);
   const [qcLoading, setQcLoading] = useState(false);
+  const [showCandidatesModal, setShowCandidatesModal] = useState(false);
+  const [showAddServicesModal, setShowAddServicesModal] = useState(false);
+  const [deliveryPaymentModal, setDeliveryPaymentModal] = useState({ show: false, mode: 'validate' });
 
   const normalizeWorkOrdersResponse = useCallback(
     (response, fallbackPage) => {
@@ -950,6 +956,13 @@ export default function WorkOrders() {
                         <i className='bi bi-magic'></i>
                         Auto Assign
                       </button>
+                      <button
+                        className='btn-action primary'
+                        onClick={() => setShowCandidatesModal(true)}
+                      >
+                        <i className='bi bi-list-stars'></i>
+                        Chọn từ danh sách
+                      </button>
                       <select
                         className='select-technician'
                         onChange={(e) => handleManualAssign(e.target.value)}
@@ -968,6 +981,16 @@ export default function WorkOrders() {
                         ))}
                       </select>
                     </>
+                  )}
+
+                  {selectedWO.assignedTechnician && selectedWOStatus === 'inprogress' && (
+                    <button
+                      className='btn-action primary'
+                      onClick={() => setShowAddServicesModal(true)}
+                    >
+                      <i className='bi bi-plus-circle'></i>
+                      Thêm dịch vụ
+                    </button>
                   )}
 
                   {selectedWO.technicianId &&
@@ -1000,6 +1023,25 @@ export default function WorkOrders() {
                         </button>
                       </>
                     )}
+
+                  {selectedWOStatus === 'completed' && (
+                    <>
+                      <button
+                        className='btn-action primary'
+                        onClick={() => setDeliveryPaymentModal({ show: true, mode: 'validate' })}
+                      >
+                        <i className='bi bi-shield-check'></i>
+                        Kiểm tra bàn giao
+                      </button>
+                      <button
+                        className='btn-action primary'
+                        onClick={() => setDeliveryPaymentModal({ show: true, mode: 'payment' })}
+                      >
+                        <i className='bi bi-credit-card'></i>
+                        Ghi nhận thanh toán
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -1170,6 +1212,39 @@ export default function WorkOrders() {
           ) : null}
         </>
       )}
+
+      {/* Technician Candidates Modal */}
+      <TechnicianCandidatesModal
+        show={showCandidatesModal}
+        onClose={() => setShowCandidatesModal(false)}
+        onSelect={(tech) => {
+          handleManualAssign(tech.technicianId || tech.id);
+          setShowCandidatesModal(false);
+        }}
+        workOrder={selectedWO}
+        serviceCenterId={serviceCenterId}
+      />
+
+      {/* Add Services Modal */}
+      <AddServicesModal
+        show={showAddServicesModal}
+        onClose={() => setShowAddServicesModal(false)}
+        onSuccess={() => {
+          viewWorkOrderDetail(selectedWO?.workOrderId || selectedWO?.id);
+        }}
+        appointment={selectedWO}
+      />
+
+      {/* Delivery & Payment Modal */}
+      <DeliveryPaymentModal
+        show={deliveryPaymentModal.show}
+        onClose={() => setDeliveryPaymentModal({ show: false, mode: 'validate' })}
+        onSuccess={() => {
+          viewWorkOrderDetail(selectedWO?.workOrderId || selectedWO?.id);
+        }}
+        workOrder={selectedWO}
+        mode={deliveryPaymentModal.mode}
+      />
 
       <style>{`
         .workorders-page {

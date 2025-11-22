@@ -1,0 +1,178 @@
+.timeslots-page {
+  padding: 16px;
+}
+
+.page-head h1 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.page-head p {
+  margin: 4px 0 16px;
+  color: #666;
+}
+
+.panel {
+  background: #fff;
+  border-radius: 25px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.mode-switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.mode-switch select {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 25px;
+  font-size: 14px;
+}
+
+.filters,
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.form-grid.two-col {
+  grid-template-columns: repeat(2, minmax(240px, 1fr));
+}
+
+@media (max-width: 768px) {
+  .form-grid.two-col {
+    grid-template-columns: 1fr;
+  }
+}
+
+.panel label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 600;
+  color: #333;
+  font-size: 13px;
+}
+
+.panel input,
+.panel select {
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 25px;
+  font-size: 14px;
+}
+
+.filters .btn {
+  justify-self: center;
+}
+
+.panel .btn {
+  align-self: center;
+  justify-self: center;
+}
+
+.form-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.form-actions.centered {
+  justify-content: center;
+}
+
+.form-actions.inline {
+  justify-content: center;
+  gap: 12px;
+  align-items: center;
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.table-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.muted {
+  color: #999;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn {
+  padding: 10px 14px;
+  border-radius: 25px;
+  border: 1px solid #ddd;
+  background: #f8f8f8;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn:hover {
+  background: #efefef;
+}
+
+.btn.primary {
+  background: #121212;
+  color: #fff;
+  border-color: #121212;
+}
+
+.btn.danger {
+  background: #ffe8e8;
+  color: #c62828;
+  border-color: #ffc2c2;
+}
+
+.status {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.status.open {
+  background: #e7f5ee;
+  color: #0d7a37;
+}
+
+.status.blocked {
+  background: #ffecec;
+  color: #c62828;
+}
+
+.checkbox {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.empty {
+  text-align: center;
+  color: #888;
+}
