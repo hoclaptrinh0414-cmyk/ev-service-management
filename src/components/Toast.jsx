@@ -1,3 +1,7 @@
+// Thông báo nổi
+
+
+
 import React, { useEffect } from 'react';
 
 const Toast = ({ type = 'success', title, message, onClose, duration = 5000 }) => {

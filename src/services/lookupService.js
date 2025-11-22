@@ -1,16 +1,20 @@
-// src/services/lookupService.js
+//   
+
+
+
+
 import apiService, { lookupAPI } from './api';
 
 /**
  * Lookup Service
- * Cung c¥p các ph°¡ng théc tra céu dï liÇu theo tài liÇu CUSTOMER_API_ENDPOINTS.md
- * T¥t c£ endpoints Áu AllowAnonymous (không c§n token)
+ * Cung cï¿½p cï¿½c phï¿½ï¿½ng thï¿½c tra cï¿½u dï¿½ liï¿½u theo tï¿½i liï¿½u CUSTOMER_API_ENDPOINTS.md
+ * Tï¿½t cï¿½ endpoints ï¿½u AllowAnonymous (khï¿½ng cï¿½n token)
  */
 export const lookupService = {
-  // ============ 6. LOOKUP DATA - Dî LIÆU TRA CèU ============
+  // ============ 6. LOOKUP DATA - Dï¿½ LIï¿½U TRA Cï¿½U ============
 
   /**
-   * 6.1. Danh sách hãng xe
+   * 6.1. Danh sï¿½ch hï¿½ng xe
    * GET /api/lookup/car-brands
    */
   async getCarBrands() {
@@ -25,7 +29,7 @@ export const lookupService = {
   },
 
   /**
-   * 6.2. Danh sách model theo hãng
+   * 6.2. Danh sï¿½ch model theo hï¿½ng
    * GET /api/lookup/car-models/by-brand/{brandId}
    */
   async getCarModelsByBrand(brandId) {
@@ -40,7 +44,7 @@ export const lookupService = {
   },
 
   /**
-   * 6.3. Danh sách trung tâm dËch vå
+   * 6.3. Danh sï¿½ch trung tï¿½m dï¿½ch vï¿½
    * GET /api/lookup/service-centers
    */
   async getServiceCenters() {
@@ -55,7 +59,7 @@ export const lookupService = {
   },
 
   /**
-   * 6.4. Time slots available (khung giÝ trÑng)
+   * 6.4. Time slots available (khung giï¿½ trï¿½ng)
    * GET /api/lookup/time-slots/available
    */
   async getAvailableTimeSlots(serviceCenterId, date) {
@@ -70,7 +74,7 @@ export const lookupService = {
   },
 
   /**
-   * 6.5. Danh sách dËch vå
+   * 6.5. Danh sï¿½ch dï¿½ch vï¿½
    * GET /api/lookup/maintenance-services
    */
   async getMaintenanceServices() {
@@ -85,7 +89,7 @@ export const lookupService = {
   },
 
   /**
-   * 6.6. Danh sách gói b£o d°áng (public)
+   * 6.6. Danh sï¿½ch gï¿½i bï¿½o dï¿½ï¿½ng (public)
    * GET /api/maintenance-packages
    */
   async getMaintenancePackages(page = 1, pageSize = 10) {
@@ -100,7 +104,7 @@ export const lookupService = {
   },
 
   /**
-   * 6.7. Gói b£o d°áng phÕ bi¿n
+   * 6.7. Gï¿½i bï¿½o dï¿½ï¿½ng phï¿½ biï¿½n
    * GET /api/maintenance-packages/popular
    */
   async getPopularPackages(topCount = 5) {
@@ -115,7 +119,7 @@ export const lookupService = {
   },
 
   /**
-   * 6.8. Chi ti¿t gói b£o d°áng
+   * 6.8. Chi tiï¿½t gï¿½i bï¿½o dï¿½ï¿½ng
    * GET /api/maintenance-packages/{id}
    */
   async getPackageDetail(packageId) {
@@ -130,7 +134,7 @@ export const lookupService = {
   },
 
   /**
-   * 6.9. Lo¡i khách hàng (Customer Types)
+   * 6.9. Loï¿½i khï¿½ch hï¿½ng (Customer Types)
    * GET /api/customer-types
    */
   async getCustomerTypes() {
@@ -147,7 +151,7 @@ export const lookupService = {
   // ============ COMBINED HELPER METHODS ============
 
   /**
-   * L¥y t¥t c£ dï liÇu c§n thi¿t cho form ng ký xe
+   * Lï¿½y tï¿½t cï¿½ dï¿½ liï¿½u cï¿½n thiï¿½t cho form ng kï¿½ xe
    */
   async getVehicleRegistrationData() {
     try {
@@ -167,7 +171,7 @@ export const lookupService = {
   },
 
   /**
-   * L¥y t¥t c£ dï liÇu c§n thi¿t cho form ·t lËch
+   * Lï¿½y tï¿½t cï¿½ dï¿½ liï¿½u cï¿½n thiï¿½t cho form ï¿½t lï¿½ch
    */
   async getAppointmentBookingData() {
     try {
@@ -189,12 +193,12 @@ export const lookupService = {
   },
 
   /**
-   * L¥y models theo brand và cache k¿t qu£
+   * Lï¿½y models theo brand vï¿½ cache kï¿½t quï¿½
    */
   _modelCache: {},
   async getModelsWithCache(brandId) {
     if (this._modelCache[brandId]) {
-      console.log('=æ Using cached models for brand:', brandId);
+      console.log('=ï¿½ Using cached models for brand:', brandId);
       return this._modelCache[brandId];
     }
 
@@ -208,7 +212,7 @@ export const lookupService = {
    */
   clearCache() {
     this._modelCache = {};
-    console.log('>ù Lookup cache cleared');
+    console.log('>ï¿½ Lookup cache cleared');
   }
 };
 

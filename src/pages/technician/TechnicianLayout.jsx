@@ -11,9 +11,7 @@ export default function TechnicianLayout() {
   const [hoveredItem, setHoveredItem] = useState(null);
 
   const menuItems = [
-    { path: "/technician", label: "Dashboard", icon: "bi-speedometer2", exact: true },
-    { path: "/technician/work-orders", label: "My Work Orders", icon: "bi-tools" },
-    { path: "/technician/maintenance/1017", label: "Maintenance Jobs", icon: "bi-list-check" },
+    { path: "/technician/flow", label: "Daily Flow", icon: "bi-play-circle", exact: false },
   ];
 
   const handleLogout = () => {
@@ -33,9 +31,6 @@ export default function TechnicianLayout() {
         >
           {sidebarOpen && (
             <div className="brand">
-              <div className="brand-icon">
-                <i className="bi bi-wrench-adjustable-circle-fill"></i>
-              </div>
               <div className="brand-text">
                 <h5>Technician Portal</h5>
                 <p>Maintenance & Repair</p>
@@ -43,9 +38,7 @@ export default function TechnicianLayout() {
             </div>
           )}
           {!sidebarOpen && (
-            <div className="brand-icon-only">
-              <i className="bi bi-wrench-adjustable-circle-fill"></i>
-            </div>
+            <div className="brand-text-small">TP</div>
           )}
         </div>
 
@@ -115,13 +108,14 @@ export default function TechnicianLayout() {
           left: 0;
           top: 0;
           height: 100vh;
-          background: linear-gradient(180deg, #1a1a1a 0%, #2d2d2d 100%);
-          color: white;
+          background: #ffffff;
+          color: #1a1a1a;
           display: flex;
           flex-direction: column;
           transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
           z-index: 1000;
-          box-shadow: 4px 0 12px rgba(0, 0, 0, 0.15);
+          box-shadow: 2px 0 10px rgba(0, 0, 0, 0.08);
+          border-right: 1px solid #e5e5e5;
         }
 
         .tech-sidebar.expanded {
@@ -135,13 +129,13 @@ export default function TechnicianLayout() {
         /* Header */
         .sidebar-header {
           padding: 32px 24px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+          border-bottom: 1px solid #e5e5e5;
           cursor: pointer;
           transition: background 0.2s;
         }
 
         .sidebar-header:hover {
-          background: rgba(255, 255, 255, 0.05);
+          background: #f5f5f7;
         }
 
         .brand {
@@ -150,29 +144,12 @@ export default function TechnicianLayout() {
           gap: 16px;
         }
 
-        .brand-icon {
-          width: 48px;
-          height: 48px;
-          background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
-          border-radius: 14px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 26px;
-          box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
-        }
-
-        .brand-icon-only {
-          width: 48px;
-          height: 48px;
-          background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
-          border-radius: 14px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 26px;
-          margin: 0 auto;
-          box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+        .brand-text-small {
+          font-size: 18px;
+          font-weight: 700;
+          color: #111;
+          text-align: center;
+          width: 100%;
         }
 
         .brand-text h5 {
@@ -203,7 +180,7 @@ export default function TechnicianLayout() {
           padding: 16px 20px;
           margin-bottom: 8px;
           border-radius: 12px;
-          color: rgba(255, 255, 255, 0.7);
+          color: #1a1a1a;
           text-decoration: none;
           font-weight: 600;
           font-size: 15px;
@@ -227,8 +204,8 @@ export default function TechnicianLayout() {
         }
 
         .nav-item:hover {
-          background: rgba(255, 107, 53, 0.15);
-          color: #ff6b35;
+          background: #f5f5f5;
+          color: #111;
           transform: translateX(4px);
         }
 
@@ -241,9 +218,9 @@ export default function TechnicianLayout() {
         }
 
         .nav-item.active {
-          background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
-          color: white;
-          box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+          background: linear-gradient(135deg, #111 0%, #444 100%);
+          color: #fff;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
 
         .nav-item.active i {
@@ -253,7 +230,7 @@ export default function TechnicianLayout() {
         /* Footer */
         .sidebar-footer {
           padding: 20px 16px;
-          border-top: 1px solid rgba(255, 255, 255, 0.1);
+          border-top: 1px solid #e5e5e5;
         }
 
         .user-info-expanded {
@@ -261,13 +238,13 @@ export default function TechnicianLayout() {
           align-items: center;
           gap: 12px;
           padding: 12px;
-          background: rgba(255, 255, 255, 0.05);
+          background: #f5f5f7;
           border-radius: 12px;
         }
 
         .user-avatar {
           font-size: 36px;
-          color: #ff6b35;
+          color: #111;
         }
 
         .user-details {
@@ -283,7 +260,7 @@ export default function TechnicianLayout() {
 
         .user-role {
           font-size: 12px;
-          color: rgba(255, 255, 255, 0.5);
+          color: #666;
         }
 
         .logout-btn {
@@ -296,14 +273,14 @@ export default function TechnicianLayout() {
           align-items: center;
           justify-content: center;
           font-size: 18px;
-          color: rgba(255, 255, 255, 0.7);
+          color: #d32f2f;
           cursor: pointer;
           transition: all 0.2s;
         }
 
         .logout-btn:hover {
-          background: rgba(255, 107, 53, 0.2);
-          color: #ff6b35;
+          background: #f7d7d7;
+          color: #b71c1c;
         }
 
         .user-info-collapsed {
@@ -321,14 +298,14 @@ export default function TechnicianLayout() {
           align-items: center;
           justify-content: center;
           font-size: 20px;
-          color: rgba(255, 255, 255, 0.7);
+          color: #d32f2f;
           cursor: pointer;
           transition: all 0.2s;
         }
 
         .logout-btn-icon:hover {
-          background: rgba(255, 107, 53, 0.2);
-          color: #ff6b35;
+          background: #f7d7d7;
+          color: #b71c1c;
         }
 
         /* ===== MAIN CONTENT ===== */
@@ -357,12 +334,12 @@ export default function TechnicianLayout() {
         }
 
         .sidebar-nav::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.2);
+          background: rgba(0, 0, 0, 0.15);
           border-radius: 3px;
         }
 
         .sidebar-nav::-webkit-scrollbar-thumb:hover {
-          background: rgba(255, 255, 255, 0.3);
+          background: rgba(0, 0, 0, 0.25);
         }
       `}</style>
     </div>

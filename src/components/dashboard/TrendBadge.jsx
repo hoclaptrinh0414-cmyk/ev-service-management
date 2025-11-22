@@ -1,3 +1,7 @@
+// Nhãn nhỏ có mũi tên -> % tăng/giảm
+
+
+
 import React from "react";
 
 const TrendBadge = ({ value = "+5%", type = "up" }) => {

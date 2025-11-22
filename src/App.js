@@ -33,6 +33,20 @@ import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/Dashboard";
 import VehicleManagement from "./pages/admin/VehicleManagement";
 import CustomerManagement from "./pages/admin/CustomerManagement";
+import StaffManagement from "./pages/admin/StaffManagement";
+import FinancialReport from "./pages/admin/FinancialReport";
+import StaffLayout from "./pages/staff/StaffLayout";
+import StaffAppointments from "./pages/staff/Appointments";
+import StaffWorkOrders from "./pages/staff/WorkOrders";
+import StaffCheckIn from "./pages/staff/CheckIn";
+import StaffSettings from "./pages/staff/Settings";
+import TechnicianLayout from "./pages/technician/TechnicianLayout";
+import TechnicianDashboard from "./pages/technician/Dashboard";
+import TechnicianWorkOrders from "./pages/technician/MyWorkOrders";
+import TechnicianChecklist from "./pages/technician/MaintenanceChecklist";
+import TechnicianFlow from "./pages/technician/TechnicianFlow";
+import TimeSlots from "./pages/admin/TimeSlots";
+import CarBrands from "./pages/admin/CarBrands";
 
 function App() {
   return (
@@ -91,6 +105,53 @@ function App() {
             }
           />
 
+          {/* Staff routes */}
+          <Route
+            path="/staff"
+            element={
+              <ProtectedRoute requireRole="staff">
+                <StaffLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<StaffAppointments />} />
+            <Route path="appointments" element={<StaffAppointments />} />
+            <Route path="work-orders" element={<StaffWorkOrders />} />
+            <Route path="check-in" element={<StaffCheckIn />} />
+            <Route path="settings" element={<StaffSettings />} />
+          </Route>
+
+          {/* Staff routes */}
+          <Route
+            path="/staff"
+            element={
+              <ProtectedRoute requireRole="staff">
+                <StaffLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<StaffAppointments />} />
+            <Route path="appointments" element={<StaffAppointments />} />
+            <Route path="work-orders" element={<StaffWorkOrders />} />
+            <Route path="check-in" element={<StaffCheckIn />} />
+            <Route path="settings" element={<StaffSettings />} />
+          </Route>
+
+          {/* Technician routes */}
+          <Route
+            path="/technician"
+            element={
+              <ProtectedRoute requireRole="technician">
+                <TechnicianLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<TechnicianDashboard />} />
+            <Route path="work-orders" element={<TechnicianWorkOrders />} />
+            <Route path="checklist" element={<TechnicianChecklist />} />
+            <Route path="flow" element={<TechnicianFlow />} />
+          </Route>
+
           {/* Admin routes */}
           <Route
             path="/admin"
@@ -125,22 +186,10 @@ function App() {
                 <div className="placeholder">Parts Inventory - Coming Soon</div>
               }
             />
-            <Route
-              path="staff"
-              element={
-                <div className="placeholder">
-                  Staff Management - Coming Soon
-                </div>
-              }
-            />
-            <Route
-              path="finance"
-              element={
-                <div className="placeholder">
-                  Financial Report - Coming Soon
-                </div>
-              }
-            />
+            <Route path="staff" element={<StaffManagement />} />
+            <Route path="finance" element={<FinancialReport />} />
+            <Route path="time-slots" element={<TimeSlots />} />
+            <Route path="brands" element={<CarBrands />} />
             <Route
               path="settings"
               element={

@@ -137,11 +137,6 @@ const SocialIconsContainer = styled.div`
   display: flex;
   gap: 15px;
   margin-top: 10px;
-  padding: 15px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
 `;
 
 const SocialIcon = styled(motion.a)`
@@ -188,32 +183,6 @@ const Footer = () => {
 
   return (
     <FooterWrapper>
-      <CTASection>
-        <CTATitle
-           initial={{ opacity: 0, y: -20 }}
-           whileInView={{ opacity: 1, y: 0 }}
-           viewport={{ once: true, amount: 0.8 }}
-           transition={{ duration: 0.6 }}
-        >
-          Sẵn sàng cho kỷ nguyên dịch vụ xe điện?
-        </CTATitle>
-        <CTAButtonWrapper
-           initial={{ opacity: 0, scale: 0.8 }}
-           whileInView={{ opacity: 1, scale: 1 }}
-           viewport={{ once: true, amount: 0.8 }}
-           transition={{ duration: 0.6, delay: 0.2 }}
-        >
-          <Button 
-            type="primary" 
-            size="large" 
-            onClick={() => navigate('/schedule-service')}
-            ghost
-          >
-            Đặt lịch ngay
-          </Button>
-        </CTAButtonWrapper>
-      </CTASection>
-
       <FooterContainer>
         <FooterGrid as={motion.div} variants={containerVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }}>
           <BrandColumn as={motion.div} variants={itemVariants}>

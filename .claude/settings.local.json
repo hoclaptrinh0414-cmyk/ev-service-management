@@ -8,7 +8,14 @@
       "Bash(curl -X GET \"https://2cb393d40b67.ngrok-free.app/api/customer/profile/me\" -H \"ngrok-skip-browser-warning: true\" -H \"Authorization: Bearer test\")",
       "Bash(curl:*)",
       "Bash(find:*)",
-      "Bash(npm test:*)"
+      "Bash(npm test:*)",
+      "Read(//d/**)",
+      "Bash(timeout:*)",
+      "Bash(npm start)",
+      "Bash(taskkill:*)",
+      "Bash(tasklist:*)",
+      "Bash(findstr:*)",
+      "Bash(netstat:*)"
     ],
     "deny": [],
     "ask": []

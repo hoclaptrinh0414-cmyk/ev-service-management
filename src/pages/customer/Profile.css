@@ -119,9 +119,31 @@
 /* Edit button hover effect */
 .edit-profile-btn {
   transition: all 0.15s ease-out;
+  background-color: #000 !important;
+  border-color: #000 !important;
 }
 
 .edit-profile-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.25);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3) !important;
+  background-color: #333 !important;
+  border-color: #333 !important;
+}
+
+/* Override all primary buttons in Profile page to black */
+.profile-page-container .ant-btn-primary {
+  background-color: #000 !important;
+  border-color: #000 !important;
+  color: #fff !important;
+}
+
+.profile-page-container .ant-btn-primary:hover {
+  background-color: #333 !important;
+  border-color: #333 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+}
+
+.profile-page-container .ant-btn-primary:active {
+  background-color: #1a1a1a !important;
+  border-color: #1a1a1a !important;
 }

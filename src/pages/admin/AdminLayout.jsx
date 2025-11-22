@@ -27,6 +27,8 @@ const NAV_ITEMS = [
     path: "/admin/finance",
     icon: "bi-graph-up-arrow",
   },
+  { label: "Time Slots", path: "/admin/time-slots", icon: "bi-calendar3" },
+  { label: "Car Brands", path: "/admin/brands", icon: "bi-building" },
   { label: "Settings", path: "/admin/settings", icon: "bi-gear" },
 ];
 
@@ -331,13 +333,6 @@ const AdminLayout = () => {
           >
             ☰
           </button>
-          <Link
-            to="/admin"
-            className="app-brand"
-            aria-label="CRM Management home"
-          >
-            <img src="/logo192.png" alt="CRM Management logo" />
-          </Link>
           <div className="search-bar" ref={searchContainerRef}>
             <input
               type="text"
@@ -605,20 +600,6 @@ const AdminLayout = () => {
               aria-hidden="true"
             ></i>
             <span>{theme === "dark" ? "Sáng" : "Tối"}</span>
-          </button>
-          <button
-            type="button"
-            className="user-account"
-            aria-label="Mở menu tài khoản Admin"
-          >
-            <span className="user-account__avatar" aria-hidden="true">
-              <img src="https://via.placeholder.com/40" alt="" />
-            </span>
-            <span className="user-account__details">
-              <i className="bi bi-person-circle" aria-hidden="true"></i>
-              <span className="user-account__name">Admin</span>
-            </span>
-            <i className="bi bi-chevron-down" aria-hidden="true"></i>
           </button>
         </div>
       </div>
