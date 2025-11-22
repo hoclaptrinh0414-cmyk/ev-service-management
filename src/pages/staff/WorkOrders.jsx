@@ -56,6 +56,91 @@ export default function WorkOrders() {
   const [showAddServicesModal, setShowAddServicesModal] = useState(false);
   const [deliveryPaymentModal, setDeliveryPaymentModal] = useState({ show: false, mode: 'validate' });
 
+  const getTechnicianDisplay = useCallback(
+    (wo) => {
+      if (!wo) return 'Unassigned';
+      const byName =
+        wo.technicianName ||
+        wo.TechnicianName ||
+        wo.assignedTechnicianName ||
+        wo.AssignedTechnicianName;
+      if (byName) return byName;
+
+      const assignedTech =
+        wo.assignedTechnician ||
+        wo.AssignedTechnician ||
+        wo.technician ||
+        wo.Technician;
+      const nestedName =
+        assignedTech?.fullName ||
+        assignedTech?.name ||
+        assignedTech?.technicianName ||
+        assignedTech?.username ||
+        assignedTech?.userName;
+      if (nestedName) return nestedName;
+
+      const techId =
+        wo.technicianId ||
+        wo.TechnicianId ||
+        wo.assignedTechnicianId ||
+        wo.AssignedTechnicianId;
+      if (techId && technicians.length) {
+        const matched = technicians.find(
+          (t) => Number(t.userId || t.technicianId || t.id) === Number(techId),
+        );
+        if (matched) {
+          return (
+            matched.fullName ||
+            matched.name ||
+            matched.technicianName ||
+            matched.username ||
+            matched.userName ||
+            `#${techId}`
+          );
+        }
+      }
+
+      return 'Unassigned';
+    },
+    [technicians],
+  );
+
+  const updateTechnicianInState = useCallback(
+    (workOrderId, technicianId, technicianName) => {
+      if (!workOrderId || !technicianId) return;
+
+      setSelectedWO((prev) => {
+        if (!prev) return prev;
+        const idMatches =
+          prev.workOrderId === workOrderId || prev.id === workOrderId;
+        if (!idMatches) return prev;
+        return {
+          ...prev,
+          technicianId,
+          assignedTechnicianId: technicianId,
+          technicianName: technicianName || prev.technicianName,
+          assignedTechnicianName: technicianName || prev.assignedTechnicianName,
+        };
+      });
+
+      setWorkOrders((prev) =>
+        prev.map((wo) => {
+          const idMatches =
+            wo.workOrderId === workOrderId || wo.id === workOrderId;
+          if (!idMatches) return wo;
+          return {
+            ...wo,
+            technicianId,
+            assignedTechnicianId: technicianId,
+            technicianName: technicianName || wo.technicianName,
+            assignedTechnicianName: technicianName || wo.assignedTechnicianName,
+          };
+        }),
+      );
+    },
+    [],
+  );
+
   const normalizeWorkOrdersResponse = useCallback(
     (response, fallbackPage) => {
       const primaryData =
@@ -112,13 +197,30 @@ export default function WorkOrders() {
         payload.CurrentPage ??
         fallbackPage;
 
+      // Enrich technician names in work order items
+      const enrichedItems = Array.isArray(items) ? items.map(wo => {
+        const techId = wo.technicianId || wo.assignedTechnicianId;
+        if (techId && !wo.technicianName && !wo.assignedTechnicianName && technicians.length > 0) {
+          const tech = technicians.find(t => Number(t.userId || t.technicianId || t.id) === Number(techId));
+          if (tech) {
+            const techName = tech.fullName || tech.name || tech.technicianName || tech.username || '';
+            return {
+              ...wo,
+              technicianName: techName,
+              assignedTechnicianName: techName,
+            };
+          }
+        }
+        return wo;
+      }) : [];
+
       return {
-        items: Array.isArray(items) ? items : [],
+        items: enrichedItems,
         totalPages: normalizedTotalPages || 1,
         pageNumber: normalizedPage || fallbackPage,
       };
     },
-    [PAGE_SIZE],
+    [PAGE_SIZE, technicians],
   );
 
   const getServiceCenterLabel = useCallback(
@@ -145,10 +247,13 @@ export default function WorkOrders() {
     setServiceCenterError('');
     try {
       const response = await staffService.getActiveServiceCenters();
+      console.log('[WorkOrders] getActiveServiceCenters response:', response);
       const payload = response?.data?.data || response?.data || response;
+      console.log('[WorkOrders] Extracted payload:', payload);
       const centers = Array.isArray(payload)
         ? payload
         : payload?.items || payload?.data || [];
+      console.log('[WorkOrders] Service Centers loaded:', centers);
       setServiceCenters(centers);
 
       setServiceCenterId((prev) => {
@@ -250,7 +355,12 @@ export default function WorkOrders() {
   const fetchTechnicians = async () => {
     try {
       const response = await staffService.getTechnicians();
+      console.log('[WorkOrders] getTechnicians response:', response);
       const data = response.data || response;
+      console.log('[WorkOrders] Technicians data:', data);
+      if (Array.isArray(data) && data.length > 0) {
+        console.log('[WorkOrders] Sample technician:', data[0]);
+      }
       setTechnicians(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Failed to load technicians:', err);
@@ -303,7 +413,20 @@ export default function WorkOrders() {
     setDetailLoading(true);
     try {
       const detailResponse = await staffService.getWorkOrderDetail(woId);
-      setSelectedWO(detailResponse.data || detailResponse);
+      const woData = detailResponse.data || detailResponse;
+
+      // Enrich technician name if only ID is present
+      const techId = woData.technicianId || woData.assignedTechnicianId;
+      if (techId && !woData.technicianName && !woData.assignedTechnicianName && technicians.length > 0) {
+        const tech = technicians.find(t => Number(t.userId || t.technicianId || t.id) === Number(techId));
+        if (tech) {
+          const techName = tech.fullName || tech.name || tech.technicianName || tech.username || '';
+          woData.technicianName = techName;
+          woData.assignedTechnicianName = techName;
+        }
+      }
+
+      setSelectedWO(woData);
 
       // Load checklist if exists
       // Load checklist if exists (new schema)
@@ -339,7 +462,7 @@ export default function WorkOrders() {
     } finally {
       setDetailLoading(false);
     }
-  }, [loadQualityCheckData]);
+  }, [loadQualityCheckData, technicians]);
 
   const searchByLicensePlate = useCallback(
     async ({ licensePlate, centerId, autoOpen = false } = {}) => {
@@ -463,22 +586,82 @@ export default function WorkOrders() {
         estimatedDurationMinutes: estimatedDuration,
       });
 
+      console.log('[WorkOrders] Auto-select technician response:', bestTech);
+      console.log('[WorkOrders] Response data object:', bestTech.data);
+      console.log('[WorkOrders] Available IDs:', {
+        'data.userId': bestTech.data?.userId,
+        'userId': bestTech.userId,
+        'data.technicianId': bestTech.data?.technicianId,
+        'technicianId': bestTech.technicianId,
+        'data.id': bestTech.data?.id,
+        'id': bestTech.id
+      });
+
+      // Ưu tiên userId trước
       const techId =
+        bestTech.data?.userId ||
+        bestTech.userId ||
         bestTech.data?.technicianId ||
         bestTech.technicianId ||
-        bestTech.userId;
+        bestTech.data?.id ||
+        bestTech.id;
+
+      console.log('[WorkOrders] Auto-assigned technician ID:', techId);
 
       if (techId) {
         await staffService.assignTechnician(
           selectedWO.workOrderId || selectedWO.id,
           techId,
         );
-        toast.success('Auto-assigned technician successfully!');
+
+        // Lấy tên từ response hoặc tìm trong technicians list
+        let techName =
+          bestTech.data?.fullName ||
+          bestTech.data?.name ||
+          bestTech.fullName ||
+          bestTech.name ||
+          bestTech.technicianName ||
+          bestTech.data?.username ||
+          bestTech.username ||
+          '';
+
+        // Nếu không có tên trong response, tìm trong technicians list
+        if (!techName && technicians.length > 0) {
+          const foundTech = technicians.find(
+            t => Number(t.userId || t.technicianId || t.id) === Number(techId)
+          );
+          if (foundTech) {
+            techName = foundTech.fullName || foundTech.name || foundTech.username || '';
+          }
+        }
+
+        console.log('[WorkOrders] Auto-assigned technician name:', techName);
+
+        updateTechnicianInState(
+          selectedWO.workOrderId || selectedWO.id,
+          techId,
+          techName,
+        );
+        toast.success(`Auto-assigned technician successfully! ${techName || ''}`);
         viewWorkOrderDetail(selectedWO.workOrderId || selectedWO.id);
+      } else {
+        toast.error('No suitable technician found');
       }
     } catch (err) {
       console.error('Auto assign failed:', err);
-      toast.error(err.response?.data?.message || 'Auto-assign failed');
+      console.error('Error details:', {
+        status: err.response?.status,
+        data: err.response?.data,
+        message: err.response?.data?.message || err.message
+      });
+
+      const errorMsg = err.response?.data?.message ||
+                       err.response?.data?.title ||
+                       err.response?.data?.error ||
+                       err.message ||
+                       'Auto-assign failed';
+
+      toast.error(`Auto-assign failed: ${errorMsg}`);
     }
   };
 
@@ -487,9 +670,33 @@ export default function WorkOrders() {
     if (!selectedWO || !numericTechId) return;
 
     try {
+      console.log('[WorkOrders] Manual assign technician with ID:', numericTechId);
+
       await staffService.assignTechnician(
         selectedWO.workOrderId || selectedWO.id,
         numericTechId,
+      );
+
+      const assignedTech =
+        technicians.find(
+          (tech) =>
+            Number(tech.userId || tech.technicianId || tech.id) === numericTechId ||
+            normaliseKey(tech.username || tech.userName) ===
+              normaliseKey(selectedWO.technicianName),
+        ) || {};
+
+      console.log('[WorkOrders] Found assigned tech:', assignedTech);
+
+      const techName =
+        assignedTech.fullName ||
+        assignedTech.name ||
+        assignedTech.technicianName ||
+        assignedTech.username ||
+        '';
+      updateTechnicianInState(
+        selectedWO.workOrderId || selectedWO.id,
+        numericTechId,
+        techName,
       );
       toast.success('Assigned technician successfully!');
       viewWorkOrderDetail(selectedWO.workOrderId || selectedWO.id);
@@ -540,6 +747,40 @@ export default function WorkOrders() {
     } catch (err) {
       console.error('Complete item failed:', err);
       toast.error(err.response?.data?.message || 'Failed to complete item');
+    }
+  };
+
+  const handleSkipChecklistItem = async (item) => {
+    if (!item || item.isRequired) {
+      toast.error('Cannot skip required items');
+      return;
+    }
+
+    const skipReason = window.prompt(
+      `Skip reason for "${item.itemDescription}":\n(Min 10 characters)`,
+      'Customer declined this service'
+    );
+
+    if (!skipReason) {
+      return; // User cancelled
+    }
+
+    if (skipReason.length < 10) {
+      toast.error('Skip reason must be at least 10 characters');
+      return;
+    }
+
+    try {
+      await staffService.skipChecklistItem({
+        itemId: item.itemId,
+        workOrderId: selectedWO.workOrderId || selectedWO.id,
+        skipReason: skipReason,
+      });
+      toast.success('Item skipped successfully!');
+      viewWorkOrderDetail(selectedWO.workOrderId || selectedWO.id);
+    } catch (err) {
+      console.error('Skip item failed:', err);
+      toast.error(err.response?.data?.message || 'Failed to skip item');
     }
   };
 
@@ -679,14 +920,14 @@ export default function WorkOrders() {
                 ) : (
                   <select
                     value={serviceCenterId ?? ''}
-                    onChange={(e) =>
-                      setServiceCenterId(
-                        e.target.value ? Number(e.target.value) : null,
-                      )
-                    }
+                    onChange={(e) => {
+                      const newValue = e.target.value ? Number(e.target.value) : null;
+                      console.log('[WorkOrders] Service Center changed to:', newValue);
+                      setServiceCenterId(newValue);
+                    }}
                   >
                     <option value=''>-- Chọn trung tâm --</option>
-                    {serviceCenters.map((center) => {
+                    {serviceCenters.map((center, index) => {
                       const centerValue =
                         center.centerId ||
                         center.serviceCenterId ||
@@ -697,6 +938,11 @@ export default function WorkOrders() {
                         center.name ||
                         center.centerCode ||
                         `Center ${centerValue}`;
+                      console.log(`[WorkOrders] Rendering option ${index + 1}:`, {
+                        centerValue,
+                        centerLabel,
+                        center
+                      });
                       return (
                         <option key={centerValue} value={centerValue}>
                           {centerLabel}
@@ -931,7 +1177,7 @@ export default function WorkOrders() {
                   <div className='detail-row'>
                     <span className='label'>Technician:</span>
                     <span className='value'>
-                      {selectedWO.technicianName || 'Unassigned'}
+                      {getTechnicianDisplay(selectedWO)}
                     </span>
                   </div>
                   <div className='detail-row'>
@@ -971,14 +1217,18 @@ export default function WorkOrders() {
                         <option value='' disabled>
                           Manual Assign...
                         </option>
-                        {technicians.map((tech) => (
-                          <option
-                            key={tech.technicianId || tech.id}
-                            value={tech.technicianId || tech.id}
-                          >
-                            {tech.fullName || tech.name}
-                          </option>
-                        ))}
+                        {technicians.map((tech) => {
+                          const techValue = tech.userId || tech.technicianId || tech.id;
+                          const techLabel = tech.fullName || tech.name || tech.username || `Tech #${techValue}`;
+                          return (
+                            <option
+                              key={techValue}
+                              value={techValue}
+                            >
+                              {techLabel}
+                            </option>
+                          );
+                        })}
                       </select>
                     </>
                   )}
@@ -1094,14 +1344,36 @@ export default function WorkOrders() {
                         </div>
 
                         {!item.isCompleted && selectedWOStatus === 'inprogress' && (
-                            <button
-                              className='btn-complete-item'
-                              onClick={() =>
-                                handleCompleteChecklistItem(item.itemId)
-                              }
-                            >
-                              <i className='bi bi-check'></i>
-                            </button>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                              <button
+                                className='btn-complete-item'
+                                onClick={() =>
+                                  handleCompleteChecklistItem(item.itemId)
+                                }
+                                title="Complete this item"
+                              >
+                                <i className='bi bi-check'></i>
+                              </button>
+                              {!item.isRequired && (
+                                <button
+                                  className='btn-skip-item'
+                                  onClick={() => handleSkipChecklistItem(item)}
+                                  title="Skip this optional item"
+                                  style={{
+                                    backgroundColor: '#ffc107',
+                                    color: '#000',
+                                    border: 'none',
+                                    borderRadius: '6px',
+                                    padding: '8px 12px',
+                                    cursor: 'pointer',
+                                    fontSize: '14px',
+                                    fontWeight: '500',
+                                  }}
+                                >
+                                  <i className='bi bi-skip-forward'></i> Skip
+                                </button>
+                              )}
+                            </div>
                           )}
                       </div>
                     ))}
@@ -1218,7 +1490,9 @@ export default function WorkOrders() {
         show={showCandidatesModal}
         onClose={() => setShowCandidatesModal(false)}
         onSelect={(tech) => {
-          handleManualAssign(tech.technicianId || tech.id);
+          const techId = tech.userId || tech.technicianId || tech.id;
+          console.log('[WorkOrders] Selected tech from modal:', tech, 'Using ID:', techId);
+          handleManualAssign(techId);
           setShowCandidatesModal(false);
         }}
         workOrder={selectedWO}

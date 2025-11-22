@@ -375,11 +375,11 @@ const MyAppointments = () => {
               </Link>
             </div>
           ) : (
-            <div className="row g-3">
+            <div className="row g-4">
               {filteredAppointments.map((appointment) => {
                 const paymentStatus = appointment.paymentStatus || appointment.paymentIntentStatus || '';
                 return (
-                  <div key={appointment.appointmentId} className="col-12">
+                  <div key={appointment.appointmentId} className="col-12 col-md-6 col-lg-4">
                     <div className="appointment-card">
                       <div className="appointment-card-header">
                         <div>

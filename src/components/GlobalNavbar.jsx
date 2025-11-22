@@ -4,7 +4,6 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import UserMenu from './UserMenu';
 import NotificationDropdown from './NotificationDropdown';
 import useNotifications from '../hooks/useNotifications';
-import { useNavigateWithTransition } from '../hooks/useNavigateWithTransition';
 import { useAuth } from '../contexts/AuthContext';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
@@ -12,7 +11,6 @@ import 'bootstrap-icons/font/bootstrap-icons.css';
 const GlobalNavbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const navigateWithTransition = useNavigateWithTransition();
   const { isAuthenticated } = useAuth();
 
   // Luôn gọi hook (required by React hooks rules)
@@ -38,7 +36,7 @@ const GlobalNavbar = () => {
 
   const handleNavigateHome = (e) => {
     e.preventDefault();
-    navigateWithTransition('/home');
+    navigate('/home');
   };
 
   return (

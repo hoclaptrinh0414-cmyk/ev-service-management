@@ -23,6 +23,17 @@ import EmailVerificationPage from "./pages/auth/EmailVerificationPage";
 import ResendVerification from "./pages/auth/ResendVerification";
 import CustomerDashboard from "./pages/customer/Dashboard";
 import RegisterVehicle from "./pages/customer/RegisterVehicle";
+import CustomerProfile from "./pages/customer/Profile";
+import Services from "./pages/Services";
+import MyAppointments from "./pages/customer/MyAppointments";
+import ScheduleServiceNew from "./pages/customer/ScheduleServiceNew";
+import Packages from "./pages/customer/Packages";
+import ProductCombo from "./pages/customer/ProductCombo";
+import ProductIndividual from "./pages/customer/ProductIndividual";
+import MySubscriptions from "./pages/customer/MySubscriptions";
+import Records from "./pages/customer/Records";
+import TrackingHistory from "./pages/customer/TrackingHistory";
+import VehicleDetail from "./pages/customer/VehicleDetail";
 
 // Import test components
 import PasswordResetTest from "./components/PasswordResetTest";
@@ -41,7 +52,7 @@ import StaffWorkOrders from "./pages/staff/WorkOrders";
 import StaffCheckIn from "./pages/staff/CheckIn";
 import StaffSettings from "./pages/staff/Settings";
 import TechnicianLayout from "./pages/technician/TechnicianLayout";
-import TechnicianDashboard from "./pages/technician/Dashboard";
+// import TechnicianDashboard from "./pages/technician/Dashboard"; // Removed - not used
 import TechnicianWorkOrders from "./pages/technician/MyWorkOrders";
 import TechnicianChecklist from "./pages/technician/MaintenanceChecklist";
 import TechnicianFlow from "./pages/technician/TechnicianFlow";
@@ -100,7 +111,97 @@ function App() {
             path="/profile"
             element={
               <ProtectedRoute>
-                <div>Profile - Protected Page</div>
+                <CustomerProfile />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/services"
+            element={
+              <ProtectedRoute>
+                <Services />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/my-appointments"
+            element={
+              <ProtectedRoute>
+                <MyAppointments />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/schedule-service"
+            element={
+              <ProtectedRoute>
+                <ScheduleServiceNew />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/packages"
+            element={
+              <ProtectedRoute>
+                <Packages />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/products/combo"
+            element={
+              <ProtectedRoute>
+                <ProductCombo />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/products/individual"
+            element={
+              <ProtectedRoute>
+                <ProductIndividual />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/subscriptions"
+            element={
+              <ProtectedRoute>
+                <MySubscriptions />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/records"
+            element={
+              <ProtectedRoute>
+                <Records />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/tracking"
+            element={
+              <ProtectedRoute>
+                <TrackingHistory />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/vehicle/:id"
+            element={
+              <ProtectedRoute>
+                <VehicleDetail />
               </ProtectedRoute>
             }
           />
@@ -146,7 +247,8 @@ function App() {
               </ProtectedRoute>
             }
           >
-            <Route index element={<TechnicianDashboard />} />
+            <Route index element={<Navigate to="/technician/work-orders" replace />} />
+            {/* <Route path="dashboard" element={<TechnicianDashboard />} /> */}
             <Route path="work-orders" element={<TechnicianWorkOrders />} />
             <Route path="checklist" element={<TechnicianChecklist />} />
             <Route path="flow" element={<TechnicianFlow />} />

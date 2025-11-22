@@ -15,7 +15,11 @@
       "Bash(taskkill:*)",
       "Bash(tasklist:*)",
       "Bash(findstr:*)",
-      "Bash(netstat:*)"
+      "Bash(netstat:*)",
+      "Bash(cat:*)",
+      "Bash(for hook in useAppointments useAuth useAuthHooks useDebounce useNavigateWithTransition useNotifications useSubscriptions)",
+      "Bash(do echo \"=== $hook ===\")",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": []

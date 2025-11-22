@@ -5,6 +5,8 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
+import { CartProvider } from './contexts/CartContext';
+import { ScheduleProvider } from './contexts/ScheduleContext';
 import App from './App';
 import 'antd/dist/reset.css';
 import './index.css';
@@ -37,7 +39,11 @@ root.render(
       <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
         <AuthProvider>
           <ToastProvider>
-            <App />
+            <CartProvider>
+              <ScheduleProvider>
+                <App />
+              </ScheduleProvider>
+            </CartProvider>
           </ToastProvider>
         </AuthProvider>
       </GoogleOAuthProvider>

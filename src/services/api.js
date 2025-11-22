@@ -1655,6 +1655,139 @@ export const reportsAPI = {
   },
 };
 
+// Work Order API - /api/work-orders
+export const workOrderAPI = {
+  // Get work order by ID - GET /api/work-orders/{workOrderId}
+  getWorkOrderById: async (workOrderId) => {
+    console.log(`[workOrderAPI.getWorkOrderById] WorkOrderId: ${workOrderId}`);
+    const response = await apiService.request(`/work-orders/${workOrderId}`);
+    console.log('[workOrderAPI.getWorkOrderById] Response:', response);
+    return response?.data || response;
+  },
+
+  // Check if work order can be rated - GET /api/work-orders/{workOrderId}/can-rate
+  canRateWorkOrder: async (workOrderId) => {
+    console.log(`[workOrderAPI.canRateWorkOrder] WorkOrderId: ${workOrderId}`);
+    const response = await apiService.request(`/work-orders/${workOrderId}/can-rate`);
+    console.log('[workOrderAPI.canRateWorkOrder] Response:', response);
+    return response?.data || response;
+  },
+
+  // Submit rating for work order - POST /api/work-orders/{workOrderId}/rating
+  submitRating: async (workOrderId, ratingData) => {
+    console.log(`[workOrderAPI.submitRating] WorkOrderId: ${workOrderId}`, ratingData);
+    const response = await apiService.request(`/work-orders/${workOrderId}/rating`, {
+      method: 'POST',
+      body: JSON.stringify(ratingData),
+    });
+    console.log('[workOrderAPI.submitRating] Response:', response);
+    return response?.data || response;
+  },
+};
+
+// ============ CHECKLIST API ============
+// API for Technician Checklist Management
+export const checklistAPI = {
+  // 1. Get checklist of a work order - GET /api/checklists/work-orders/{workOrderId}
+  getWorkOrderChecklist: async (workOrderId) => {
+    if (workOrderId === undefined || workOrderId === null) {
+      throw new Error('Work Order ID is required');
+    }
+    console.log(`[checklistAPI.getWorkOrderChecklist] WorkOrderId: ${workOrderId}`);
+    const response = await apiService.request(`/checklists/work-orders/${workOrderId}`);
+    console.log('[checklistAPI.getWorkOrderChecklist] Response:', response);
+    return response?.data || response;
+  },
+
+  // 2. Update checklist item status - PUT /api/checklist-items/{itemId}
+  updateChecklistItem: async (itemId, updateData) => {
+    if (itemId === undefined || itemId === null) {
+      throw new Error('Checklist item ID is required');
+    }
+    console.log(`[checklistAPI.updateChecklistItem] ItemId: ${itemId}`, updateData);
+    const response = await apiService.request(`/checklist-items/${itemId}`, {
+      method: 'PUT',
+      body: JSON.stringify(updateData),
+    });
+    console.log('[checklistAPI.updateChecklistItem] Response:', response);
+    return response?.data || response;
+  },
+
+  // 3. Complete checklist item - POST /api/checklists/items/complete
+  completeChecklistItem: async (itemData) => {
+    console.log('[checklistAPI.completeChecklistItem] ItemData:', itemData);
+    const response = await apiService.request('/checklists/items/complete', {
+      method: 'POST',
+      body: JSON.stringify(itemData),
+    });
+    console.log('[checklistAPI.completeChecklistItem] Response:', response);
+    return response?.data || response;
+  },
+
+  // 4. Skip optional checklist item - POST /api/checklists/items/skip
+  skipChecklistItem: async (skipData) => {
+    console.log('[checklistAPI.skipChecklistItem] SkipData:', skipData);
+    const response = await apiService.request('/checklists/items/skip', {
+      method: 'POST',
+      body: JSON.stringify(skipData),
+    });
+    console.log('[checklistAPI.skipChecklistItem] Response:', response);
+    return response?.data || response;
+  },
+
+  // 5. Uncomplete checklist item - PATCH /api/checklist-items/{itemId}/uncomplete
+  uncompleteChecklistItem: async (itemId) => {
+    if (itemId === undefined || itemId === null) {
+      throw new Error('Checklist item ID is required');
+    }
+    console.log(`[checklistAPI.uncompleteChecklistItem] ItemId: ${itemId}`);
+    const response = await apiService.request(`/checklist-items/${itemId}/uncomplete`, {
+      method: 'PATCH',
+    });
+    console.log('[checklistAPI.uncompleteChecklistItem] Response:', response);
+    return response?.data || response;
+  },
+
+  // 6. Validate work order completion - GET /api/checklists/work-orders/{workOrderId}/validate
+  validateWorkOrderCompletion: async (workOrderId) => {
+    if (workOrderId === undefined || workOrderId === null) {
+      throw new Error('Work Order ID is required');
+    }
+    console.log(`[checklistAPI.validateWorkOrderCompletion] WorkOrderId: ${workOrderId}`);
+    const response = await apiService.request(`/checklists/work-orders/${workOrderId}/validate`);
+    console.log('[checklistAPI.validateWorkOrderCompletion] Response:', response);
+    return response?.data || response;
+  },
+
+  // 7. Apply checklist template to work order - POST /api/work-orders/{workOrderId}/apply-checklist
+  applyChecklistTemplate: async (workOrderId, templateData) => {
+    if (workOrderId === undefined || workOrderId === null) {
+      throw new Error('Work Order ID is required');
+    }
+    console.log(`[checklistAPI.applyChecklistTemplate] WorkOrderId: ${workOrderId}`, templateData);
+    const response = await apiService.request(`/work-orders/${workOrderId}/apply-checklist`, {
+      method: 'POST',
+      body: JSON.stringify(templateData),
+    });
+    console.log('[checklistAPI.applyChecklistTemplate] Response:', response);
+    return response?.data || response;
+  },
+
+  // 8. Bulk complete all items - POST /api/work-orders/{workOrderId}/complete-all
+  bulkCompleteAllItems: async (workOrderId, notes) => {
+    if (workOrderId === undefined || workOrderId === null) {
+      throw new Error('Work Order ID is required');
+    }
+    console.log(`[checklistAPI.bulkCompleteAllItems] WorkOrderId: ${workOrderId}`, { notes });
+    const response = await apiService.request(`/work-orders/${workOrderId}/complete-all`, {
+      method: 'POST',
+      body: JSON.stringify({ notes }),
+    });
+    console.log('[checklistAPI.bulkCompleteAllItems] Response:', response);
+    return response?.data || response;
+  },
+};
+
 export const authUtils = {
   isAuthenticated: () => apiService.isAuthenticated(),
   getToken: () => apiService.getToken(),

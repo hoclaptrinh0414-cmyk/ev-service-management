@@ -97,7 +97,7 @@ export default function Appointments({ isDashboard = false }) {
     appointment: null,
   });
   const [confirmForm, setConfirmForm] = useState({
-    method: 'Phone Call',
+    method: 'Phone',
     notes: '',
     sendEmail: true,
     sendSMS: false,
@@ -372,7 +372,7 @@ export default function Appointments({ isDashboard = false }) {
 
   const openConfirmModal = (appointment) => {
     setConfirmForm({
-      method: 'Phone Call',
+      method: 'Phone',
       notes: '',
       sendEmail: true,
       sendSMS: false,
@@ -506,11 +506,29 @@ export default function Appointments({ isDashboard = false }) {
       navigate('/staff/work-orders', { state: { fromCheckIn: true } });
     } catch (error) {
       console.error('Error checking in appointment:', error);
-      toast.error(
+      console.error('Error details:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.response?.data?.message,
+        error: error.response?.data?.error,
+        validation: error.response?.data?.errors,
+      });
+
+      const errorMessage =
+        error.response?.data?.error ||
         error.response?.data?.message ||
-          error.response?.data?.error ||
-          'Failed to check-in appointment',
-      );
+        error.response?.data?.title ||
+        'Failed to check-in appointment';
+
+      // Hiển thị lỗi cụ thể
+      if (errorMessage.includes('thanh toán') || errorMessage.includes('payment')) {
+        toast.error('⚠️ ' + errorMessage + '\n\nVui lòng xử lý thanh toán trước khi check-in.', {
+          duration: 5000,
+        });
+      } else {
+        toast.error(errorMessage);
+      }
     } finally {
       setCheckingInId(null);
     }
@@ -1240,7 +1258,7 @@ export default function Appointments({ isDashboard = false }) {
                       }))
                     }
                   >
-                    <option value='Phone Call'>Phone Call</option>
+                    <option value='Phone'>Phone</option>
                     <option value='In-Person'>In Person</option>
                     <option value='Email'>Email</option>
                     <option value='SMS'>SMS</option>

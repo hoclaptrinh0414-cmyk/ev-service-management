@@ -100,10 +100,12 @@ export const cancelAppointment = async (appointmentId, cancellationReason) => {
 /**
  * Check-in appointment (tạo WorkOrder + Checklist tự động)
  * POST /appointment-management/{id}/check-in
+ * BE chỉ cần empty body {}
  */
 export const checkInAppointment = async (appointmentId) => {
   const { data } = await api.post(
     `/appointment-management/${appointmentId}/check-in`,
+    {},
   );
   return data;
 };
@@ -175,10 +177,33 @@ export const getAvailableTechnicians = async (params = {}) => {
  * PATCH /work-orders/{id}/assign-technician/{technicianId}
  */
 export const assignTechnician = async (workOrderId, technicianId) => {
-  const { data } = await api.patch(
-    `/work-orders/${workOrderId}/assign-technician/${technicianId}`,
-  );
-  return data;
+  console.log('[staffService] assignTechnician called with:', {
+    workOrderId,
+    technicianId,
+    url: `/work-orders/${workOrderId}/assign-technician/${technicianId}`
+  });
+
+  if (!workOrderId || !technicianId) {
+    throw new Error(`Invalid parameters: workOrderId=${workOrderId}, technicianId=${technicianId}`);
+  }
+
+  try {
+    const { data } = await api.patch(
+      `/work-orders/${workOrderId}/assign-technician/${technicianId}`,
+    );
+    console.log('[staffService] assignTechnician response:', data);
+    return data;
+  } catch (error) {
+    console.error('[staffService] assignTechnician failed:', {
+      workOrderId,
+      technicianId,
+      status: error.response?.status,
+      errorData: error.response?.data,
+      errorMessage: error.response?.data?.message || error.message
+    });
+    console.error('Full error response:', error.response);
+    throw error;
+  }
 };
 
 /**
