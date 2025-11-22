@@ -137,3 +137,70 @@
   font-weight: 600;
   font-size: 12px;
 }
+
+.wo-actions {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.btn.info {
+  background: #0288d1;
+  color: #fff;
+  border-color: #0288d1;
+}
+
+.btn.warning {
+  background: #f57c00;
+  color: #fff;
+  border-color: #f57c00;
+}
+
+.btn.success {
+  background: #2e7d32;
+  color: #fff;
+  border-color: #2e7d32;
+}
+
+.selected-row {
+  background-color: #e3f2fd !important;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: #1976d2;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+  font-size: 14px;
+}
+
+.wo-select {
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.status-completed,
+.status-complete,
+.status-done {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.status-in-progress,
+.status-inprogress {
+  background: #fff3e0;
+  color: #ef6c00;
+}
+
+.status-pending {
+  background: #fff8e1;
+  color: #fbc02d;
+}
+
+.status-cancelled {
+  background: #ffebee;
+  color: #c62828;
+}

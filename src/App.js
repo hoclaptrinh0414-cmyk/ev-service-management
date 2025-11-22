@@ -1,4 +1,4 @@
-// src/App.js - COPY TOÀN BỘ FILE NÀY - ĐÃ THÊM APIDebug
+// src/App.js
 import React from "react";
 import {
   BrowserRouter as Router,
@@ -58,7 +58,10 @@ import TechnicianChecklist from "./pages/technician/MaintenanceChecklist";
 import TechnicianFlow from "./pages/technician/TechnicianFlow";
 import TimeSlots from "./pages/admin/TimeSlots";
 import CarBrands from "./pages/admin/CarBrands";
+import ServiceSchedule from "./pages/admin/ServiceSchedule";
+import PartManagement from "./pages/admin/PartManagement";
 
+// Force re-compile
 function App() {
   return (
     <Router>
@@ -222,22 +225,6 @@ function App() {
             <Route path="settings" element={<StaffSettings />} />
           </Route>
 
-          {/* Staff routes */}
-          <Route
-            path="/staff"
-            element={
-              <ProtectedRoute requireRole="staff">
-                <StaffLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<StaffAppointments />} />
-            <Route path="appointments" element={<StaffAppointments />} />
-            <Route path="work-orders" element={<StaffWorkOrders />} />
-            <Route path="check-in" element={<StaffCheckIn />} />
-            <Route path="settings" element={<StaffSettings />} />
-          </Route>
-
           {/* Technician routes */}
           <Route
             path="/technician"
@@ -250,7 +237,7 @@ function App() {
             <Route index element={<Navigate to="/technician/work-orders" replace />} />
             {/* <Route path="dashboard" element={<TechnicianDashboard />} /> */}
             <Route path="work-orders" element={<TechnicianWorkOrders />} />
-            <Route path="checklist" element={<TechnicianChecklist />} />
+            <Route path="maintenance/:workOrderId" element={<TechnicianChecklist />} />
             <Route path="flow" element={<TechnicianFlow />} />
           </Route>
 
@@ -266,14 +253,7 @@ function App() {
             <Route index element={<AdminDashboard />} />
             <Route path="vehicles" element={<VehicleManagement />} />
             <Route path="customers" element={<CustomerManagement />} />
-            <Route
-              path="schedule"
-              element={
-                <div className="placeholder">
-                  Service Schedule - Coming Soon
-                </div>
-              }
-            />
+            <Route path="schedule" element={<ServiceSchedule />} />
             <Route
               path="maintenance"
               element={
@@ -284,9 +264,7 @@ function App() {
             />
             <Route
               path="parts"
-              element={
-                <div className="placeholder">Parts Inventory - Coming Soon</div>
-              }
+              element={<PartManagement />}
             />
             <Route path="staff" element={<StaffManagement />} />
             <Route path="finance" element={<FinancialReport />} />

@@ -278,10 +278,10 @@ export const applyChecklistTemplate = async (workOrderId, templateData) => {
 
 /**
  * Lấy checklist của work order
- * GET /checklists/work-orders/{workOrderId}
+ * GET /work-orders/{workOrderId}/checklist
  */
 export const getWorkOrderChecklist = async (workOrderId) => {
-  const { data } = await api.get(`/checklists/work-orders/${workOrderId}`);
+  const { data } = await api.get(`/work-orders/${workOrderId}/checklist`);
   return data;
 };
 
@@ -339,10 +339,10 @@ export const uncompleteChecklistItem = async (itemId) => {
 
 /**
  * Bulk complete all items
- * POST /work-orders/{id}/complete-all
+ * POST /checklists/work-orders/{id}/complete-all
  */
 export const bulkCompleteAllItems = async (workOrderId, notes) => {
-  const { data } = await api.post(`/work-orders/${workOrderId}/complete-all`, {
+  const { data } = await api.post(`/checklists/work-orders/${workOrderId}/complete-all`, {
     notes,
   });
   return data;

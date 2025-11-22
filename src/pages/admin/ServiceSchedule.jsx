@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Calendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
@@ -10,6 +10,7 @@ import { Select } from '../../components/ui/select';
 import { Label } from '../../components/ui/label';
 import ListView from './ListView';
 import AppointmentModal from './AppointmentModal';
+import { appointmentAPI, technicianAPI } from '../../services/adminAPI';
 
 const localizer = momentLocalizer(moment);
 
@@ -20,73 +21,6 @@ const STATUS_META = {
   completed: { label: 'Đã hoàn thành', accent: 'bg-emerald-500' },
   canceled: { label: 'Đã hủy', accent: 'bg-rose-500' },
 };
-
-const SAMPLE_APPOINTMENTS = [
-  {
-    id: 1,
-    title: 'Nguyễn Văn A • Bảo dưỡng định kỳ',
-    start: new Date(2025, 9, 24, 9, 0),
-    end: new Date(2025, 9, 24, 10, 30),
-    resource: {
-      status: 'confirmed',
-      technician: 'Nguyễn Quốc Huy',
-      customer: 'Nguyễn Văn A',
-      customerId: 1,
-      vehicleId: 101,
-      vehicle: '51F-123.45',
-      service: 'Bảo dưỡng định kỳ',
-      notes: 'Kiểm tra bổ sung hệ thống phanh trước khi giao xe.',
-    },
-  },
-  {
-    id: 2,
-    title: 'Trần Thị B • Thay dầu động cơ',
-    start: new Date(2025, 9, 25, 13, 30),
-    end: new Date(2025, 9, 25, 15, 0),
-    resource: {
-      status: 'pending',
-      technician: 'Phạm Minh Trí',
-      customer: 'Trần Thị B',
-      customerId: 2,
-      vehicleId: 201,
-      vehicle: '29A-987.65',
-      service: 'Thay dầu động cơ',
-      notes: 'Khách muốn lấy xe cuối ngày.',
-    },
-  },
-  {
-    id: 3,
-    title: 'Lê Minh C • Kiểm tra phanh',
-    start: new Date(2025, 9, 26, 8, 0),
-    end: new Date(2025, 9, 26, 9, 0),
-    resource: {
-      status: 'in_progress',
-      technician: 'Trần Nhật Anh',
-      customer: 'Lê Minh C',
-      customerId: 1,
-      vehicleId: 102,
-      vehicle: '51G-111.22',
-      service: 'Kiểm tra phanh',
-      notes: '',
-    },
-  },
-  {
-    id: 4,
-    title: 'Phạm Gia D • Sửa chữa thân vỏ',
-    start: new Date(2025, 9, 27, 15, 0),
-    end: new Date(2025, 9, 27, 16, 30),
-    resource: {
-      status: 'completed',
-      technician: 'Nguyễn Quốc Huy',
-      customer: 'Phạm Gia D',
-      customerId: 2,
-      vehicleId: 201,
-      vehicle: '29A-987.65',
-      service: 'Sửa chữa thân vỏ',
-      notes: 'Hoàn tất, đã vệ sinh nội thất.',
-    },
-  },
-];
 
 const STATUS_OPTIONS = [
   { value: 'all', label: 'Tất cả trạng thái' },
@@ -125,16 +59,66 @@ const ServiceSchedule = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [technicianFilter, setTechnicianFilter] = useState('all');
 
-  const [appointments, setAppointments] = useState(SAMPLE_APPOINTMENTS);
+  const [appointments, setAppointments] = useState([]);
+  const [techniciansList, setTechniciansList] = useState([]);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetchData();
+    fetchTechnicians();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const res = await appointmentAPI.getAll();
+      const data = res?.data || res || [];
+
+      const mappedAppointments = data.map(apt => ({
+        id: apt.appointmentId || apt.id,
+        title: `${apt.customerName || 'Khách'} • ${apt.serviceName || 'Dịch vụ'}`,
+        start: new Date(apt.appointmentDate || apt.startTime), // Adjust based on actual API response
+        end: new Date(new Date(apt.appointmentDate || apt.startTime).getTime() + 60 * 60 * 1000), // Default 1h duration if not provided
+        resource: {
+          status: (apt.status || 'pending').toLowerCase(),
+          technician: apt.technicianName || 'Chưa phân công',
+          customer: apt.customerName,
+          customerId: apt.customerId,
+          vehicleId: apt.vehicleId,
+          vehicle: apt.licensePlate,
+          service: apt.serviceName,
+          notes: apt.notes,
+          ...apt
+        }
+      }));
+      setAppointments(mappedAppointments);
+    } catch (error) {
+      console.error("Failed to fetch appointments:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchTechnicians = async () => {
+    try {
+      const res = await technicianAPI.getAll();
+      const data = res?.data || res || [];
+      setTechniciansList(data);
+    } catch (error) {
+      console.error("Failed to fetch technicians:", error);
+    }
+  };
 
   const technicians = useMemo(() => {
     const unique = new Set(
       appointments.map((apt) => apt.resource.technician).filter(Boolean)
     );
+    // Also include technicians from API list
+    techniciansList.forEach(t => unique.add(t.fullName || t.name));
     return ['all', ...unique];
-  }, [appointments]);
+  }, [appointments, techniciansList]);
 
   const filteredAppointments = useMemo(() => {
     return appointments.filter((appointment) => {
@@ -248,48 +232,21 @@ const ServiceSchedule = () => {
     setSelectedAppointment(null);
   };
 
-  const handleSaveAppointment = (formData) => {
-    if (selectedAppointment?.id) {
-      setAppointments((prev) =>
-        prev.map((apt) =>
-          apt.id === selectedAppointment.id
-            ? {
-                ...apt,
-                title: `${formData.customer || apt.resource.customer} • ${formData.service}`,
-                start: new Date(formData.start || apt.start),
-                end: new Date(formData.end || apt.end),
-                resource: {
-                  ...apt.resource,
-                  ...formData,
-                  customer: formData.customer || apt.resource.customer,
-                  vehicle: formData.vehicle || apt.resource.vehicle,
-                },
-              }
-            : apt
-        )
-      );
-    } else {
-      const newId = Math.max(...appointments.map((apt) => apt.id)) + 1;
-      const newAppointment = {
-        id: newId,
-        title: `${formData.customer || 'Khách hàng'} • ${formData.service}`,
-        start: new Date(formData.start),
-        end: new Date(formData.end),
-        resource: {
-          status: formData.status || 'pending',
-          technician: formData.technician,
-          customer: formData.customer || 'Khách hàng',
-          customerId: formData.customerId,
-          vehicleId: formData.vehicleId,
-          vehicle: formData.vehicle || '',
-          service: formData.service,
-          notes: formData.notes,
-        },
-      };
-      setAppointments((prev) => [...prev, newAppointment]);
+  const handleSaveAppointment = async (formData) => {
+    try {
+      if (selectedAppointment?.id) {
+        // Update existing
+        await appointmentAPI.update(selectedAppointment.id, formData);
+      } else {
+        // Create new
+        await appointmentAPI.create(formData);
+      }
+      fetchData(); // Refresh data
+      handleCloseModal();
+    } catch (error) {
+      console.error("Failed to save appointment:", error);
+      alert("Failed to save appointment");
     }
-
-    handleCloseModal();
   };
 
   return (
@@ -424,11 +381,10 @@ const ServiceSchedule = () => {
                     key={option.value}
                     variant={isActive ? 'default' : 'outline'}
                     onClick={handleClick}
-                    className={`rounded-full px-4 ${
-                      isActive
-                        ? 'bg-neutral-900'
-                        : 'border-neutral-200 text-neutral-600 hover:bg-neutral-100'
-                    }`}
+                    className={`rounded-full px-4 ${isActive
+                      ? 'bg-neutral-900'
+                      : 'border-neutral-200 text-neutral-600 hover:bg-neutral-100'
+                      }`}
                   >
                     {option.label}
                   </Button>
@@ -470,6 +426,7 @@ const ServiceSchedule = () => {
           appointment={selectedAppointment}
           onClose={handleCloseModal}
           onSave={handleSaveAppointment}
+          technicians={techniciansList}
         />
       )}
     </div>

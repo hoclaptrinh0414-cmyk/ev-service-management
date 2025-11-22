@@ -60,6 +60,89 @@ export const workOrderService = {
       throw error;
     }
   },
+  /**
+   * LẤY CHECKLIST CỦA WORK ORDER
+   * GET /api/work-orders/{workOrderId}/checklist
+   */
+  async getChecklist(workOrderId) {
+    try {
+      const response = await workOrderAPI.getChecklist(workOrderId);
+      return response;
+    } catch (error) {
+      console.error('Get checklist failed:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * HOÀN THÀNH 1 CHECKLIST ITEM
+   * POST /api/checklists/items/complete
+   */
+  async completeChecklistItem(data) {
+    try {
+      const response = await workOrderAPI.completeChecklistItem(data);
+      return response;
+    } catch (error) {
+      console.error('Complete checklist item failed:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * BỎ QUA 1 CHECKLIST ITEM (OPTIONAL)
+   * POST /api/checklists/items/skip
+   */
+  async skipChecklistItem(data) {
+    try {
+      const response = await workOrderAPI.skipChecklistItem(data);
+      return response;
+    } catch (error) {
+      console.error('Skip checklist item failed:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * VALIDATE CHECKLIST TRƯỚC KHI COMPLETE WORK ORDER
+   * GET /api/checklists/work-orders/{workOrderId}/validate
+   */
+  async validateChecklist(workOrderId) {
+    try {
+      const response = await workOrderAPI.validateChecklist(workOrderId);
+      return response;
+    } catch (error) {
+      console.error('Validate checklist failed:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * HOÀN TẤT WORK ORDER
+   * POST /api/work-orders/{id}/complete
+   */
+  async completeWorkOrder(workOrderId) {
+    try {
+      const response = await workOrderAPI.completeWorkOrder(workOrderId);
+      return response;
+    } catch (error) {
+      console.error('Complete work order failed:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * (OPTIONAL) COMPLETE ALL ITEMS
+   * POST /api/checklists/work-orders/{workOrderId}/complete-all
+   */
+  async bulkCompleteChecklist(workOrderId, notes) {
+    try {
+      const response = await workOrderAPI.bulkCompleteChecklist(workOrderId, notes);
+      return response;
+    } catch (error) {
+      console.error('Bulk complete checklist failed:', error);
+      throw error;
+    }
+  },
 };
 
 export default workOrderService;

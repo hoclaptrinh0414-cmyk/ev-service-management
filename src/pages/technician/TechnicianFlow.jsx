@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import apiService, { lookupAPI } from "../../services/api";
+import apiService, { lookupAPI, workOrderAPI } from "../../services/api";
 import "./TechnicianFlow.css";
 
 const fetchMyWorkOrders = async () => {
@@ -59,6 +60,7 @@ const addPart = ({ id, partId }) =>
   });
 
 const TechnicianFlow = () => {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selectedWo, setSelectedWo] = useState("");
   const [serviceId, setServiceId] = useState("");
@@ -77,29 +79,43 @@ const TechnicianFlow = () => {
   const checkInMut = useMutation({
     mutationFn: checkIn,
     onError: (err) => window.alert(getErrorMessage(err)),
+    onSuccess: () => window.alert("Check-in thành công!"),
   });
   const checkOutMut = useMutation({
     mutationFn: checkOut,
     onError: (err) => window.alert(getErrorMessage(err)),
+    onSuccess: () => window.alert("Check-out thành công!"),
   });
   const startMut = useMutation({
     mutationFn: startWorkOrder,
-    onSuccess: () => queryClient.invalidateQueries(["tech-my-workorders"]),
+    onSuccess: () => {
+      queryClient.invalidateQueries(["tech-my-workorders"]);
+      window.alert("Đã bắt đầu Work Order!");
+    },
     onError: (err) => window.alert(getErrorMessage(err)),
   });
   const completeMut = useMutation({
     mutationFn: completeWorkOrder,
-    onSuccess: () => queryClient.invalidateQueries(["tech-my-workorders"]),
+    onSuccess: () => {
+      queryClient.invalidateQueries(["tech-my-workorders"]);
+      window.alert("Đã hoàn thành Work Order!");
+    },
     onError: (err) => window.alert(getErrorMessage(err)),
   });
   const addServiceMut = useMutation({
     mutationFn: addService,
-    onSuccess: () => queryClient.invalidateQueries(["tech-my-workorders"]),
+    onSuccess: () => {
+      queryClient.invalidateQueries(["tech-my-workorders"]);
+      window.alert("Đã thêm dịch vụ!");
+    },
     onError: (err) => window.alert(getErrorMessage(err)),
   });
   const addPartMut = useMutation({
     mutationFn: addPart,
-    onSuccess: () => queryClient.invalidateQueries(["tech-my-workorders"]),
+    onSuccess: () => {
+      queryClient.invalidateQueries(["tech-my-workorders"]);
+      window.alert("Đã thêm phụ tùng!");
+    },
     onError: (err) => window.alert(getErrorMessage(err)),
   });
 
@@ -138,7 +154,29 @@ const TechnicianFlow = () => {
       window.alert("Work order này đã hoàn thành rồi.");
       return;
     }
-    completeMut.mutate(selectedWo);
+    // Validate before completing
+    if (window.confirm("Bạn có chắc chắn muốn hoàn thành Work Order này? Hãy đảm bảo checklist đã được hoàn tất.")) {
+      completeMut.mutate(selectedWo);
+    }
+  };
+
+  const handleOpenChecklist = () => {
+    if (!selectedWo) return;
+    navigate(`/technician/maintenance/${selectedWo}`);
+  };
+
+  const handleValidate = async () => {
+    if (!selectedWo) return;
+    try {
+      const res = await workOrderAPI.validateChecklist(selectedWo);
+      if (res && res.isValid) {
+        window.alert("Checklist hợp lệ! Bạn có thể hoàn thành Work Order.");
+      } else {
+        window.alert(`Checklist chưa hoàn tất! ${res?.message || ''}`);
+      }
+    } catch (err) {
+      window.alert(`Lỗi validate: ${getErrorMessage(err)}`);
+    }
   };
 
   return (
@@ -173,16 +211,16 @@ const TechnicianFlow = () => {
             <button
               className="btn primary"
               onClick={() => serviceCenterId && checkInMut.mutate(serviceCenterId)}
-              disabled={checkInMut.isLoading || !serviceCenterId}
+              disabled={checkInMut.isPending || !serviceCenterId}
             >
-              {checkInMut.isLoading ? "Đang check-in..." : "Check-in"}
+              {checkInMut.isPending ? "Đang check-in..." : "Check-in"}
             </button>
             <button
               className="btn"
               onClick={() => serviceCenterId && checkOutMut.mutate(serviceCenterId)}
-              disabled={checkOutMut.isLoading || !serviceCenterId}
+              disabled={checkOutMut.isPending || !serviceCenterId}
             >
-              {checkOutMut.isLoading ? "Đang check-out..." : "Check-out"}
+              {checkOutMut.isPending ? "Đang check-out..." : "Check-out"}
             </button>
           </div>
         </div>
@@ -192,6 +230,7 @@ const TechnicianFlow = () => {
           <select
             value={selectedWo}
             onChange={(e) => setSelectedWo(e.target.value)}
+            className="wo-select"
           >
             <option value="">-- Chọn work order --</option>
             {workOrders.map((wo) => (
@@ -201,29 +240,46 @@ const TechnicianFlow = () => {
               </option>
             ))}
           </select>
-            <div className="btn-row">
-              <button
-                className="btn primary"
-                onClick={handleStart}
-                disabled={!selectedWo || startMut.isLoading}
-              >
-                {startMut.isLoading ? "Đang bắt đầu..." : "Bắt đầu"}
-              </button>
-              <button
-                className="btn"
-                onClick={handleComplete}
-                disabled={!selectedWo || completeMut.isLoading}
-              >
-                {completeMut.isLoading ? "Đang hoàn tất..." : "Hoàn tất"}
-              </button>
-            </div>
-            {isCompleted && (
-              <div className="inline-note warning">
-                Work order này đã Completed, không thể start/complete lại.
+
+          {selectedWo && (
+            <div className="wo-actions">
+              <div className="btn-row">
+                <button
+                  className="btn primary"
+                  onClick={handleStart}
+                  disabled={startMut.isPending || isCompleted}
+                >
+                  {startMut.isPending ? "Đang bắt đầu..." : "Bắt đầu"}
+                </button>
+                <button
+                  className="btn info"
+                  onClick={handleOpenChecklist}
+                >
+                  Mở Checklist
+                </button>
+                <button
+                  className="btn warning"
+                  onClick={handleValidate}
+                >
+                  Validate
+                </button>
+                <button
+                  className="btn success"
+                  onClick={handleComplete}
+                  disabled={completeMut.isPending || isCompleted}
+                >
+                  {completeMut.isPending ? "Đang hoàn tất..." : "Hoàn tất"}
+                </button>
               </div>
-            )}
-          </div>
+              {isCompleted && (
+                <div className="inline-note warning">
+                  Work order này đã Completed.
+                </div>
+              )}
+            </div>
+          )}
         </div>
+      </div>
 
       <div className="panel grid-2">
         <div className="card-block">
@@ -241,9 +297,9 @@ const TechnicianFlow = () => {
             onClick={() =>
               selectedWo && serviceId && addServiceMut.mutate({ id: selectedWo, serviceId })
             }
-            disabled={!selectedWo || !serviceId || addServiceMut.isLoading}
+            disabled={!selectedWo || !serviceId || addServiceMut.isPending}
           >
-            {addServiceMut.isLoading ? "Đang thêm..." : "Thêm dịch vụ"}
+            {addServiceMut.isPending ? "Đang thêm..." : "Thêm dịch vụ"}
           </button>
         </div>
 
@@ -262,9 +318,9 @@ const TechnicianFlow = () => {
             onClick={() =>
               selectedWo && partId && addPartMut.mutate({ id: selectedWo, partId })
             }
-            disabled={!selectedWo || !partId || addPartMut.isLoading}
+            disabled={!selectedWo || !partId || addPartMut.isPending}
           >
-            {addPartMut.isLoading ? "Đang thêm..." : "Thêm phụ tùng"}
+            {addPartMut.isPending ? "Đang thêm..." : "Thêm phụ tùng"}
           </button>
         </div>
       </div>
@@ -283,34 +339,43 @@ const TechnicianFlow = () => {
                 <th>Biển số</th>
                 <th>Trạng thái</th>
                 <th>Dịch vụ</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
               {workOrdersQuery.isLoading ? (
                 <tr>
-                  <td colSpan={5} className="empty">
+                  <td colSpan={6} className="empty">
                     Đang tải...
                   </td>
                 </tr>
               ) : workOrders.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="empty">
+                  <td colSpan={6} className="empty">
                     Không có work order
                   </td>
                 </tr>
               ) : (
                 workOrders.map((wo) => (
-                  <tr key={wo.id || wo.workOrderId}>
+                  <tr key={wo.id || wo.workOrderId} className={String(wo.id || wo.workOrderId) === String(selectedWo) ? "selected-row" : ""}>
                     <td>{wo.workOrderId || wo.id}</td>
                     <td>{wo.customerName || wo.customer?.fullName || "-"}</td>
                     <td>{wo.licensePlate || wo.vehicle?.licensePlate || "-"}</td>
                     <td>
-                      <span className="badge">{wo.status || wo.state || "N/A"}</span>
+                      <span className={`badge status-${(wo.status || wo.state || "").toLowerCase()}`}>{wo.status || wo.state || "N/A"}</span>
                     </td>
                     <td>
                       {wo.services && wo.services.length > 0
                         ? wo.services.map((s) => s.serviceName || s.name).join(", ")
                         : "-"}
+                    </td>
+                    <td>
+                      <button className="btn-link" onClick={() => {
+                        setSelectedWo(wo.id || wo.workOrderId);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}>
+                        Chọn
+                      </button>
                     </td>
                   </tr>
                 ))

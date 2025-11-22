@@ -108,8 +108,8 @@ class UnifiedAPIService {
 
         const error = new Error(
           (data && data.message) ||
-            data ||
-            `HTTP error! status: ${response.status}`
+          data ||
+          `HTTP error! status: ${response.status}`
         );
         error.response = { status: response.status, data };
         throw error;
@@ -1351,8 +1351,8 @@ export const staffAPI = {
         user?.isActive !== undefined
           ? user.isActive
           : user?.status !== undefined
-          ? String(user.status).toLowerCase() !== "inactive"
-          : true,
+            ? String(user.status).toLowerCase() !== "inactive"
+            : true,
     });
 
     const normalizedItems = items.map(normalize);
@@ -1492,8 +1492,7 @@ export const financialReportsAPI = {
       )
     ).toString();
     const response = await apiService.request(
-      `/financial-reports/revenue/compare${
-        queryString ? `?${queryString}` : ""
+      `/financial-reports/revenue/compare${queryString ? `?${queryString}` : ""
       }`
     );
     return response?.data || response;
@@ -1530,8 +1529,7 @@ export const financialReportsAPI = {
       )
     ).toString();
     const response = await apiService.request(
-      `/financial-reports/payments/gateway-comparison${
-        queryString ? `?${queryString}` : ""
+      `/financial-reports/payments/gateway-comparison${queryString ? `?${queryString}` : ""
       }`
     );
     return response?.data || response;
@@ -1584,8 +1582,7 @@ export const financialReportsAPI = {
       )
     ).toString();
     const response = await apiService.request(
-      `/financial-reports/invoices/discount-analysis${
-        queryString ? `?${queryString}` : ""
+      `/financial-reports/invoices/discount-analysis${queryString ? `?${queryString}` : ""
       }`
     );
     return response?.data || response;
@@ -1656,6 +1653,7 @@ export const reportsAPI = {
 };
 
 // Work Order API - /api/work-orders
+// Work Order API - /api/work-orders
 export const workOrderAPI = {
   // Get work order by ID - GET /api/work-orders/{workOrderId}
   getWorkOrderById: async (workOrderId) => {
@@ -1683,18 +1681,77 @@ export const workOrderAPI = {
     console.log('[workOrderAPI.submitRating] Response:', response);
     return response?.data || response;
   },
+
+  // Complete Work Order - POST /api/work-orders/{id}/complete
+  completeWorkOrder: async (workOrderId) => {
+    console.log(`[workOrderAPI.completeWorkOrder] WorkOrderId: ${workOrderId}`);
+    const response = await apiService.request(`/work-orders/${workOrderId}/complete`, {
+      method: 'POST'
+    });
+    console.log('[workOrderAPI.completeWorkOrder] Response:', response);
+    return response?.data || response;
+  },
+
+  // Get Checklist - GET /api/work-orders/{workOrderId}/checklist
+  getChecklist: async (workOrderId) => {
+    console.log(`[workOrderAPI.getChecklist] WorkOrderId: ${workOrderId}`);
+    const response = await apiService.request(`/work-orders/${workOrderId}/checklist`);
+    console.log('[workOrderAPI.getChecklist] Response:', response);
+    return response?.data || response;
+  },
+
+  // Complete Checklist Item - POST /api/checklists/items/complete
+  completeChecklistItem: async (data) => {
+    console.log('[workOrderAPI.completeChecklistItem] Data:', data);
+    const response = await apiService.request('/checklists/items/complete', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    console.log('[workOrderAPI.completeChecklistItem] Response:', response);
+    return response?.data || response;
+  },
+
+  // Skip Checklist Item - POST /api/checklists/items/skip
+  skipChecklistItem: async (data) => {
+    console.log('[workOrderAPI.skipChecklistItem] Data:', data);
+    const response = await apiService.request('/checklists/items/skip', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    console.log('[workOrderAPI.skipChecklistItem] Response:', response);
+    return response?.data || response;
+  },
+
+  // Validate Checklist - GET /api/checklists/work-orders/{workOrderId}/validate
+  validateChecklist: async (workOrderId) => {
+    console.log(`[workOrderAPI.validateChecklist] WorkOrderId: ${workOrderId}`);
+    const response = await apiService.request(`/checklists/work-orders/${workOrderId}/validate`);
+    console.log('[workOrderAPI.validateChecklist] Response:', response);
+    return response?.data || response;
+  },
+
+  // Bulk Complete Checklist - POST /api/checklists/work-orders/{workOrderId}/complete-all
+  bulkCompleteChecklist: async (workOrderId, notes) => {
+    console.log(`[workOrderAPI.bulkCompleteChecklist] WorkOrderId: ${workOrderId}`, { notes });
+    const response = await apiService.request(`/checklists/work-orders/${workOrderId}/complete-all`, {
+      method: 'POST',
+      body: JSON.stringify({ notes }),
+    });
+    console.log('[workOrderAPI.bulkCompleteChecklist] Response:', response);
+    return response?.data || response;
+  },
 };
 
 // ============ CHECKLIST API ============
 // API for Technician Checklist Management
 export const checklistAPI = {
-  // 1. Get checklist of a work order - GET /api/checklists/work-orders/{workOrderId}
+  // 1. Get checklist of a work order - GET /api/work-orders/{workOrderId}/checklist
   getWorkOrderChecklist: async (workOrderId) => {
     if (workOrderId === undefined || workOrderId === null) {
       throw new Error('Work Order ID is required');
     }
     console.log(`[checklistAPI.getWorkOrderChecklist] WorkOrderId: ${workOrderId}`);
-    const response = await apiService.request(`/checklists/work-orders/${workOrderId}`);
+    const response = await apiService.request(`/work-orders/${workOrderId}/checklist`);
     console.log('[checklistAPI.getWorkOrderChecklist] Response:', response);
     return response?.data || response;
   },
@@ -1773,13 +1830,13 @@ export const checklistAPI = {
     return response?.data || response;
   },
 
-  // 8. Bulk complete all items - POST /api/work-orders/{workOrderId}/complete-all
+  // 8. Bulk complete all items - POST /api/checklists/work-orders/{workOrderId}/complete-all
   bulkCompleteAllItems: async (workOrderId, notes) => {
     if (workOrderId === undefined || workOrderId === null) {
       throw new Error('Work Order ID is required');
     }
     console.log(`[checklistAPI.bulkCompleteAllItems] WorkOrderId: ${workOrderId}`, { notes });
-    const response = await apiService.request(`/work-orders/${workOrderId}/complete-all`, {
+    const response = await apiService.request(`/checklists/work-orders/${workOrderId}/complete-all`, {
       method: 'POST',
       body: JSON.stringify({ notes }),
     });

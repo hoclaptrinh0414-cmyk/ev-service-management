@@ -1,328 +1,425 @@
-// src/pages/staff/MaintenanceChecklist.jsx
+// src/pages/technician/MaintenanceChecklist.jsx
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  getWorkOrderDetail, 
-  getWorkOrderChecklist,
-  quickCompleteItem,
-  uncompleteChecklistItem,
-  completeWorkOrder
-} from '../../services/staffService';
+import { Modal, Button, Spinner, Alert } from 'react-bootstrap';
+import workOrderService from '../../services/workOrderService';
+import { toast } from 'react-toastify';
+import './MaintenanceChecklist.css';
 
 export default function MaintenanceChecklist() {
   const { workOrderId } = useParams();
   const navigate = useNavigate();
+
   const [workOrder, setWorkOrder] = useState(null);
   const [checklist, setChecklist] = useState(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('All');
 
+  // Modal States
+  const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [showSkipModal, setShowSkipModal] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+
+  // Form States
+  const [notes, setNotes] = useState('');
+  const [photoUrl, setPhotoUrl] = useState('');
+  const [skipReason, setSkipReason] = useState('');
+
   useEffect(() => {
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workOrderId]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [woResponse, checklistResponse] = await Promise.all([
-        getWorkOrderDetail(workOrderId),
-        getWorkOrderChecklist(workOrderId)
+      const [woRes, checklistRes] = await Promise.all([
+        workOrderService.getWorkOrderDetails(workOrderId),
+        workOrderService.getChecklist(workOrderId)
       ]);
 
-      if (woResponse.success) {
-        setWorkOrder(woResponse.data);
-      }
+      setWorkOrder(woRes?.data || woRes);
+      setChecklist(checklistRes?.data || checklistRes);
 
-      if (checklistResponse.success) {
-        setChecklist(checklistResponse.data);
-      }
     } catch (error) {
       console.error('Failed to fetch data:', error);
-      alert('Failed to load checklist data');
+      toast.error('Failed to load checklist data');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleToggleItem = async (item) => {
+  const handleOpenCompleteModal = (item) => {
+    setSelectedItem(item);
+    setNotes('');
+    setPhotoUrl('');
+    setShowCompleteModal(true);
+  };
+
+  const handleOpenSkipModal = (item) => {
+    setSelectedItem(item);
+    setSkipReason('');
+    setShowSkipModal(true);
+  };
+
+  const handleCompleteItem = async () => {
+    if (!selectedItem) return;
+
     try {
-      setActionLoading(item.checklistItemId);
-      
-      if (item.isCompleted) {
-        await uncompleteChecklistItem(item.checklistItemId);
-      } else {
-        await quickCompleteItem(item.checklistItemId, '');
-      }
-      
+      setActionLoading(selectedItem.itemId);
+      const payload = {
+        workOrderId: parseInt(workOrderId),
+        itemId: selectedItem.itemId,
+        notes: notes,
+        photoUrls: photoUrl ? [photoUrl] : []
+      };
+
+      await workOrderService.completeChecklistItem(payload);
+      toast.success('Item completed successfully');
+      setShowCompleteModal(false);
       await fetchData();
     } catch (error) {
-      alert('Failed to update item: ' + (error.response?.data?.message || error.message));
+      console.error('Complete item error:', error);
+      toast.error('Failed to complete item');
     } finally {
       setActionLoading(null);
     }
   };
 
-  const handleCompleteAllAndFinish = async () => {
-    if (!window.confirm('Complete all items and finish this work order?')) return;
+  const handleSkipItem = async () => {
+    if (!selectedItem) return;
+    if (!skipReason.trim()) {
+      toast.warning('Please provide a reason for skipping');
+      return;
+    }
 
     try {
-      setLoading(true);
-      await completeWorkOrder(workOrderId);
-      alert('Work order completed successfully!');
-      navigate('/staff/work-orders');
+      setActionLoading(selectedItem.itemId);
+      const payload = {
+        workOrderId: parseInt(workOrderId),
+        itemId: selectedItem.itemId,
+        skipReason: skipReason
+      };
+
+      await workOrderService.skipChecklistItem(payload);
+      toast.success('Item skipped successfully');
+      setShowSkipModal(false);
+      await fetchData();
     } catch (error) {
-      alert('Failed to complete work order: ' + (error.response?.data?.message || error.message));
+      console.error('Skip item error:', error);
+      toast.error('Failed to skip item');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleValidateAndFinish = async () => {
+    try {
+      setLoading(true);
+      const validateRes = await workOrderService.validateChecklist(workOrderId);
+      const validationData = validateRes?.data || validateRes;
+
+      if (!validationData.isValid) {
+        const missing = validationData.missingRequired?.map(i => i.title).join(', ');
+        toast.error(`Cannot complete: Missing required items (${missing})`);
+        return;
+      }
+
+      if (window.confirm('All items validated. Are you sure you want to complete this work order?')) {
+        await workOrderService.completeWorkOrder(workOrderId);
+        toast.success('Work order completed successfully!');
+        navigate('/technician/my-work-orders');
+      }
+
+    } catch (error) {
+      console.error('Finish work order error:', error);
+      if (error.response?.data?.errors?.includes('PAYMENT_REQUIRED')) {
+        toast.error('Payment required before completion.');
+      } else if (error.response?.data?.errors?.includes('CHECKLIST_INCOMPLETE')) {
+        toast.error('Checklist is incomplete.');
+      } else {
+        toast.error('Failed to complete work order');
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const getProgressPercentage = () => {
-    if (!checklist?.items || checklist.items.length === 0) return 0;
-    const completed = checklist.items.filter(item => item.isCompleted).length;
-    return Math.round((completed / checklist.items.length) * 100);
-  };
-
   const getCategories = () => {
     if (!checklist?.items) return [];
-    const categories = new Set(checklist.items.map(item => item.categoryName || 'Other'));
+    const categories = new Set(checklist.items.map(item => item.category || 'Other'));
     return ['All', ...Array.from(categories)];
   };
 
   const getFilteredItems = () => {
     if (!checklist?.items) return [];
     if (selectedCategory === 'All') return checklist.items;
-    return checklist.items.filter(item => (item.categoryName || 'Other') === selectedCategory);
+    return checklist.items.filter(item => (item.category || 'Other') === selectedCategory);
   };
 
-  if (loading) {
+  const getProgress = () => {
+    if (!checklist?.items?.length) return 0;
+    const completed = checklist.items.filter(i => i.isCompleted || i.skipped).length;
+    return Math.round((completed / checklist.items.length) * 100);
+  };
+
+  if (loading && !checklist) {
     return (
-      <div className="d-flex justify-content-center align-items-center" style={{ height: '400px' }}>
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </div>
+      <div className="d-flex justify-content-center align-items-center vh-100 bg-light">
+        <Spinner animation="border" variant="primary" />
       </div>
     );
   }
 
   if (!workOrder || !checklist) {
     return (
-      <div className="p-4">
-        <div className="alert alert-danger">
-          <i className="bi bi-exclamation-triangle me-2"></i>
-          Failed to load checklist data
-        </div>
-        <button className="btn btn-primary" onClick={() => navigate('/staff/work-orders')}>
-          Back to Work Orders
-        </button>
+      <div className="container mt-5">
+        <Alert variant="danger">Failed to load work order data.</Alert>
+        <Button variant="secondary" onClick={() => navigate(-1)}>Go Back</Button>
       </div>
     );
   }
 
-  const progress = getProgressPercentage();
+  const progress = getProgress();
   const filteredItems = getFilteredItems();
 
   return (
-    <div className="p-4">
+    <div className="tech-page-container">
       {/* Header */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <div>
-          <button 
-            className="btn btn-link text-decoration-none p-0 mb-2"
-            onClick={() => navigate('/staff/work-orders')}
-          >
-            <i className="bi bi-arrow-left me-2"></i>
-            Back to Work Orders
+      <header className="tech-header">
+        <div className="container">
+          <button className="tech-back-btn" onClick={() => navigate(-1)}>
+            <i className="bi bi-arrow-left me-2"></i> Back to List
           </button>
-          <h1 className="h3 fw-bold mb-1">Maintenance Checklist</h1>
-          <p className="text-muted mb-0">
-            Work Order #{workOrder.workOrderCode} - {workOrder.vehicleLicensePlate}
-          </p>
-        </div>
-        <div className="text-end">
-          <div className="h2 fw-bold mb-0 text-primary">{progress}%</div>
-          <small className="text-muted">Complete</small>
-        </div>
-      </div>
-
-      {/* Work Order Info Card */}
-      <div className="card border-0 shadow-sm mb-4">
-        <div className="card-body">
-          <div className="row g-3">
-            <div className="col-md-3">
-              <small className="text-muted d-block">Vehicle</small>
-              <div className="fw-medium">{workOrder.vehicleMake} {workOrder.vehicleModel}</div>
-              <small className="text-muted">{workOrder.vehicleLicensePlate}</small>
-            </div>
-            <div className="col-md-3">
-              <small className="text-muted d-block">Customer</small>
-              <div className="fw-medium">{workOrder.customerName}</div>
-              <small className="text-muted">{workOrder.customerPhone}</small>
-            </div>
-            <div className="col-md-3">
-              <small className="text-muted d-block">Status</small>
-              <span className="badge bg-primary">{workOrder.status}</span>
-            </div>
-            <div className="col-md-3">
-              <small className="text-muted d-block">Progress</small>
-              <div className="progress" style={{ height: '24px' }}>
-                <div 
-                  className="progress-bar bg-success" 
-                  role="progressbar" 
-                  style={{ width: `${progress}%` }}
-                  aria-valuenow={progress} 
-                  aria-valuemin="0" 
-                  aria-valuemax="100"
-                >
-                  {progress}%
-                </div>
-              </div>
-            </div>
+          <h1 className="tech-wo-title">Maintenance Checklist</h1>
+          <div className="tech-wo-meta">
+            <span>WO: <strong>{workOrder.workOrderCode}</strong></span>
+            <span>•</span>
+            <span>Vehicle: <strong>{workOrder.vehicleLicensePlate}</strong></span>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* Category Filter */}
-      <div className="mb-3">
-        <div className="btn-group" role="group">
-          {getCategories().map(category => (
+      <div className="container">
+        {/* Progress Card */}
+        <div className="tech-progress-card">
+          <div className="tech-progress-label">
+            <span>Overall Progress</span>
+            <span>{progress}%</span>
+          </div>
+          <div className="tech-progress-bar-bg">
+            <div
+              className="tech-progress-bar-fill"
+              style={{ width: `${progress}%` }}
+            ></div>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="tech-filters mb-4">
+          {getCategories().map(cat => (
             <button
-              key={category}
-              type="button"
-              className={`btn ${selectedCategory === category ? 'btn-primary' : 'btn-outline-primary'}`}
-              onClick={() => setSelectedCategory(category)}
+              key={cat}
+              className={`tech-filter-pill ${selectedCategory === cat ? 'active' : ''}`}
+              onClick={() => setSelectedCategory(cat)}
             >
-              {category}
+              {cat}
             </button>
           ))}
         </div>
-      </div>
 
-      {/* Checklist Items */}
-      <div className="card border-0 shadow-sm mb-4">
-        <div className="card-body">
-          {filteredItems.length === 0 ? (
-            <div className="text-center py-5">
-              <i className="bi bi-inbox fs-1 text-muted"></i>
-              <p className="text-muted mt-2">No checklist items in this category</p>
-            </div>
-          ) : (
-            <div className="list-group list-group-flush">
-              {filteredItems.map((item, index) => (
-                <div 
-                  key={item.checklistItemId} 
-                  className={`list-group-item border-0 ${item.isCompleted ? 'bg-light' : ''}`}
-                >
-                  <div className="d-flex align-items-start">
-                    {/* Checkbox */}
-                    <div className="form-check me-3">
-                      <input
-                        className="form-check-input"
-                        type="checkbox"
-                        checked={item.isCompleted}
-                        onChange={() => handleToggleItem(item)}
-                        disabled={actionLoading === item.checklistItemId}
-                        id={`item-${item.checklistItemId}`}
-                        style={{ width: '24px', height: '24px' }}
-                      />
-                    </div>
+        {/* Checklist Items */}
+        <div className="tech-checklist-items">
+          {filteredItems.map((item) => {
+            const statusClass = item.isCompleted ? 'completed' : item.skipped ? 'skipped' : 'pending';
 
-                    {/* Item Content */}
-                    <div className="flex-grow-1">
-                      <div className="d-flex justify-content-between align-items-start">
-                        <div>
-                          <label 
-                            htmlFor={`item-${item.checklistItemId}`}
-                            className={`mb-1 ${item.isCompleted ? 'text-decoration-line-through text-muted' : 'fw-medium'}`}
-                            style={{ cursor: 'pointer' }}
-                          >
-                            {index + 1}. {item.itemName}
-                          </label>
-                          {item.description && (
-                            <p className="small text-muted mb-1">{item.description}</p>
-                          )}
-                          <div className="d-flex gap-2 align-items-center">
-                            <span className="badge bg-secondary">{item.categoryName || 'Other'}</span>
-                            {!item.isRequired && (
-                              <span className="badge bg-info">Optional</span>
-                            )}
-                            {item.estimatedMinutes && (
-                              <small className="text-muted">
-                                <i className="bi bi-clock me-1"></i>
-                                ~{item.estimatedMinutes} min
-                              </small>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Action Loading Spinner */}
-                        {actionLoading === item.checklistItemId && (
-                          <div className="spinner-border spinner-border-sm text-primary" role="status">
-                            <span className="visually-hidden">Loading...</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Completion Info */}
-                      {item.isCompleted && item.completedDate && (
-                        <div className="mt-2 p-2 bg-white rounded border">
-                          <small className="text-success">
-                            <i className="bi bi-check-circle-fill me-1"></i>
-                            Completed on {new Date(item.completedDate).toLocaleString()}
-                          </small>
-                          {item.completedByName && (
-                            <small className="text-muted ms-2">by {item.completedByName}</small>
-                          )}
-                        </div>
+            return (
+              <div key={item.itemId} className={`tech-item-card ${statusClass}`}>
+                <div className="tech-item-header">
+                  <div>
+                    <div className="d-flex align-items-center gap-2 mb-1">
+                      <span className="tech-badge tech-badge-cat">{item.category || 'General'}</span>
+                      {item.isRequired ? (
+                        <span className="tech-badge tech-badge-req">Required</span>
+                      ) : (
+                        <span className="tech-badge tech-badge-opt">Optional</span>
                       )}
                     </div>
+                    <h3 className="tech-item-title">{item.itemDescription || item.title}</h3>
+                    {item.description && <p className="tech-item-desc">{item.description}</p>}
+                  </div>
+                  <div className="ms-3">
+                    {item.isCompleted && <i className="bi bi-check-circle-fill text-success fs-4"></i>}
+                    {item.skipped && <i className="bi bi-dash-circle-fill text-warning fs-4"></i>}
+                    {!item.isCompleted && !item.skipped && <i className="bi bi-circle text-secondary fs-4"></i>}
                   </div>
                 </div>
-              ))}
+
+                {/* Status Details */}
+                {(item.isCompleted || item.skipped) && (
+                  <div className="tech-status-box">
+                    <div className="tech-status-row">
+                      <i className="bi bi-person-circle"></i>
+                      <strong>{item.isCompleted ? (item.completedBy || 'Technician') : (item.skippedBy || 'Technician')}</strong>
+                      <span className="text-muted">•</span>
+                      <span>{new Date(item.isCompleted ? item.completedAt : item.skippedAt).toLocaleString()}</span>
+                    </div>
+
+                    {item.notes && (
+                      <div className="tech-status-note mt-2">
+                        <i className="bi bi-sticky me-2"></i>"{item.notes}"
+                      </div>
+                    )}
+
+                    {item.skipReason && (
+                      <div className="tech-status-note mt-2 text-danger">
+                        <i className="bi bi-exclamation-circle me-2"></i>Skipped: {item.skipReason}
+                      </div>
+                    )}
+
+                    {item.photoUrls && item.photoUrls.length > 0 && (
+                      <div className="mt-2">
+                        {item.photoUrls.map((url, idx) => (
+                          <a key={idx} href={url} target="_blank" rel="noreferrer" className="tech-photo-link">
+                            <i className="bi bi-image"></i> View Photo
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Actions */}
+                {!item.isCompleted && !item.skipped && (
+                  <div className="tech-item-actions">
+                    <button
+                      className="tech-btn tech-btn-complete"
+                      onClick={() => handleOpenCompleteModal(item)}
+                      disabled={actionLoading === item.itemId}
+                    >
+                      <i className="bi bi-check-lg"></i> Complete
+                    </button>
+                    {!item.isRequired && (
+                      <button
+                        className="tech-btn tech-btn-skip"
+                        onClick={() => handleOpenSkipModal(item)}
+                        disabled={actionLoading === item.itemId}
+                      >
+                        <i className="bi bi-skip-forward"></i> Skip
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          {filteredItems.length === 0 && (
+            <div className="text-center py-5 text-muted">
+              <i className="bi bi-clipboard-x fs-1 d-block mb-3"></i>
+              <p>No items found in this category.</p>
             </div>
           )}
         </div>
       </div>
 
-      {/* Action Buttons */}
-      <div className="d-flex justify-content-between">
-        <button 
-          className="btn btn-outline-secondary"
-          onClick={() => navigate('/staff/work-orders')}
-        >
-          <i className="bi bi-arrow-left me-2"></i>
-          Back
-        </button>
-        <div>
-          <button 
-            className="btn btn-primary me-2"
-            onClick={fetchData}
-          >
-            <i className="bi bi-arrow-clockwise me-2"></i>
-            Refresh
-          </button>
-          {progress === 100 && (
-            <button 
-              className="btn btn-success"
-              onClick={handleCompleteAllAndFinish}
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <span className="spinner-border spinner-border-sm me-2"></span>
-                  Completing...
-                </>
-              ) : (
-                <>
-                  <i className="bi bi-check-circle-fill me-2"></i>
-                  Finish Work Order
-                </>
-              )}
-            </button>
-          )}
+      {/* Fixed Footer */}
+      <footer className="tech-footer">
+        <div className="tech-footer-info">
+          <span className="text-muted small">Total Items</span>
+          <strong className="text-dark">{checklist.items.length} Tasks</strong>
         </div>
-      </div>
+        <button
+          className="tech-footer-btn"
+          onClick={handleValidateAndFinish}
+          disabled={loading}
+        >
+          {loading ? <Spinner animation="border" size="sm" /> : 'Finish Work Order'}
+        </button>
+      </footer>
+
+      {/* Complete Modal */}
+      <Modal show={showCompleteModal} onHide={() => setShowCompleteModal(false)} centered contentClassName="border-0 rounded-4 overflow-hidden">
+        <div className="tech-modal-header">
+          <h5 className="tech-modal-title">Complete Task</h5>
+          <button type="button" className="btn-close" onClick={() => setShowCompleteModal(false)}></button>
+        </div>
+        <div className="tech-modal-body">
+          <p className="mb-4 text-muted">{selectedItem?.itemDescription || selectedItem?.title}</p>
+
+          <div className="mb-3">
+            <label className="tech-form-label">Notes (Optional)</label>
+            <textarea
+              className="tech-form-input"
+              rows="3"
+              placeholder="Enter inspection results or observations..."
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+            ></textarea>
+          </div>
+
+          <div className="mb-4">
+            <label className="tech-form-label">Photo URL (Optional)</label>
+            <input
+              type="text"
+              className="tech-form-input"
+              placeholder="https://..."
+              value={photoUrl}
+              onChange={(e) => setPhotoUrl(e.target.value)}
+            />
+          </div>
+
+          <div className="d-flex gap-2">
+            <button className="btn btn-light flex-grow-1 py-2 fw-medium" onClick={() => setShowCompleteModal(false)}>Cancel</button>
+            <button
+              className="btn btn-primary flex-grow-1 py-2 fw-medium"
+              onClick={handleCompleteItem}
+              disabled={!!actionLoading}
+            >
+              {actionLoading ? <Spinner size="sm" animation="border" /> : 'Mark as Complete'}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Skip Modal */}
+      <Modal show={showSkipModal} onHide={() => setShowSkipModal(false)} centered contentClassName="border-0 rounded-4 overflow-hidden">
+        <div className="tech-modal-header">
+          <h5 className="tech-modal-title text-warning">Skip Task</h5>
+          <button type="button" className="btn-close" onClick={() => setShowSkipModal(false)}></button>
+        </div>
+        <div className="tech-modal-body">
+          <p className="mb-4 text-muted">{selectedItem?.itemDescription || selectedItem?.title}</p>
+
+          <Alert variant="warning" className="border-0 bg-warning-subtle text-warning-emphasis mb-4">
+            <i className="bi bi-exclamation-triangle-fill me-2"></i>
+            Skipping this item requires a valid reason.
+          </Alert>
+
+          <div className="mb-4">
+            <label className="tech-form-label">Reason <span className="text-danger">*</span></label>
+            <textarea
+              className="tech-form-input"
+              rows="3"
+              placeholder="Why is this item being skipped?"
+              value={skipReason}
+              onChange={(e) => setSkipReason(e.target.value)}
+            ></textarea>
+          </div>
+
+          <div className="d-flex gap-2">
+            <button className="btn btn-light flex-grow-1 py-2 fw-medium" onClick={() => setShowSkipModal(false)}>Cancel</button>
+            <button
+              className="btn btn-warning text-white flex-grow-1 py-2 fw-medium"
+              onClick={handleSkipItem}
+              disabled={!!actionLoading}
+            >
+              {actionLoading ? <Spinner size="sm" animation="border" /> : 'Skip Item'}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

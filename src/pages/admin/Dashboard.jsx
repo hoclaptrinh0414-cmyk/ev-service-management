@@ -7,7 +7,7 @@ import ProgressStat from "../../components/dashboard/ProgressStat";
 import TrendAreaChart from "../../components/dashboard/TrendAreaChart";
 import { motion } from "framer-motion";
 import DonutChart from "../../components/dashboard/DonutChart";
-import { appointmentsAPI, customersAPI, vehicleAPI } from "../../services/api";
+import { appointmentAPI, customerAPI, vehicleAPI } from "../../services/adminAPI";
 
 const COLOR_PALETTE = [
   "#0d6efd",
@@ -216,11 +216,11 @@ const Dashboard = () => {
 
     const fetchDashboardData = async () => {
       if (
-        !customersAPI.getStatistics ||
-        !customersAPI.getMaintenanceDue ||
-        !vehicleAPI.getVehicleStatistics ||
-        !appointmentsAPI.getStatisticsByStatus ||
-        !appointmentsAPI.getAppointments
+        !customerAPI.getStatistics ||
+        !customerAPI.getMaintenanceDue ||
+        !vehicleAPI.getStatistics ||
+        !appointmentAPI.getStatisticsByStatus ||
+        !appointmentAPI.getAll
       ) {
         setLoading(false);
         return;
@@ -233,11 +233,11 @@ const Dashboard = () => {
 
       try {
         const results = await Promise.allSettled([
-          customersAPI.getStatistics(),
-          vehicleAPI.getVehicleStatistics(),
-          customersAPI.getMaintenanceDue(),
-          appointmentsAPI.getStatisticsByStatus(),
-          appointmentsAPI.getAppointments({
+          customerAPI.getStatistics(),
+          vehicleAPI.getStatistics(),
+          customerAPI.getMaintenanceDue(),
+          appointmentAPI.getStatisticsByStatus(),
+          appointmentAPI.getAll({
             page: 1,
             pageSize: 4,
             sortBy: "AppointmentDate",
@@ -412,8 +412,8 @@ const Dashboard = () => {
                 loading
                   ? "Đang tải dữ liệu..."
                   : stats.totalCustomers
-                  ? `${maintenanceSharePercent}% of base`
-                  : "Chưa có dữ liệu"
+                    ? `${maintenanceSharePercent}% of base`
+                    : "Chưa có dữ liệu"
               }
               icon="bi bi-tools"
             >
@@ -546,8 +546,8 @@ const Dashboard = () => {
                           (b.status === "Completed"
                             ? "#22c55e"
                             : b.status === "In Progress"
-                            ? "#f59e0b"
-                            : "#0d6efd");
+                              ? "#f59e0b"
+                              : "#0d6efd");
 
                         return (
                           <tr key={b.id}>
