@@ -765,6 +765,11 @@ class UnifiedAPIService {
     });
     return response;
   }
+  async getAvailableServiceCenters(date) {
+    const query = date ? `?date=${date}` : "";
+    const response = await this.request(`/service-centers/available${query}`);
+    return response;
+  }
 
   // 6.4. Time slots available (khung giờ trống)
   async getAvailableTimeSlots(serviceCenterId, date) {

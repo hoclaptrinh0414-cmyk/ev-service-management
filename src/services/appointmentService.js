@@ -238,6 +238,30 @@ export const appointmentService = {
     }
   },
 
+  /**
+   * Lay trung tam con slot trong theo ngay (BE: GET /api/service-centers/available?date=YYYY-MM-DD)
+   */
+  async getAvailableCenters(date) {
+    try {
+      const response = await apiService.getAvailableServiceCenters(date);
+      if (response?.data) return response;
+
+      const list = Array.isArray(response?.data)
+        ? response.data
+        : Array.isArray(response)
+          ? response
+          : [];
+
+      return {
+        ...response,
+        data: list,
+      };
+    } catch (error) {
+      console.error('Get available centers failed:', error);
+      throw error;
+    }
+  },
+
 
 
   /**
