@@ -5,7 +5,7 @@ const API_BASE = (process.env.REACT_APP_API_URL || '').replace(/\/$/, '');
 // If REACT_APP_API_URL ends with /api, remove it for hub root
 const HUB_BASE = API_BASE.endsWith('/api')
   ? API_BASE.replace(/\/api$/, '')
-  : API_BASE || 'http://localhost:7077';
+  : API_BASE;
 
 export const CHAT_HUB_URL = `${HUB_BASE}/hubs/chat`;
 

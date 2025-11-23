@@ -12,7 +12,9 @@ const API_CONFIG = {
 
 console.log("API Configuration:", {
   baseURL: API_CONFIG.baseURL,
-  appURL: process.env.REACT_APP_APP_URL || "http://localhost:3000",
+  appURL:
+    process.env.REACT_APP_APP_URL ||
+    (process.env.REACT_APP_API_URL || "").replace(/\/api$/, ""),
 });
 
 class UnifiedAPIService {
