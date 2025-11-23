@@ -305,11 +305,16 @@ export const authService = {
    */
   async logout() {
     try {
-      await authAPI.logout();
-      console.log('✅ Logged out');
+      const refreshToken = localStorage.getItem('refreshToken') || '';
+      await apiService.request('/auth/logout', {
+        method: 'POST',
+        body: JSON.stringify({ refreshToken }),
+      });
+      console.log('✅ Logged out via /auth/logout');
     } catch (error) {
       console.error('❌ Logout error:', error);
       // Vẫn clear auth data ngay cả khi có lỗi
+    } finally {
       authUtils.clearAuth();
     }
   },

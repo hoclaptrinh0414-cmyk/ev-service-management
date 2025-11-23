@@ -53,6 +53,27 @@ export const getAppointmentDetail = async (appointmentId) => {
 };
 
 /**
+ * Tạo appointment mới (Walk-in/Phone)
+ * POST /appointment-management
+ */
+export const createAppointment = async (appointmentData) => {
+  const { data } = await api.post('/appointment-management', appointmentData);
+  return data;
+};
+
+/**
+ * Cập nhật appointment
+ * PUT /appointment-management/{id}
+ */
+export const updateAppointment = async (appointmentId, appointmentData) => {
+  const { data } = await api.put(
+    `/appointment-management/${appointmentId}`,
+    appointmentData,
+  );
+  return data;
+};
+
+/**
  * Xác nhận appointment (Staff confirm trước khi khách tới)
  * POST /appointment-management/{id}/confirm
  */
@@ -65,12 +86,38 @@ export const confirmAppointment = async (appointmentId, confirmData) => {
 };
 
 /**
+ * Hủy appointment
+ * POST /appointment-management/{id}/cancel
+ */
+export const cancelAppointment = async (appointmentId, cancellationReason) => {
+  const { data } = await api.post(
+    `/appointment-management/${appointmentId}/cancel`,
+    { cancellationReason },
+  );
+  return data;
+};
+
+/**
  * Check-in appointment (tạo WorkOrder + Checklist tự động)
  * POST /appointment-management/{id}/check-in
+ * BE chỉ cần empty body {}
  */
 export const checkInAppointment = async (appointmentId) => {
   const { data } = await api.post(
     `/appointment-management/${appointmentId}/check-in`,
+    {},
+  );
+  return data;
+};
+
+/**
+ * Thêm dịch vụ phát sinh vào appointment
+ * POST /appointment-management/{id}/add-services
+ */
+export const addServicesToAppointment = async (appointmentId, serviceIds) => {
+  const { data } = await api.post(
+    `/appointment-management/${appointmentId}/add-services`,
+    { serviceIds },
   );
   return data;
 };
@@ -105,14 +152,58 @@ export const autoSelectTechnician = async (assignData) => {
 };
 
 /**
+ * Get top N technician candidates (gợi ý danh sách)
+ * POST /technicians/auto-assign/candidates?topN=5
+ */
+export const getTechnicianCandidates = async (assignData, topN = 5) => {
+  const { data } = await api.post(
+    `/technicians/auto-assign/candidates?topN=${topN}`,
+    assignData,
+  );
+  return data;
+};
+
+/**
+ * Get available technicians (filter theo thời gian rảnh)
+ * GET /technicians/available
+ */
+export const getAvailableTechnicians = async (params = {}) => {
+  const { data } = await api.get('/technicians/available', { params });
+  return data;
+};
+
+/**
  * Assign technician to work order
  * PATCH /work-orders/{id}/assign-technician/{technicianId}
  */
 export const assignTechnician = async (workOrderId, technicianId) => {
-  const { data } = await api.patch(
-    `/work-orders/${workOrderId}/assign-technician/${technicianId}`,
-  );
-  return data;
+  console.log('[staffService] assignTechnician called with:', {
+    workOrderId,
+    technicianId,
+    url: `/work-orders/${workOrderId}/assign-technician/${technicianId}`
+  });
+
+  if (!workOrderId || !technicianId) {
+    throw new Error(`Invalid parameters: workOrderId=${workOrderId}, technicianId=${technicianId}`);
+  }
+
+  try {
+    const { data } = await api.patch(
+      `/work-orders/${workOrderId}/assign-technician/${technicianId}`,
+    );
+    console.log('[staffService] assignTechnician response:', data);
+    return data;
+  } catch (error) {
+    console.error('[staffService] assignTechnician failed:', {
+      workOrderId,
+      technicianId,
+      status: error.response?.status,
+      errorData: error.response?.data,
+      errorMessage: error.response?.data?.message || error.message
+    });
+    console.error('Full error response:', error.response);
+    throw error;
+  }
 };
 
 /**
@@ -130,6 +221,26 @@ export const startWorkOrder = async (workOrderId) => {
  */
 export const completeWorkOrder = async (workOrderId) => {
   const { data } = await api.post(`/work-orders/${workOrderId}/complete`);
+  return data;
+};
+
+/**
+ * Update work order status manually
+ * PATCH /work-orders/{id}/status
+ */
+export const updateWorkOrderStatus = async (workOrderId, status) => {
+  const { data } = await api.patch(`/work-orders/${workOrderId}/status`, {
+    status,
+  });
+  return data;
+};
+
+/**
+ * Validate delivery (kiểm tra trước khi bàn giao xe)
+ * GET /work-orders/{id}/validate-delivery
+ */
+export const validateDelivery = async (workOrderId) => {
+  const { data } = await api.get(`/work-orders/${workOrderId}/validate-delivery`);
   return data;
 };
 
@@ -167,10 +278,10 @@ export const applyChecklistTemplate = async (workOrderId, templateData) => {
 
 /**
  * Lấy checklist của work order
- * GET /checklists/work-orders/{workOrderId}
+ * GET /work-orders/{workOrderId}/checklist
  */
 export const getWorkOrderChecklist = async (workOrderId) => {
-  const { data } = await api.get(`/checklists/work-orders/${workOrderId}`);
+  const { data } = await api.get(`/work-orders/${workOrderId}/checklist`);
   return data;
 };
 
@@ -228,10 +339,10 @@ export const uncompleteChecklistItem = async (itemId) => {
 
 /**
  * Bulk complete all items
- * POST /work-orders/{id}/complete-all
+ * POST /checklists/work-orders/{id}/complete-all
  */
 export const bulkCompleteAllItems = async (workOrderId, notes) => {
-  const { data } = await api.post(`/work-orders/${workOrderId}/complete-all`, {
+  const { data } = await api.post(`/checklists/work-orders/${workOrderId}/complete-all`, {
     notes,
   });
   return data;
@@ -280,7 +391,19 @@ export const canRateWorkOrder = async (workOrderId) => {
   return data;
 };
 
-// ==================== INVOICE ====================
+// ==================== PAYMENT & INVOICE ====================
+
+/**
+ * Record payment result (manual - chuyển khoản/VNPay)
+ * POST /appointment-management/{id}/payments/record-result
+ */
+export const recordPaymentResult = async (appointmentId, paymentData) => {
+  const { data } = await api.post(
+    `/appointment-management/${appointmentId}/payments/record-result`,
+    paymentData,
+  );
+  return data;
+};
 
 /**
  * Get invoice by work order
@@ -317,17 +440,25 @@ export default {
   getStaffAppointments,
   getAppointmentsByDate,
   getAppointmentDetail,
+  createAppointment,
+  updateAppointment,
   confirmAppointment,
+  cancelAppointment,
   checkInAppointment,
+  addServicesToAppointment,
   getActiveServiceCenters,
 
   // Work Orders
   searchWorkOrders,
   getWorkOrderDetail,
   autoSelectTechnician,
+  getTechnicianCandidates,
+  getAvailableTechnicians,
   assignTechnician,
   startWorkOrder,
   completeWorkOrder,
+  updateWorkOrderStatus,
+  validateDelivery,
 
   // Checklist Templates
   getChecklistTemplates,
@@ -349,7 +480,8 @@ export default {
   getQualityCheckInfo,
   canRateWorkOrder,
 
-  // Invoice
+  // Payment & Invoice
+  recordPaymentResult,
   getInvoiceByWorkOrder,
 
   // Technicians
