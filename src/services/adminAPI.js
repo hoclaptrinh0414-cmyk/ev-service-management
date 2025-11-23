@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || "https://2bc85e2d7dea.ngrok-free.app/api";
+const API_BASE_URL =
+  process.env.REACT_APP_API_URL ||
+  "https://unprepared-kade-nonpossibly.ngrok-free.dev/api";
 
 // Create axios instance with default config
 const adminAPI = axios.create({
@@ -115,6 +117,17 @@ export const serviceCenterAPI = {
   search: (params) => adminAPI.get('/service-centers/search', { params }),
   getStatistics: (id) => adminAPI.get(`/service-centers/${id}/statistics`),
   getAvailability: (id, params) => adminAPI.get(`/service-centers/${id}/availability`, { params }),
+};
+
+// ==================== PARTS MANAGEMENT ====================
+export const partAPI = {
+  getAll: (params) => adminAPI.get('/parts', { params }),
+  getById: (id) => adminAPI.get(`/parts/${id}`),
+  create: (data) => adminAPI.post('/parts', data),
+  update: (id, data) => adminAPI.put(`/parts/${id}`, data),
+  delete: (id) => adminAPI.delete(`/parts/${id}`),
+  search: (params) => adminAPI.get('/parts/search', { params }),
+  getActive: () => adminAPI.get('/parts/active'),
 };
 
 // ==================== INVENTORY MANAGEMENT ====================
@@ -274,6 +287,31 @@ export const workOrderAPI = {
   start: (id) => adminAPI.post(`/work-orders/${id}/start`),
   complete: (id) => adminAPI.post(`/work-orders/${id}/complete`),
   getTimeline: (id) => adminAPI.get(`/work-orders/${id}/timeline`),
+};
+
+// ==================== VEHICLES (ADMIN) ====================
+export const vehicleAPI = {
+  getAll: (params) => adminAPI.get('/vehicles', { params }),
+  getById: (id) => adminAPI.get(`/vehicles/${id}`),
+  create: (data) => adminAPI.post('/vehicles', data),
+  update: (id, data) => adminAPI.put(`/vehicles/${id}`, data),
+  delete: (id) => adminAPI.delete(`/vehicles/${id}`),
+  search: (params) => adminAPI.get('/vehicles/search', { params }),
+  getStatistics: () => adminAPI.get('/vehicles/statistics'),
+};
+
+// ==================== CUSTOMER TYPES ====================
+export const customerTypeAPI = {
+  getAll: () => adminAPI.get('/customer-types'),
+  getActive: () => adminAPI.get('/customer-types/active'),
+};
+
+export const handleApiError = (error) => {
+  console.error("API Error:", error);
+  if (error.response?.data?.message) return error.response.data.message;
+  if (error.response?.data?.Message) return error.response.data.Message;
+  if (error.message) return error.message;
+  return "Đã xảy ra lỗi không xác định.";
 };
 
 export default adminAPI;

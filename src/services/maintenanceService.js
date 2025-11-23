@@ -1,7 +1,9 @@
 // src/services/maintenanceService.js
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5153/api';
+const API_BASE_URL =
+  process.env.REACT_APP_API_URL ||
+  'https://unprepared-kade-nonpossibly.ngrok-free.dev/api';
 
 export const maintenanceService = {
   // Get all maintenance services with pagination and filters
