@@ -1,31 +1,62 @@
-// src/services/appointmentService.js
+﻿// src/services/appointmentService.js
 import apiService, { appointmentsAPI, lookupAPI } from './api';
 
 /**
  * Appointment Service
- * Cung cấp các phương thức quản lý lịch hẹn bảo dưỡng theo tài liệu CUSTOMER_API_ENDPOINTS.md
+ * Cung cáº¥p cÃ¡c phÆ°Æ¡ng thá»©c quáº£n lÃ½ lá»‹ch háº¹n báº£o dÆ°á»¡ng theo tÃ i liá»‡u CUSTOMER_API_ENDPOINTS.md
  */
 export const appointmentService = {
   // ============ VEHICLE HELPERS FOR BOOKING FLOW ============
   /**
-   * Lấy danh sách xe của khách (dùng ở bước chọn xe)
+   * Láº¥y danh sÃ¡ch xe cá»§a khÃ¡ch (dÃ¹ng á»Ÿ bÆ°á»›c chá»n xe)
    * GET /api/customer/profile/my-vehicles
    */
+  
   async getMyVehicles() {
     try {
       const response = await apiService.getMyVehicles();
-      console.log('🛠️ Get my vehicles success:', response);
+      console.log('Get my vehicles success:', response);
       return response;
     } catch (error) {
-      console.error('❌ Get my vehicles failed:', error);
+      console.error('Get my vehicles failed:', error);
+      throw error;
+    }
+  },
+/**
+   * Admin: Xoa xe khach hang
+   * DELETE /api/customer-vehicles/{id}
+   */
+  async deleteCustomerVehicleAdmin(vehicleId) {
+    try {
+      const response = await apiService.deleteCustomerVehicleAdmin(vehicleId);
+      console.log('Delete customer vehicle (admin) success:', response);
+      return response;
+    } catch (error) {
+      console.error('Delete customer vehicle (admin) failed:', error);
       throw error;
     }
   },
 
-  // ============ 4. APPOINTMENTS - ĐẶT LỊCH BẢO DƯỠNG ============
+  /**
+   * Customer: Xoa xe cua toi
+   * DELETE /api/customer/profile/my-vehicles/{vehicleId}
+   */
+  async deleteVehicle(vehicleId) {
+    try {
+      const response = await apiService.deleteVehicle(vehicleId);
+      console.log('Delete my vehicle success:', response);
+      return response;
+    } catch (error) {
+      console.error('Delete my vehicle failed:', error);
+      throw error;
+    }
+  },
+
+
+  // ============ 4. APPOINTMENTS - Äáº¶T Lá»ŠCH Báº¢O DÆ¯á» NG ============
 
   /**
-   * 4.1. Tạo lịch hẹn mới
+   * 4.1. Táº¡o lá»‹ch háº¹n má»›i
    * POST /api/appointments
    */
   async createAppointment(appointmentData) {
@@ -42,76 +73,76 @@ export const appointmentService = {
         priority: appointmentData.priority || 'Normal',
         source: appointmentData.source || 'Online'
       });
-      console.log('✅ Create appointment success:', response);
+      console.log('âœ… Create appointment success:', response);
       return response;
     } catch (error) {
-      console.error('❌ Create appointment failed:', error);
+      console.error('âŒ Create appointment failed:', error);
       throw error;
     }
   },
 
   /**
-   * 4.2. Xem tất cả lịch hẹn của tôi
+   * 4.2. Xem táº¥t cáº£ lá»‹ch háº¹n cá»§a tÃ´i
    * GET /api/appointments/my-appointments
    */
   async getMyAppointments(params = {}) {
     try {
       const response = await appointmentsAPI.getMyAppointments(params);
-      console.log('✅ Get my appointments success:', response);
+      console.log('âœ… Get my appointments success:', response);
       return response;
     } catch (error) {
-      console.error('❌ Get my appointments failed:', error);
+      console.error('âŒ Get my appointments failed:', error);
       throw error;
     }
   },
 
   /**
-   * 4.3. Xem lịch hẹn sắp tới
+   * 4.3. Xem lá»‹ch háº¹n sáº¯p tá»›i
    * GET /api/appointments/my-appointments/upcoming
    */
   async getUpcomingAppointments(limit = 5) {
     try {
       const response = await appointmentsAPI.getUpcomingAppointments(limit);
-      console.log('✅ Get upcoming appointments success:', response);
+      console.log('âœ… Get upcoming appointments success:', response);
       return response;
     } catch (error) {
-      console.error('❌ Get upcoming appointments failed:', error);
+      console.error('âŒ Get upcoming appointments failed:', error);
       throw error;
     }
   },
 
   /**
-   * 4.4. Xem chi tiết lịch hẹn
+   * 4.4. Xem chi tiáº¿t lá»‹ch háº¹n
    * GET /api/appointments/{id}
    */
   async getAppointmentById(appointmentId) {
     try {
       const response = await appointmentsAPI.getAppointmentDetail(appointmentId);
-      console.log('✅ Get appointment detail success:', response);
+      console.log('âœ… Get appointment detail success:', response);
       return response;
     } catch (error) {
-      console.error('❌ Get appointment detail failed:', error);
+      console.error('âŒ Get appointment detail failed:', error);
       throw error;
     }
   },
 
   /**
-   * 4.5. Tìm lịch hẹn theo mã
+   * 4.5. TÃ¬m lá»‹ch háº¹n theo mÃ£
    * GET /api/appointments/by-code/{code}
    */
   async getAppointmentByCode(code) {
     try {
       const response = await appointmentsAPI.getAppointmentByCode(code);
-      console.log('✅ Get appointment by code success:', response);
+      console.log('âœ… Get appointment by code success:', response);
       return response;
     } catch (error) {
-      console.error('❌ Get appointment by code failed:', error);
+      console.error('âŒ Get appointment by code failed:', error);
       throw error;
     }
   },
 
   /**
-   * 4.6. Cập nhật lịch hẹn
+   * 4.6. Cáº­p nháº­t lá»‹ch háº¹n
    * PUT /api/appointments/{id}
    */
   async updateAppointment(appointmentId, updateData) {
@@ -123,55 +154,55 @@ export const appointmentService = {
         customerNotes: updateData.customerNotes,
         priority: updateData.priority
       });
-      console.log('✅ Update appointment success:', response);
+      console.log('âœ… Update appointment success:', response);
       return response;
     } catch (error) {
-      console.error('❌ Update appointment failed:', error);
+      console.error('âŒ Update appointment failed:', error);
       throw error;
     }
   },
 
   /**
-   * 4.7. Dời lịch hẹn
+   * 4.7. Dá»i lá»‹ch háº¹n
    * POST /api/appointments/{id}/reschedule
    */
   async rescheduleAppointment(appointmentId, newSlotId, reason) {
     try {
       const response = await appointmentsAPI.rescheduleAppointment(appointmentId, newSlotId, reason);
-      console.log('✅ Reschedule appointment success:', response);
+      console.log('âœ… Reschedule appointment success:', response);
       return response;
     } catch (error) {
-      console.error('❌ Reschedule appointment failed:', error);
+      console.error('âŒ Reschedule appointment failed:', error);
       throw error;
     }
   },
 
   /**
-   * 4.8. Hủy lịch hẹn
+   * 4.8. Há»§y lá»‹ch háº¹n
    * POST /api/appointments/{id}/cancel
    */
   async cancelAppointment(appointmentId, reason) {
     try {
       const response = await appointmentsAPI.cancelAppointment(appointmentId, reason);
-      console.log('✅ Cancel appointment success:', response);
+      console.log('âœ… Cancel appointment success:', response);
       return response;
     } catch (error) {
-      console.error('❌ Cancel appointment failed:', error);
+      console.error('âŒ Cancel appointment failed:', error);
       throw error;
     }
   },
 
   /**
-   * 4.9. Xóa lịch hẹn (chỉ khi Pending)
+   * 4.9. XÃ³a lá»‹ch háº¹n (chá»‰ khi Pending)
    * DELETE /api/appointments/{id}
    */
   async deleteAppointment(appointmentId) {
     try {
       const response = await appointmentsAPI.deleteAppointment(appointmentId);
-      console.log('✅ Delete appointment success:', response);
+      console.log('âœ… Delete appointment success:', response);
       return response;
     } catch (error) {
-      console.error('❌ Delete appointment failed:', error);
+      console.error('âŒ Delete appointment failed:', error);
       throw error;
     }
   },
@@ -179,16 +210,16 @@ export const appointmentService = {
   // ============ HELPER METHODS FOR BOOKING FLOW ============
 
   /**
-   * Lấy danh sách trung tâm dịch vụ
+   * Láº¥y danh sÃ¡ch trung tÃ¢m dá»‹ch vá»¥
    * GET /api/lookup/service-centers
    */
   async getServiceCenters() {
     try {
       const response = await lookupAPI.getServiceCenters();
-      console.log('✅ Get service centers success:', response);
+      console.log('âœ… Get service centers success:', response);
       return response;
     } catch (error) {
-      console.error('❌ Get service centers failed:', error);
+      console.error('âŒ Get service centers failed:', error);
       throw error;
     }
   },
@@ -265,22 +296,22 @@ export const appointmentService = {
 
 
   /**
-   * Lấy danh sách dịch vụ bảo dưỡng
+   * Láº¥y danh sÃ¡ch dá»‹ch vá»¥ báº£o dÆ°á»¡ng
    * GET /api/lookup/maintenance-services
    */
   async getActiveServices() {
     try {
       const response = await lookupAPI.getMaintenanceServices();
-      console.log('✅ Get maintenance services success:', response);
+      console.log('âœ… Get maintenance services success:', response);
       return response;
     } catch (error) {
-      console.error('❌ Get maintenance services failed:', error);
+      console.error('âŒ Get maintenance services failed:', error);
       throw error;
     }
   },
 
   /**
-   * Lấy khung giờ trống
+   * Láº¥y khung giá» trá»‘ng
    * GET /api/lookup/time-slots/available
    */
   /**
@@ -316,4 +347,6 @@ export const appointmentService = {
 
 
 export default appointmentService;
+
+
 

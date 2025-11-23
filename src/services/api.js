@@ -467,6 +467,17 @@ class UnifiedAPIService {
     return response;
   }
 
+  // Admin: xoa xe khach hang
+  async deleteCustomerVehicleAdmin(vehicleId) {
+    if (vehicleId === undefined || vehicleId === null) {
+      throw new Error("Vehicle ID is required");
+    }
+    const response = await this.request(`/customer-vehicles/${vehicleId}`, {
+      method: "DELETE",
+    });
+    return response;
+  }
+
   // 3.5. Kiểm tra xe có thể xóa không
   async canDeleteVehicle(vehicleId) {
     const response = await this.request(
