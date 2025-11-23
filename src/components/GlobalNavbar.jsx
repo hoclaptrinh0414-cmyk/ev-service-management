@@ -4,7 +4,6 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import UserMenu from './UserMenu';
 import NotificationDropdown from './NotificationDropdown';
 import useNotifications from '../hooks/useNotifications';
-import { useNavigateWithTransition } from '../hooks/useNavigateWithTransition';
 import { useAuth } from '../contexts/AuthContext';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
@@ -12,16 +11,26 @@ import 'bootstrap-icons/font/bootstrap-icons.css';
 const GlobalNavbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const navigateWithTransition = useNavigateWithTransition();
   const { isAuthenticated, user } = useAuth();
 
   const { notifications, markAsRead, dismissNotification } = useNotifications({
     enabled: isAuthenticated,
   });
 
-  const hideNavbarPaths = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email', '/resend-verification'];
+  const hideNavbarPaths = [
+    '/login',
+    '/register',
+    '/forgot-password',
+    '/reset-password',
+    '/verify-email',
+    '/resend-verification',
+  ];
 
-  if (hideNavbarPaths.includes(location.pathname)) {
+  if (
+    hideNavbarPaths.includes(location.pathname) ||
+    location.pathname.startsWith('/staff') ||
+    location.pathname.startsWith('/technician')
+  ) {
     return null;
   }
 
@@ -34,66 +43,68 @@ const GlobalNavbar = () => {
 
   const handleNavigateHome = (e) => {
     e.preventDefault();
-    let homePath = '/';
+    let homePath = '/home';
+
     if (isAuthenticated) {
-        switch (user.role) {
-            case 'admin':
-                homePath = '/admin';
-                break;
-            case 'staff':
-                homePath = '/staff';
-                break;
-            case 'technician':
-                homePath = '/technician';
-                break;
-            default:
-                homePath = '/home';
-        }
-    }
-    navigateWithTransition(homePath);
-  };
-  
-  const getNavLinks = () => {
-    const commonLinks = [
-        { path: '/services', label: 'Services' },
-        { path: '/blog', label: 'Blog' },
-        { path: '/about', label: 'About' },
-        { path: '/contact', label: 'Contact' },
-    ];
-  
-    if (!isAuthenticated) {
-        return commonLinks;
+      switch (user?.role) {
+        case 'admin':
+          homePath = '/admin';
+          break;
+        case 'staff':
+          homePath = '/staff';
+          break;
+        case 'technician':
+          homePath = '/technician';
+          break;
+        default:
+          homePath = '/home';
+      }
     }
 
-    switch (user.role) {
-        case 'admin':
-            return [
-                { path: '/admin', label: 'Dashboard' },
-                { path: '/admin/schedule', label: 'Schedule' },
-                { path: '/admin/customers', label: 'Customers' },
-                { path: '/admin/vehicles', label: 'Vehicles' },
-                { path: '/admin/staff', label: 'Staff' },
-                { path: '/admin/finance', label: 'Finance' },
-            ];
-        case 'staff':
-            return [
-                { path: '/staff/appointments', label: 'Appointments' },
-                { path: '/staff/work-orders', label: 'Work Orders' },
-                { path: '/staff/checkin', label: 'Check-In' },
-            ];
-        case 'technician':
-            return [
-                { path: '/technician', label: 'Dashboard' },
-                { path: '/technician/work-orders', label: 'My Work Orders' },
-            ];
-        default: // customer
-            return [
-                { path: '/home', label: 'Home' },
-                { path: '/my-appointments', label: 'Appointments' },
-                { path: '/schedule-service', label: 'Schedule Service' },
-                { path: '/services', label: 'Services' },
-                { path: '/blog', label: 'Blog' },
-            ];
+    navigate(homePath);
+  };
+
+  const getNavLinks = () => {
+    const commonLinks = [
+      { path: '/services', label: 'Services' },
+      { path: '/blog', label: 'Blog' },
+      { path: '/about', label: 'About' },
+      { path: '/contact', label: 'Contact' },
+    ];
+
+    if (!isAuthenticated) {
+      return commonLinks;
+    }
+
+    switch (user?.role) {
+      case 'admin':
+        return [
+          { path: '/admin', label: 'Dashboard' },
+          { path: '/admin/schedule', label: 'Schedule' },
+          { path: '/admin/customers', label: 'Customers' },
+          { path: '/admin/vehicles', label: 'Vehicles' },
+          { path: '/admin/staff', label: 'Staff' },
+          { path: '/admin/finance', label: 'Finance' },
+        ];
+      case 'staff':
+        return [
+          { path: '/staff/appointments', label: 'Appointments' },
+          { path: '/staff/work-orders', label: 'Work Orders' },
+          { path: '/staff/check-in', label: 'Check-In' },
+        ];
+      case 'technician':
+        return [
+          { path: '/technician/flow', label: 'Daily Flow' },
+          { path: '/technician/work-orders', label: 'My Work Orders' },
+        ];
+      default:
+        return [
+          { path: '/home', label: 'Home' },
+          { path: '/my-appointments', label: 'Appointments' },
+          { path: '/schedule-service', label: 'Schedule Service' },
+          { path: '/services', label: 'Services' },
+          { path: '/blog', label: 'Blog' },
+        ];
     }
   };
 
@@ -112,9 +123,11 @@ const GlobalNavbar = () => {
         {/* Center Menu (Desktop only) */}
         <div className="d-none d-lg-block navbar-col-center">
           <ul className="navbar-nav main-menu-minimal">
-            {navLinks.map(link => (
+            {navLinks.map((link) => (
               <li className="nav-item" key={link.path}>
-                  <Link className="nav-link move" to={link.path}>{link.label.toUpperCase()}</Link>
+                <Link className="nav-link move" to={link.path}>
+                  {link.label.toUpperCase()}
+                </Link>
               </li>
             ))}
           </ul>
@@ -143,9 +156,11 @@ const GlobalNavbar = () => {
         {/* Mobile Menu */}
         <div className="collapse navbar-collapse" id="globalNavbarNav">
           <ul className="navbar-nav ms-auto text-center d-lg-none">
-            {navLinks.map(link => (
+            {navLinks.map((link) => (
               <li className="nav-item" key={link.path}>
-                <Link className="nav-link move" to={link.path}>{link.label.toUpperCase()}</Link>
+                <Link className="nav-link move" to={link.path}>
+                  {link.label.toUpperCase()}
+                </Link>
               </li>
             ))}
           </ul>

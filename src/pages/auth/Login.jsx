@@ -49,32 +49,26 @@ const Login = () => {
     if (role?.toLowerCase() === 'admin' || roleId === 1) {
       console.log('✅ Admin role - Redirect to /admin');
       navigate('/admin');
+      return;  // ← DỪNG LẠI, KHÔNG CHẠY CODE PHÍA DƯỚI
     }
     // Staff/Reception (roleId=2) -> /staff
     else if (role?.toLowerCase() === 'staff' || roleId === 2) {
       console.log('✅ Staff - Reception role - Redirect to /staff');
       navigate('/staff');
+      return;
     }
     // Technician/Mechanic (roleId=3) -> /technician
     else if (role?.toLowerCase() === 'technician' || roleId === 3) {
       console.log('✅ Technician - Mechanic role - Redirect to /technician');
       navigate('/technician');
+      return;
     }
     // Customer (roleId=4) -> /home
     else {
       console.log('✅ Customer role - Redirect to /home');
       navigate('/home');
-    }
-    const normalizedRole = role?.toLowerCase();
-
-    if (normalizedRole === 'staff' || roleId === 2) {
-      console.log('✅ Redirect to /staff');
-      navigate('/staff');
       return;
     }
-
-    console.log('✅ Redirect to /home');
-    navigate('/home');
   };
 
   const handleLoginSuccess = (result) => {

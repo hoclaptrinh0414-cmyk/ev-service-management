@@ -1,5 +1,53 @@
+/* Page Header */
+h2 {
+  color: #111827 !important;
+  font-weight: 700 !important;
+}
+
+h2 + p.text-muted {
+  color: #6b7280 !important;
+  font-size: 1rem;
+}
+
+/* Filter Bar */
+.appointments-filter-bar {
+  background: #f9fafb;
+  padding: 1rem;
+  border-radius: 12px;
+}
+
+.appointments-filter-bar .btn {
+  font-weight: 600;
+  color: #374151;
+}
+
+.appointments-filter-bar .btn-dark {
+  background: #111827;
+  border-color: #111827;
+  color: #fff;
+}
+
+.appointments-filter-bar .btn-outline-dark {
+  border-color: #d1d5db;
+  color: #374151;
+  background: #fff;
+}
+
+.appointments-filter-bar .btn-outline-dark:hover {
+  background: #111827;
+  border-color: #111827;
+  color: #fff;
+}
+
 .appointments-filter-bar select {
   min-width: 180px;
+  font-weight: 500;
+  color: #111827;
+  border-color: #d1d5db;
+}
+
+.appointments-filter-bar i {
+  color: #374151;
 }
 
 .appointment-card {
@@ -8,10 +56,15 @@
   padding: 1.2rem;
   background: #fff;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease;
 }
 
-.appointment-card + .appointment-card {
-  margin-top: 0.75rem;
+.appointment-card:hover {
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+  transform: translateY(-4px);
 }
 
 .appointment-card-header {
@@ -23,15 +76,17 @@
 
 .appointment-code {
   font-weight: 700;
-  font-size: 1rem;
+  font-size: 1.05rem;
+  color: #111827;
 }
 
 .appointment-datetime {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #555;
+  color: #374151;
   font-size: 0.95rem;
+  font-weight: 500;
 }
 
 .dot-separator::before {
@@ -52,12 +107,13 @@
 }
 
 .appointment-card-body {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 0.75rem;
   padding: 0.75rem 0;
   border-top: 1px solid #f0f0f0;
   border-bottom: 1px solid #f0f0f0;
+  flex-grow: 1;
 }
 
 .info-block {
@@ -69,16 +125,21 @@
   font-size: 0.85rem;
   color: #6b7280;
   margin: 0;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .info-value {
   font-weight: 700;
   font-size: 1rem;
+  color: #111827;
 }
 
 .info-sub {
-  color: #555;
+  color: #6b7280;
   font-size: 0.9rem;
+  font-weight: 400;
 }
 
 .service-chips {
@@ -92,8 +153,9 @@
   color: #111827;
   padding: 0.35rem 0.75rem;
   border-radius: 999px;
-  font-size: 0.9rem;
-  border: 1px solid #e5e7eb;
+  font-size: 0.88rem;
+  font-weight: 600;
+  border: 1px solid #d1d5db;
 }
 
 .appointment-card-footer {
