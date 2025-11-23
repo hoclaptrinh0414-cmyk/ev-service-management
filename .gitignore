@@ -28,6 +28,12 @@ CON
 AUX
 NUL
 
+# Local tool/config artifacts
+.claude/
+
+# Local package metadata (kept out of git)
+package-lock.json
+package.json
 # Ignore documentation and text files
 *.md
 *.txt
