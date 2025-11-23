@@ -519,8 +519,9 @@ class UnifiedAPIService {
   }
 
   // 4.2. Xem tất cả lịch hẹn của tôi
-  async getMyAppointments() {
-    const response = await this.request("/appointments/my-appointments");
+  async getMyAppointments(params = {}) {
+    const queryString = buildQueryString(params);
+    const response = await this.request(`/appointments/my-appointments${queryString}`);
     return response;
   }
 
@@ -1208,7 +1209,7 @@ export const vehicleAPI = {
 export const appointmentsAPI = {
   createAppointment: (appointmentData) =>
     apiService.createAppointment(appointmentData),
-  getMyAppointments: () => apiService.getMyAppointments(),
+  getMyAppointments: (params) => apiService.getMyAppointments(params),
   getUpcomingAppointments: (limit) => apiService.getUpcomingAppointments(limit),
   getAppointmentDetail: (id) => apiService.getAppointmentDetail(id),
   getAppointmentByCode: (code) => apiService.getAppointmentByCode(code),

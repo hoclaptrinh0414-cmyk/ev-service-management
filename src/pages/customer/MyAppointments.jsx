@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import appointmentService from '../../services/appointmentService';
-import { toast } from 'react-toastify';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import '../Home.css';
@@ -57,26 +58,78 @@ const MyAppointments = () => {
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [activeCenters, setActiveCenters] = useState([]);
   const [selectedCenterId, setSelectedCenterId] = useState(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(9);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState(null);
+  const toastConfig = { autoClose: 10000, closeOnClick: true, pauseOnHover: true };
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    loadAppointments();
     loadCenters();
   }, []);
 
   useEffect(() => {
-    filterAppointments();
-  }, [activeTab, appointments, statusFilter, sortBy, dateFilter]);
+    // Reset trang khi đổi filter
+    setPage(1);
+  }, [activeTab, statusFilter, sortBy, dateFilter]);
+
+  useEffect(() => {
+    loadAppointments();
+  }, [activeTab, statusFilter, sortBy, dateFilter, page, pageSize]);
 
   const loadAppointments = async () => {
+    const statusMapIds = {
+      pending: 1,
+      confirmed: 2,
+      inprogress: 4,
+      completed: 5,
+      cancelled: 6,
+      rescheduled: 7,
+      noshow: 8,
+      completed_partial: 9,
+    };
+
+    const params = {
+      page,
+      pageSize,
+      sortBy: 'appointmentDate',
+      sortOrder: sortBy === 'dateAsc' ? 'asc' : 'desc',
+    };
+
+    if (statusFilter !== 'all' && statusMapIds[statusFilter]) {
+      params.statusId = statusMapIds[statusFilter];
+    }
+
+    if (activeTab === 'upcoming') {
+      params.startDate = new Date().toISOString().split('T')[0];
+    }
+
+    if (dateFilter) {
+      params.startDate = dateFilter;
+      params.endDate = dateFilter;
+    }
+
     try {
       setLoading(true);
-      const response = await appointmentService.getMyAppointments();
-      const data = Array.isArray(response?.data) ? response.data : Array.isArray(response) ? response : [];
-      setAppointments(data);
+      const response = await appointmentService.getMyAppointments(params);
+      const payload = response?.data || response || {};
+      const items = payload.items || payload.data || payload || [];
+
+      setAppointments(items);
+      setFilteredAppointments(items);
+      const total = payload.totalCount || items.length || 0;
+      setTotalCount(total);
+      const pages =
+        payload.totalPages ||
+        Math.max(1, Math.ceil(total / (pageSize || 1)));
+      setTotalPages(pages);
     } catch (error) {
       console.error('Error loading appointments:', error);
       setMessage('Khong the tai danh sach lich hen. Vui long thu lai.');
+      toast.error('Không thể tải danh sách lịch hẹn. Vui lòng thử lại.', toastConfig);
     } finally {
       setLoading(false);
     }
@@ -105,49 +158,8 @@ const MyAppointments = () => {
     } catch (error) {
       console.error('Error loading centers:', error);
       setActiveCenters([]);
+      toast.warning('Không thể tải danh sách trung tâm. Vui lòng thử lại.', toastConfig);
     }
-  };
-
-  const filterAppointments = () => {
-    let list = [...appointments];
-
-    const isSameDay = (d1, d2) => {
-      if (!d1 || !d2) return false;
-      const a = new Date(d1);
-      const b = new Date(d2);
-      return (
-        a.getFullYear() === b.getFullYear() &&
-        a.getMonth() === b.getMonth() &&
-        a.getDate() === b.getDate()
-      );
-    };
-
-    if (activeTab !== 'all') {
-      const now = new Date();
-      list = list.filter((apt) => {
-        const aptDate = new Date(apt.appointmentDate || apt.slotDate);
-        const canon = canonicalStatus(apt.statusName || apt.status);
-        return aptDate >= now && canon !== 'cancelled' && canon !== 'completed';
-      });
-    }
-
-    if (statusFilter !== 'all') {
-      list = list.filter((apt) => canonicalStatus(apt.statusName || apt.status) === statusFilter);
-    }
-
-    if (dateFilter) {
-      list = list.filter((apt) =>
-        isSameDay(dateFilter, apt.appointmentDate || apt.slotDate)
-      );
-    }
-
-    list.sort((a, b) => {
-      const aDate = new Date(a.appointmentDate || a.slotDate || 0).getTime();
-      const bDate = new Date(b.appointmentDate || b.slotDate || 0).getTime();
-      return sortBy === 'dateAsc' ? aDate - bDate : bDate - aDate;
-    });
-
-    setFilteredAppointments(list);
   };
 
   const getStatusBadge = (status) => {
@@ -246,7 +258,7 @@ const MyAppointments = () => {
         ? `Rescheduled successfully. New appointment #${newId}`
         : 'Rescheduled successfully!';
       setMessage(successMsg);
-      toast.success(successMsg);
+      toast.success(successMsg, toastConfig);
       setShowRescheduleModal(false);
       loadAppointments();
       setTimeout(() => setMessage(''), 2500);
@@ -254,7 +266,7 @@ const MyAppointments = () => {
       console.error('Error rescheduling:', error);
       const errMsg = error.response?.data?.message || 'Khong the doi lich. Vui long thu lai.';
       setMessage(errMsg);
-      toast.error(errMsg);
+      toast.error(errMsg, toastConfig);
     } finally {
       setLoading(false);
     }
@@ -273,7 +285,7 @@ const MyAppointments = () => {
         cancelReason
       );
       setMessage('Huy lich thanh cong!');
-      toast.success('Đã hủy lịch hẹn.');
+      toast.success('Đã hủy lịch hẹn.', toastConfig);
       setShowCancelModal(false);
       setCancelReason('');
       loadAppointments();
@@ -282,36 +294,46 @@ const MyAppointments = () => {
       console.error('Error cancelling:', error);
       const errMsg = error.response?.data?.message || 'Khong the huy lich. Vui long thu lai.';
       setMessage(errMsg);
-      toast.error(errMsg);
+      toast.error(errMsg, toastConfig);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDeleteAppointment = async (appointmentId) => {
-    if (!window.confirm('Ban co chac muon xoa lich hen nay? (Chi xoa duoc lich dang Pending)')) {
-      return;
-    }
+  const handleDeleteAppointment = async () => {
+    if (!pendingDeleteId) return;
 
     try {
       setLoading(true);
-      await appointmentService.deleteAppointment(appointmentId);
+      await appointmentService.deleteAppointment(pendingDeleteId);
       setMessage('Xoa lich hen thanh cong!');
-      toast.success('Đã xóa lịch hẹn.');
+      toast.success('Đã xóa lịch hẹn.', toastConfig);
       loadAppointments();
       setTimeout(() => setMessage(''), 2500);
     } catch (error) {
       console.error('Error deleting:', error);
       const errMsg = error.response?.data?.message || 'Khong the xoa lich hen. Chi xoa duoc lich dang Pending.';
       setMessage(errMsg);
-      toast.error(errMsg);
+      toast.error(errMsg, toastConfig);
     } finally {
       setLoading(false);
+      setShowDeleteModal(false);
+      setPendingDeleteId(null);
     }
   };
 
   return (
     <MainLayout>
+      <ToastContainer
+        position="top-right"
+        autoClose={10000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        draggable
+        pauseOnHover
+        theme="colored"
+      />
       {/* Main Content */}
       <section style={{ marginTop: '20px', minHeight: '60vh' }}>
         <div className="container">
@@ -399,6 +421,44 @@ const MyAppointments = () => {
               </select>
             </div>
           </div>
+          <div className="d-flex flex-wrap align-items-center justify-content-between mb-3">
+            <div className="text-muted small">
+              Trang {page}/{totalPages} — {totalCount} lịch hẹn
+            </div>
+            <div className="d-flex align-items-center gap-2">
+              <label className="mb-0 small text-muted">Page size</label>
+              <select
+                className="form-select form-select-sm"
+                style={{ width: '90px' }}
+                value={pageSize}
+                onChange={(e) => {
+                  setPage(1);
+                  setPageSize(Number(e.target.value));
+                }}
+                disabled={loading}
+              >
+                {[6, 9, 12, 15].map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+              <div className="btn-group btn-group-sm">
+                <button
+                  className="btn btn-outline-dark"
+                  disabled={page <= 1 || loading}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                >
+                  <i className="bi bi-chevron-left"></i>
+                </button>
+                <button
+                  className="btn btn-outline-dark"
+                  disabled={page >= totalPages || loading}
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                >
+                  <i className="bi bi-chevron-right"></i>
+                </button>
+              </div>
+            </div>
+          </div>
 
           {loading ? (
             <div className="text-center py-5">
@@ -415,102 +475,107 @@ const MyAppointments = () => {
               </Link>
             </div>
           ) : (
-            <div className="row g-4">
-              {filteredAppointments.map((appointment) => {
-                const paymentStatus =
-                  appointment.paymentStatusName ||
-                  appointment.paymentStatus ||
-                  appointment.paymentIntentStatus ||
-                  '';
-                const canonStatus = canonicalStatus(appointment.statusName || appointment.status);
-                return (
-                  <div key={appointment.appointmentId} className="col-12 col-md-6 col-lg-4">
-                    <div className="appointment-card">
-                      <div className="appointment-card-header">
-                        <div>
-                          <div className="appointment-code">#{appointment.appointmentCode || appointment.appointmentId}</div>
-                          <div className="appointment-datetime">
-                            <span><i className="bi bi-calendar-event me-1"></i>{formatDate(appointment.appointmentDate || appointment.slotDate)}</span>
-                            <span className="dot-separator"></span>
-                            <span><i className="bi bi-clock me-1"></i>{formatTimeRange(appointment.slotStartTime, appointment.slotEndTime)}</span>
-                          </div>
-                        </div>
-                        <div className="d-flex flex-column align-items-end gap-2">
-                          {getStatusBadge(canonStatus)}
-                          {paymentStatus && (
-                            <span className="payment-pill">
-                              <i className="bi bi-wallet2 me-1"></i>
-                              {paymentStatus}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="appointment-card-body">
-                        <div className="info-block">
-                          <p className="muted-label mb-1"><i className="bi bi-car-front me-1"></i>Xe</p>
-                          <div className="info-value">
-                            {appointment.vehicleName || appointment.vehicleModel || 'N/A'}
-                          </div>
-                          <div className="info-sub">{appointment.vehicleLicensePlate || ''}</div>
-                        </div>
-
-                        <div className="info-block">
-                          <p className="muted-label mb-1"><i className="bi bi-building me-1"></i>Trung tam</p>
-                          <div className="info-value">{appointment.serviceCenterName || 'N/A'}</div>
-                          <div className="info-sub">{appointment.serviceCenterAddress || ''}</div>
-                        </div>
-
-                        <div className="info-block align-items-start">
-                          <p className="muted-label mb-1"><i className="bi bi-tools me-1"></i>Dich vu</p>
-                          {appointment.services && appointment.services.length > 0 ? (
-                            <div className="service-chips">
-                              {appointment.services.map((service, idx) => (
-                                <span key={idx}>{service.serviceName || service.name || service}</span>
-                              ))}
+            <>
+              <div className="row g-4">
+                {filteredAppointments.map((appointment) => {
+                  const paymentStatus =
+                    appointment.paymentStatusName ||
+                    appointment.paymentStatus ||
+                    appointment.paymentIntentStatus ||
+                    '';
+                  const canonStatus = canonicalStatus(appointment.statusName || appointment.status);
+                  return (
+                    <div key={appointment.appointmentId} className="col-12 col-md-6 col-lg-4">
+                      <div className="appointment-card">
+                        <div className="appointment-card-header">
+                          <div>
+                            <div className="appointment-code">#{appointment.appointmentCode || appointment.appointmentId}</div>
+                            <div className="appointment-datetime">
+                              <span><i className="bi bi-calendar-event me-1"></i>{formatDate(appointment.appointmentDate || appointment.slotDate)}</span>
+                              <span className="dot-separator"></span>
+                              <span><i className="bi bi-clock me-1"></i>{formatTimeRange(appointment.slotStartTime, appointment.slotEndTime)}</span>
                             </div>
-                          ) : (
-                            <div className="info-sub">Chua co thong tin dich vu</div>
-                          )}
+                          </div>
+                          <div className="d-flex flex-column align-items-end gap-2">
+                            {getStatusBadge(canonStatus)}
+                            {paymentStatus && (
+                              <span className="payment-pill">
+                                <i className="bi bi-wallet2 me-1"></i>
+                                {paymentStatus}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      </div>
 
-                      <div className="appointment-card-footer">
-                        <div className="action-group">
-                          {(canonStatus === 'pending' || canonStatus === 'confirmed') && (
-                            <button
-                              className="btn btn-outline-dark btn-sm"
-                              onClick={() => handleReschedule(appointment)}
-                            >
-                              <i className="bi bi-calendar-range me-1"></i>
-                              Doi lich
-                            </button>
-                          )}
-                          {(canonStatus === 'pending' || canonStatus === 'confirmed') && (
-                            <button
-                              className="btn btn-outline-danger btn-sm"
-                              onClick={() => handleCancelAppointment(appointment)}
-                            >
-                              <i className="bi bi-x-circle me-1"></i>
-                              Huy
-                            </button>
-                          )}
-                          {canonStatus === 'cancelled' && (
-                            <button
-                              className="btn btn-outline-secondary btn-sm"
-                              onClick={() => handleDeleteAppointment(appointment.appointmentId)}
-                            >
-                              <i className="bi bi-trash me-1"></i>
-                              Xoa
-                            </button>
-                          )}
+                        <div className="appointment-card-body">
+                          <div className="info-block">
+                            <p className="muted-label mb-1"><i className="bi bi-car-front me-1"></i>Xe</p>
+                            <div className="info-value">
+                              {appointment.vehicleName || appointment.vehicleModel || 'N/A'}
+                            </div>
+                            <div className="info-sub">{appointment.vehicleLicensePlate || ''}</div>
+                          </div>
+
+                          <div className="info-block">
+                            <p className="muted-label mb-1"><i className="bi bi-building me-1"></i>Trung tam</p>
+                            <div className="info-value">{appointment.serviceCenterName || 'N/A'}</div>
+                            <div className="info-sub">{appointment.serviceCenterAddress || ''}</div>
+                          </div>
+
+                          <div className="info-block align-items-start">
+                            <p className="muted-label mb-1"><i className="bi bi-tools me-1"></i>Dich vu</p>
+                            {appointment.services && appointment.services.length > 0 ? (
+                              <div className="service-chips">
+                                {appointment.services.map((service, idx) => (
+                                  <span key={idx}>{service.serviceName || service.name || service}</span>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="info-sub">Chua co thong tin dich vu</div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="appointment-card-footer">
+                          <div className="action-group">
+                            {(canonStatus === 'pending' || canonStatus === 'confirmed') && (
+                              <button
+                                className="btn btn-outline-dark btn-sm"
+                                onClick={() => handleReschedule(appointment)}
+                              >
+                                <i className="bi bi-calendar-range me-1"></i>
+                                Doi lich
+                              </button>
+                            )}
+                            {(canonStatus === 'pending' || canonStatus === 'confirmed') && (
+                              <button
+                                className="btn btn-outline-danger btn-sm"
+                                onClick={() => handleCancelAppointment(appointment)}
+                              >
+                                <i className="bi bi-x-circle me-1"></i>
+                                Huy
+                              </button>
+                            )}
+                            {canonStatus === 'cancelled' && (
+                              <button
+                                className="btn btn-outline-secondary btn-sm"
+                                onClick={() => {
+                                  setPendingDeleteId(appointment.appointmentId);
+                                  setShowDeleteModal(true);
+                                }}
+                              >
+                                <i className="bi bi-trash me-1"></i>
+                                Xoa
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            </>
           )}
         </div>
       </section>
@@ -662,6 +727,36 @@ const MyAppointments = () => {
                 </button>
                 <button type="button" className="btn btn-danger" onClick={confirmCancel} disabled={loading}>
                   {loading ? 'Dang xu ly...' : 'Xac nhan huy'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Modal */}
+      {showDeleteModal && (
+        <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Xóa lịch hẹn</h5>
+                <button type="button" className="btn-close" onClick={() => setShowDeleteModal(false)}></button>
+              </div>
+              <div className="modal-body">
+                <p>Ban co chac muon xoa lich hen nay? (Chi xoa duoc lich dang Pending)</p>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => setShowDeleteModal(false)}>
+                  Huy
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  onClick={handleDeleteAppointment}
+                  disabled={loading}
+                >
+                  {loading ? 'Dang xu ly...' : 'Xac nhan xoa'}
                 </button>
               </div>
             </div>

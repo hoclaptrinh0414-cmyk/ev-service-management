@@ -54,9 +54,9 @@ export const appointmentService = {
    * 4.2. Xem tất cả lịch hẹn của tôi
    * GET /api/appointments/my-appointments
    */
-  async getMyAppointments() {
+  async getMyAppointments(params = {}) {
     try {
-      const response = await appointmentsAPI.getMyAppointments();
+      const response = await appointmentsAPI.getMyAppointments(params);
       console.log('✅ Get my appointments success:', response);
       return response;
     } catch (error) {
