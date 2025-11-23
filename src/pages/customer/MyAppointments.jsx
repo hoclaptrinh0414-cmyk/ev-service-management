@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import appointmentService from '../../services/appointmentService';
+import { toast } from 'react-toastify';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import '../Home.css';
@@ -11,6 +12,7 @@ import MainLayout from '../../components/layout/MainLayout';
 const statusMap = {
   pending: { color: 'warning', text: 'Pending confirmation', icon: 'clock-history' },
   confirmed: { color: 'info', text: 'Confirmed', icon: 'check-circle' },
+  rescheduled: { color: 'warning', text: 'Rescheduled', icon: 'arrow-repeat' },
   inprogress: { color: 'primary', text: 'In progress', icon: 'gear' },
   completed: { color: 'success', text: 'Completed', icon: 'check-all' },
   completed_partial: { color: 'success', text: 'Completed (unpaid)', icon: 'check2-circle' },
@@ -23,6 +25,7 @@ const canonicalStatus = (status) => {
   const raw = (status || '').toString().trim().toLowerCase();
   if (['pending', 'pendingpayment', 'awaitingpayment'].includes(raw)) return 'pending';
   if (['confirmed'].includes(raw)) return 'confirmed';
+  if (['rescheduled', 'reschedule'].includes(raw)) return 'rescheduled';
   if (['inprogress', 'processing', 'ongoing'].includes(raw)) return 'inprogress';
   if (['completed'].includes(raw)) return 'completed';
   if (['completedwithunpaidbalance', 'completed_partial', 'completedpartiallypaid'].includes(raw)) return 'completed_partial';
@@ -239,13 +242,19 @@ const MyAppointments = () => {
         res?.data?.newAppointmentId ||
         res?.appointmentId ||
         res?.newAppointmentId;
-      setMessage(newId ? `Rescheduled successfully. New appointment #${newId}` : 'Rescheduled successfully!');
+      const successMsg = newId
+        ? `Rescheduled successfully. New appointment #${newId}`
+        : 'Rescheduled successfully!';
+      setMessage(successMsg);
+      toast.success(successMsg);
       setShowRescheduleModal(false);
       loadAppointments();
       setTimeout(() => setMessage(''), 2500);
     } catch (error) {
       console.error('Error rescheduling:', error);
-      setMessage(error.response?.data?.message || 'Khong the doi lich. Vui long thu lai.');
+      const errMsg = error.response?.data?.message || 'Khong the doi lich. Vui long thu lai.';
+      setMessage(errMsg);
+      toast.error(errMsg);
     } finally {
       setLoading(false);
     }
@@ -264,13 +273,16 @@ const MyAppointments = () => {
         cancelReason
       );
       setMessage('Huy lich thanh cong!');
+      toast.success('Đã hủy lịch hẹn.');
       setShowCancelModal(false);
       setCancelReason('');
       loadAppointments();
       setTimeout(() => setMessage(''), 2500);
     } catch (error) {
       console.error('Error cancelling:', error);
-      setMessage(error.response?.data?.message || 'Khong the huy lich. Vui long thu lai.');
+      const errMsg = error.response?.data?.message || 'Khong the huy lich. Vui long thu lai.';
+      setMessage(errMsg);
+      toast.error(errMsg);
     } finally {
       setLoading(false);
     }
@@ -285,11 +297,14 @@ const MyAppointments = () => {
       setLoading(true);
       await appointmentService.deleteAppointment(appointmentId);
       setMessage('Xoa lich hen thanh cong!');
+      toast.success('Đã xóa lịch hẹn.');
       loadAppointments();
       setTimeout(() => setMessage(''), 2500);
     } catch (error) {
       console.error('Error deleting:', error);
-      setMessage(error.response?.data?.message || 'Khong the xoa lich hen. Chi xoa duoc lich dang Pending.');
+      const errMsg = error.response?.data?.message || 'Khong the xoa lich hen. Chi xoa duoc lich dang Pending.';
+      setMessage(errMsg);
+      toast.error(errMsg);
     } finally {
       setLoading(false);
     }
