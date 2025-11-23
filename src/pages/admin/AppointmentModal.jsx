@@ -1,26 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Button } from '../../components/ui/button';
-
-const MOCK_CUSTOMERS = [
-  { id: 1, name: 'Nguyễn Văn A' },
-  { id: 2, name: 'Trần Thị B' },
-];
-
-const MOCK_VEHICLES = {
-  1: [
-    { id: 101, plate: '51F-123.45' },
-    { id: 102, plate: '51G-111.22' },
-  ],
-  2: [{ id: 201, plate: '29A-987.65' }],
-};
-
-const MOCK_SERVICES = [
-  'Bảo dưỡng định kỳ',
-  'Thay dầu động cơ',
-  'Kiểm tra phanh',
-];
-
-const MOCK_TECHNICIANS = ['Nguyễn Quốc Huy', 'Phạm Minh Trí', 'Trần Nhật Anh'];
+import { customerAPI, vehicleAPI, maintenanceServiceAPI } from '../../services/adminAPI';
 
 const STATUS_OPTIONS = [
   { value: 'pending', label: 'Chờ xác nhận' },
@@ -30,8 +10,29 @@ const STATUS_OPTIONS = [
   { value: 'canceled', label: 'Đã hủy' },
 ];
 
-const AppointmentModal = ({ appointment, onClose, onSave }) => {
+const AppointmentModal = ({ appointment, onClose, onSave, technicians = [] }) => {
   const [formData, setFormData] = useState({});
+  const [customers, setCustomers] = useState([]);
+  const [vehicles, setVehicles] = useState([]);
+  const [services, setServices] = useState([]);
+
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      try {
+        const [customersRes, servicesRes] = await Promise.all([
+          customerAPI.getAll({ pageSize: 100 }), // Fetch top 100 customers for now
+          maintenanceServiceAPI.getAll({ pageSize: 100 })
+        ]);
+
+        setCustomers(customersRes?.data?.items || customersRes?.data || []);
+        setServices(servicesRes?.data?.items || servicesRes?.data || []);
+      } catch (error) {
+        console.error("Failed to fetch initial data for modal:", error);
+      }
+    };
+
+    fetchInitialData();
+  }, []);
 
   useEffect(() => {
     if (!appointment) return;
@@ -51,9 +52,34 @@ const AppointmentModal = ({ appointment, onClose, onSave }) => {
     });
   }, [appointment]);
 
-  const selectedCustomerVehicles = useMemo(() => {
-    if (!formData.customerId) return [];
-    return MOCK_VEHICLES[formData.customerId] || [];
+  useEffect(() => {
+    const fetchVehicles = async () => {
+      if (!formData.customerId) {
+        setVehicles([]);
+        return;
+      }
+
+      try {
+        // Assuming vehicleAPI has a method to get vehicles by customer, or we filter from getAll
+        // For now, let's use getAll with a search param if supported, or just fetch all and filter client side if list is small
+        // Ideally: vehicleAPI.getByCustomer(formData.customerId)
+        // Based on adminAPI.js, we have vehicleAPI.getAll(params). Let's try to filter by customerId if backend supports it,
+        // or use search. If not, we might need to add a specific endpoint.
+        // Let's assume vehicleAPI.getAll({ customerId: ... }) works or we fallback to empty.
+
+        // Actually, looking at adminAPI.js, vehicleAPI.getAll takes params.
+        // Let's try to fetch vehicles for this customer.
+        // If the API doesn't support filtering by customerId directly in getAll, we might need to rely on what we have.
+        // A common pattern is vehicleAPI.getAll({ customerId: id })
+
+        const res = await vehicleAPI.getAll({ customerId: formData.customerId });
+        setVehicles(res?.data?.items || res?.data || []);
+      } catch (error) {
+        console.error("Failed to fetch vehicles:", error);
+      }
+    };
+
+    fetchVehicles();
   }, [formData.customerId]);
 
   const handleChange = (event) => {
@@ -106,9 +132,9 @@ const AppointmentModal = ({ appointment, onClose, onSave }) => {
                 className="mt-2 block w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-800 shadow-sm focus:border-accent-600 focus:outline-none focus:ring-2 focus:ring-accent-200"
               >
                 <option value="">Chọn khách hàng</option>
-                {MOCK_CUSTOMERS.map((customer) => (
-                  <option key={customer.id} value={customer.id}>
-                    {customer.name}
+                {customers.map((customer) => (
+                  <option key={customer.customerId || customer.id} value={customer.customerId || customer.id}>
+                    {customer.fullName || customer.name}
                   </option>
                 ))}
               </select>
@@ -130,9 +156,9 @@ const AppointmentModal = ({ appointment, onClose, onSave }) => {
                 className="mt-2 block w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-800 shadow-sm focus:border-accent-600 focus:outline-none focus:ring-2 focus:ring-accent-200 disabled:bg-neutral-100"
               >
                 <option value="">Chọn xe</option>
-                {selectedCustomerVehicles.map((vehicle) => (
-                  <option key={vehicle.id} value={vehicle.id}>
-                    {vehicle.plate}
+                {vehicles.map((vehicle) => (
+                  <option key={vehicle.vehicleId || vehicle.id} value={vehicle.vehicleId || vehicle.id}>
+                    {vehicle.licensePlate || vehicle.plate}
                   </option>
                 ))}
               </select>
@@ -155,9 +181,9 @@ const AppointmentModal = ({ appointment, onClose, onSave }) => {
                 className="mt-2 block w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-800 shadow-sm focus:border-accent-600 focus:outline-none focus:ring-2 focus:ring-accent-200"
               >
                 <option value="">Chọn dịch vụ</option>
-                {MOCK_SERVICES.map((service) => (
-                  <option key={service} value={service}>
-                    {service}
+                {services.map((service) => (
+                  <option key={service.serviceId || service.id} value={service.serviceName || service.name}>
+                    {service.serviceName || service.name}
                   </option>
                 ))}
               </select>
@@ -177,9 +203,9 @@ const AppointmentModal = ({ appointment, onClose, onSave }) => {
                 className="mt-2 block w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-800 shadow-sm focus:border-accent-600 focus:outline-none focus:ring-2 focus:ring-accent-200"
               >
                 <option value="">Gán kỹ thuật viên</option>
-                {MOCK_TECHNICIANS.map((tech) => (
-                  <option key={tech} value={tech}>
-                    {tech}
+                {technicians.map((tech) => (
+                  <option key={tech.technicianId || tech.id || tech} value={tech.fullName || tech.name || tech}>
+                    {tech.fullName || tech.name || tech}
                   </option>
                 ))}
               </select>

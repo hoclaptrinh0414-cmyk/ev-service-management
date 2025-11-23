@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useState, useTransition } from "react";
 import {
-  customersAPI,
-  customerTypesAPI,
+  customerAPI,
+  customerTypeAPI,
   handleApiError,
-} from "../../services/apiService";
+} from "../../services/adminAPI";
 
 const DEFAULT_PAGINATION = {
   page: 1,
@@ -251,19 +251,19 @@ const normalizePagedResult = (response) => {
 
   const page = coercePositiveInt(
     payload.page ??
-      payload.Page ??
-      payload.pageNumber ??
-      payload.PageNumber ??
-      payload.currentPage ??
-      payload.CurrentPage,
+    payload.Page ??
+    payload.pageNumber ??
+    payload.PageNumber ??
+    payload.currentPage ??
+    payload.CurrentPage,
     fallback.page
   );
 
   const pageSize = coercePositiveInt(
     payload.pageSize ??
-      payload.PageSize ??
-      payload.limit ??
-      payload.Limit,
+    payload.PageSize ??
+    payload.limit ??
+    payload.Limit,
     fallback.pageSize
   );
 
@@ -480,7 +480,7 @@ const CustomerManagement = () => {
     try {
       if (modalMode === "create") {
         const payload = buildCreatePayload(formData);
-        const response = await customersAPI.create(payload);
+        const response = await customerAPI.create(payload);
         const message = resolveApiMessage(
           response,
           "Tạo khách hàng thành công."
@@ -492,7 +492,7 @@ const CustomerManagement = () => {
         closeModal();
       } else if (modalMode === "edit") {
         const payload = buildUpdatePayload(formData);
-        const response = await customersAPI.update(
+        const response = await customerAPI.update(
           formData.customerId,
           payload
         );
@@ -554,7 +554,7 @@ const CustomerManagement = () => {
     setDeleteError("");
 
     try {
-      const response = await customersAPI.remove(customerId);
+      const response = await customerAPI.delete(customerId);
       const message = resolveApiMessage(
         response,
         "Xóa khách hàng thành công."
@@ -602,7 +602,7 @@ const CustomerManagement = () => {
     setMaintenanceError("");
 
     try {
-      const response = await customersAPI.getById(customerId, {
+      const response = await customerAPI.getById(customerId, {
         includeStats: false,
       });
       const payload = extractPayload(response);
@@ -628,13 +628,13 @@ const CustomerManagement = () => {
 
   const loadCustomerTypes = async () => {
     try {
-      const response = await customerTypesAPI.getActive();
+      const response = await customerTypeAPI.getActive();
       const payload = extractPayload(response);
       const items = Array.isArray(payload)
         ? payload
         : Array.isArray(payload?.items)
-        ? payload.items
-        : payload?.data ?? [];
+          ? payload.items
+          : payload?.data ?? [];
       setCustomerTypes(Array.isArray(items) ? items : []);
     } catch (error) {
       console.debug("Không thể tải loại khách hàng", error);
@@ -645,15 +645,15 @@ const CustomerManagement = () => {
     setStatsLoading(true);
     setStatsError("");
     try {
-      const response = await customersAPI.getStatistics();
+      const response = await customerAPI.getStatistics();
       const payload = extractPayload(response) ?? {};
       const customersByType = payload.customersByType ?? payload.CustomersByType;
       const typeEntries =
         customersByType && typeof customersByType === "object"
           ? Object.entries(customersByType).map(([key, value]) => ({
-              key,
-              value,
-            }))
+            key,
+            value,
+          }))
           : [];
 
       setStats({
@@ -684,7 +684,7 @@ const CustomerManagement = () => {
   const loadMaintenanceCustomers = async () => {
     setMaintenanceError("");
     try {
-      const response = await customersAPI.getMaintenanceDue();
+      const response = await customerAPI.getMaintenanceDue();
       const payload = extractPayload(response);
       const mapped = mapMaintenanceCustomers(payload).slice(0, 8);
       setMaintenanceCustomers(mapped);
@@ -706,8 +706,8 @@ const CustomerManagement = () => {
       sortOption,
     });
 
-  const cachedPage = pageCache[cacheKey];
-  if (cachedPage?.items) {
+    const cachedPage = pageCache[cacheKey];
+    if (cachedPage?.items) {
       setCustomers(cachedPage.items);
       setPagination((prev) => {
         const nextTotalPages = cachedPage.pagination?.totalPages ?? prev.totalPages;
@@ -751,7 +751,7 @@ const CustomerManagement = () => {
     }
 
     try {
-      const response = await customersAPI.getCustomers(params);
+      const response = await customerAPI.getAll(params);
 
       if (response?.success === false) {
         throw new Error(
@@ -1121,10 +1121,10 @@ const CustomerManagement = () => {
                 <small>
                   Tỉ lệ hoạt động: {stats?.totalCustomers
                     ? Math.round(
-                        ((stats?.activeCustomers || 0) /
-                          Math.max(stats?.totalCustomers || 1, 1)) *
-                          100
-                      )
+                      ((stats?.activeCustomers || 0) /
+                        Math.max(stats?.totalCustomers || 1, 1)) *
+                      100
+                    )
                     : 0}
                   %
                 </small>
@@ -1248,102 +1248,102 @@ const CustomerManagement = () => {
                     const overdueLabel = hasVisited ? formatOverdueDuration(lastVisitDate) : "";
 
                     return (
-                    <tr key={resolvedId}>
-                      <td>
-                        {(pagination.page - 1) * pagination.pageSize +
-                          index +
-                          1}
-                      </td>
-                      <td>
-                        <div className="cell-title">{customer.fullName ?? customer.FullName}</div>
-                        <small className="muted-text">
-                          Mã: {customer.customerCode ?? customer.CustomerCode ?? "—"}
-                        </small>
-                      </td>
-                      <td>
-                        <div>{customer.phoneNumber ?? customer.PhoneNumber ?? "—"}</div>
-                        <small className="muted-text">
-                          {customer.email ?? customer.Email ?? "Không có email"}
-                        </small>
-                      </td>
-                      <td>
-                        <div>
-                          {customer.customerType?.typeName ??
-                            customer.customerType?.TypeName ??
-                            "Không phân loại"}
-                        </div>
-                        <small className="muted-text">
-                          Loyalty: {formatNumber(customer.loyaltyPoints ?? customer.LoyaltyPoints)} điểm
-                        </small>
-                      </td>
-                      <td>
-                        <div className="cell-pill">
-                          <i className="bi bi-truck" />
-                          {formatNumber(customer.activeVehicleCount ?? customer.ActiveVehicleCount ?? 0)} / {formatNumber(customer.vehicleCount ?? customer.VehicleCount ?? 0)}
-                        </div>
-                      </td>
-                      <td>
-                        <div className="visit-column">
-                          <span className={hasVisited ? "visit-date" : "visit-date muted-text"}>{lastVisitDisplay}</span>
-                          {hasVisited && overdueLabel ? (
-                            <span className="visit-overdue">
-                              <i className="bi bi-clock-history" aria-hidden="true" /> {overdueLabel}
-                            </span>
-                          ) : null}
-                        </div>
-                      </td>
-                      <td>{renderStatusBadge(customer.isActive ?? customer.IsActive)}</td>
-                      <td>
-                        <div className="spend-cell">
-                          <span className={`currency ${isSpendRevealed ? "" : "muted-text"}`}>
-                            {isSpendRevealed
-                              ? formatCurrency(
+                      <tr key={resolvedId}>
+                        <td>
+                          {(pagination.page - 1) * pagination.pageSize +
+                            index +
+                            1}
+                        </td>
+                        <td>
+                          <div className="cell-title">{customer.fullName ?? customer.FullName}</div>
+                          <small className="muted-text">
+                            Mã: {customer.customerCode ?? customer.CustomerCode ?? "—"}
+                          </small>
+                        </td>
+                        <td>
+                          <div>{customer.phoneNumber ?? customer.PhoneNumber ?? "—"}</div>
+                          <small className="muted-text">
+                            {customer.email ?? customer.Email ?? "Không có email"}
+                          </small>
+                        </td>
+                        <td>
+                          <div>
+                            {customer.customerType?.typeName ??
+                              customer.customerType?.TypeName ??
+                              "Không phân loại"}
+                          </div>
+                          <small className="muted-text">
+                            Loyalty: {formatNumber(customer.loyaltyPoints ?? customer.LoyaltyPoints)} điểm
+                          </small>
+                        </td>
+                        <td>
+                          <div className="cell-pill">
+                            <i className="bi bi-truck" />
+                            {formatNumber(customer.activeVehicleCount ?? customer.ActiveVehicleCount ?? 0)} / {formatNumber(customer.vehicleCount ?? customer.VehicleCount ?? 0)}
+                          </div>
+                        </td>
+                        <td>
+                          <div className="visit-column">
+                            <span className={hasVisited ? "visit-date" : "visit-date muted-text"}>{lastVisitDisplay}</span>
+                            {hasVisited && overdueLabel ? (
+                              <span className="visit-overdue">
+                                <i className="bi bi-clock-history" aria-hidden="true" /> {overdueLabel}
+                              </span>
+                            ) : null}
+                          </div>
+                        </td>
+                        <td>{renderStatusBadge(customer.isActive ?? customer.IsActive)}</td>
+                        <td>
+                          <div className="spend-cell">
+                            <span className={`currency ${isSpendRevealed ? "" : "muted-text"}`}>
+                              {isSpendRevealed
+                                ? formatCurrency(
                                   customer.totalSpent ?? customer.TotalSpent
                                 )
-                              : "••••••"}
-                          </span>
-                          <button
-                            type="button"
-                            className={`btn-icon spend-toggle ${isSpendRevealed ? "is-active" : ""}`}
-                            title={
-                              isSpendRevealed
-                                ? "Ẩn tổng chi tiêu"
-                                : "Hiện tổng chi tiêu"
-                            }
-                            aria-label={
-                              isSpendRevealed
-                                ? "Ẩn tổng chi tiêu"
-                                : "Hiện tổng chi tiêu"
-                            }
-                            onClick={() => toggleSpendVisibility(resolvedId)}
-                          >
-                            <i className={`bi ${isSpendRevealed ? "bi-eye-slash" : "bi-eye"}`} />
-                          </button>
-                        </div>
-                      </td>
-                      <td>
-                        <div className="action-buttons">
-                          <button
-                            type="button"
-                            className="btn-icon"
-                            title="Chỉnh sửa khách hàng"
-                            aria-label="Chỉnh sửa khách hàng"
-                            onClick={() => openEditModal(customer)}
-                          >
-                            <i className="bi bi-pencil" />
-                          </button>
-                          <button
-                            type="button"
-                            className="btn-icon danger"
-                            title="Xóa khách hàng"
-                            aria-label="Xóa khách hàng"
-                            onClick={() => openDeleteModal(customer)}
-                          >
-                            <i className="bi bi-trash" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
+                                : "••••••"}
+                            </span>
+                            <button
+                              type="button"
+                              className={`btn-icon spend-toggle ${isSpendRevealed ? "is-active" : ""}`}
+                              title={
+                                isSpendRevealed
+                                  ? "Ẩn tổng chi tiêu"
+                                  : "Hiện tổng chi tiêu"
+                              }
+                              aria-label={
+                                isSpendRevealed
+                                  ? "Ẩn tổng chi tiêu"
+                                  : "Hiện tổng chi tiêu"
+                              }
+                              onClick={() => toggleSpendVisibility(resolvedId)}
+                            >
+                              <i className={`bi ${isSpendRevealed ? "bi-eye-slash" : "bi-eye"}`} />
+                            </button>
+                          </div>
+                        </td>
+                        <td>
+                          <div className="action-buttons">
+                            <button
+                              type="button"
+                              className="btn-icon"
+                              title="Chỉnh sửa khách hàng"
+                              aria-label="Chỉnh sửa khách hàng"
+                              onClick={() => openEditModal(customer)}
+                            >
+                              <i className="bi bi-pencil" />
+                            </button>
+                            <button
+                              type="button"
+                              className="btn-icon danger"
+                              title="Xóa khách hàng"
+                              aria-label="Xóa khách hàng"
+                              onClick={() => openDeleteModal(customer)}
+                            >
+                              <i className="bi bi-trash" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
                     );
                   })
                 ) : (
@@ -1382,21 +1382,20 @@ const CustomerManagement = () => {
                   const disableNext = pagination.page >= totalPagesToRender;
                   return (
                     <>
-                <button
-                  className="page-btn"
-                  onClick={() => handlePageChange(pagination.page - 1)}
-                      disabled={disablePrev}
-                >
-                  <i className="bi bi-chevron-left" />
-                </button>
+                      <button
+                        className="page-btn"
+                        onClick={() => handlePageChange(pagination.page - 1)}
+                        disabled={disablePrev}
+                      >
+                        <i className="bi bi-chevron-left" />
+                      </button>
 
                       {showNumberButtons &&
                         [...Array(totalPagesToRender)].map((_, idx) => (
                           <button
                             key={idx + 1}
-                            className={`page-btn ${
-                              pagination.page === idx + 1 ? "active" : ""
-                            }`}
+                            className={`page-btn ${pagination.page === idx + 1 ? "active" : ""
+                              }`}
                             onClick={() => handlePageChange(idx + 1)}
                             disabled={pagination.page === idx + 1}
                           >
@@ -1404,13 +1403,13 @@ const CustomerManagement = () => {
                           </button>
                         ))}
 
-                <button
-                  className="page-btn"
-                  onClick={() => handlePageChange(pagination.page + 1)}
-                      disabled={disableNext}
-                >
-                  <i className="bi bi-chevron-right" />
-                </button>
+                      <button
+                        className="page-btn"
+                        onClick={() => handlePageChange(pagination.page + 1)}
+                        disabled={disableNext}
+                      >
+                        <i className="bi bi-chevron-right" />
+                      </button>
                     </>
                   );
                 })()}
@@ -1437,9 +1436,8 @@ const CustomerManagement = () => {
                 <li key={item.id}>
                   <button
                     type="button"
-                    className={`maintenance-card${
-                      maintenanceLoadingId === item.id ? " loading" : ""
-                    }`}
+                    className={`maintenance-card${maintenanceLoadingId === item.id ? " loading" : ""
+                      }`}
                     onClick={() => handleMaintenanceSelect(item)}
                     disabled={maintenanceLoadingId === item.id}
                     title="Mở chi tiết khách hàng"
@@ -1662,8 +1660,8 @@ const CustomerManagement = () => {
                   {isSubmitting
                     ? "Đang lưu..."
                     : modalMode === "create"
-                    ? "Tạo khách hàng"
-                    : "Lưu thay đổi"}
+                      ? "Tạo khách hàng"
+                      : "Lưu thay đổi"}
                 </button>
               </div>
             </form>

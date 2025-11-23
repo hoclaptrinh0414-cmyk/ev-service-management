@@ -1,3 +1,6 @@
+// biểu đồ donut -> thể hiện tỷ lệ 
+
+
 import React from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 

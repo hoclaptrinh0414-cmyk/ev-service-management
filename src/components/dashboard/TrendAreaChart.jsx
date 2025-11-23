@@ -1,3 +1,7 @@
+//Biểu đồ lớn có trục XY -> Xu hướng theo thời gian
+
+
+
 import React from "react";
 import {
   AreaChart,

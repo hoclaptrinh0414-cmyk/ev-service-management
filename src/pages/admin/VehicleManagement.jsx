@@ -1,6 +1,6 @@
-// src/pages/admin/VehicleManagement.jsx - HOÀN CHỈNH - THAY THẾ FILE CŨ
+// src/pages/admin/VehicleManagement.jsx
 import React, { useState, useEffect } from 'react';
-import { vehicleAPI } from '../../services/apiService';
+import { vehicleAPI } from '../../services/adminAPI';
 
 const VehicleManagement = () => {
   const [vehicles, setVehicles] = useState([]);
@@ -12,14 +12,17 @@ const VehicleManagement = () => {
   const [totalPages, setTotalPages] = useState(1);
   const pageSize = 10;
 
+  useEffect(() => {
+    fetchVehicles();
+  }, [currentPage, searchTerm, filterStatus]);
 
   const fetchVehicles = async () => {
     setLoading(true);
     setError('');
-    
+
     try {
-      console.log('Fetching vehicles from API...');
-      
+      console.log('🚗 Fetching vehicles from API...');
+
       // Tạo params cho API
       const params = {
         page: currentPage,
@@ -36,37 +39,44 @@ const VehicleManagement = () => {
         params.maintenanceStatus = filterStatus;
       }
 
-      console.log('Request params:', params);
+      console.log('📋 Request params:', params);
 
       // GỌI API THẬT
-      const response = await vehicleAPI.getCustomerVehicles(params);
-      console.log('API Response:', response);
-      
+      const response = await vehicleAPI.getAll(params);
+      console.log('✅ API Response:', response);
+
       // Xử lý response
       if (response.success && response.data) {
         const vehicleData = response.data.items || response.data;
         const pages = response.data.totalPages || 1;
-        
+
         setVehicles(Array.isArray(vehicleData) ? vehicleData : []);
         setTotalPages(pages);
-        console.log(`Loaded ${vehicleData.length} vehicles`);
+        console.log(`✅ Loaded ${vehicleData.length} vehicles`);
       } else if (Array.isArray(response)) {
         setVehicles(response);
         setTotalPages(1);
-        console.log(`Loaded ${response.length} vehicles`);
+        console.log(`✅ Loaded ${response.length} vehicles`);
       } else {
-        throw new Error('Invalid response format');
+        // Fallback if response structure is different but contains data
+        const possibleData = response.data || response;
+        if (Array.isArray(possibleData)) {
+          setVehicles(possibleData);
+          setTotalPages(1);
+        } else {
+          throw new Error('Invalid response format');
+        }
       }
 
     } catch (error) {
-      console.error('Error fetching vehicles:', error);
-      
+      console.error('❌ Error fetching vehicles:', error);
+
       if (error.message === 'Network error - Cannot connect to server') {
         setError('Không thể kết nối đến server. Đang hiển thị dữ liệu mẫu.');
       } else {
         setError('Không thể tải dữ liệu từ API. Đang hiển thị dữ liệu mẫu.');
       }
-      
+
       // Fallback: Mock data
       const mockData = [
         {
@@ -125,7 +135,7 @@ const VehicleManagement = () => {
           maintenanceStatus: "Cần bảo dưỡng"
         }
       ];
-      
+
       setVehicles(mockData);
       setTotalPages(1);
     } finally {
@@ -166,12 +176,6 @@ const VehicleManagement = () => {
     return '#dc3545';
   };
 
-  // Trigger data load on first mount and when filters/pagination change
-  useEffect(() => {
-    fetchVehicles();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, filterStatus, searchTerm]);
-
   if (loading) {
     return (
       <div className="loading">
@@ -186,7 +190,7 @@ const VehicleManagement = () => {
   return (
     <div className="vehicle-management">
       <div className="section-header">
-        <h2>Quản lý Xe Điện</h2>
+        <h2>🚗 Quản lý Xe Điện</h2>
         <button className="btn-add">
           <i className="bi bi-plus-circle me-2"></i>
           Thêm xe mới
@@ -212,21 +216,21 @@ const VehicleManagement = () => {
             onChange={handleSearch}
           />
         </div>
-        
+
         <div className="filter-buttons">
-          <button 
+          <button
             className={`filter-btn ${filterStatus === 'all' ? 'active' : ''}`}
             onClick={() => handleFilterChange('all')}
           >
             Tất cả ({vehicles.length})
           </button>
-          <button 
+          <button
             className={`filter-btn ${filterStatus === 'Cần bảo dưỡng' ? 'active' : ''}`}
             onClick={() => handleFilterChange('Cần bảo dưỡng')}
           >
             Cần bảo dưỡng ({vehicles.filter(v => v.maintenanceStatus === 'Cần bảo dưỡng').length})
           </button>
-          <button 
+          <button
             className={`filter-btn ${filterStatus === 'Bình thường' ? 'active' : ''}`}
             onClick={() => handleFilterChange('Bình thường')}
           >
@@ -246,7 +250,7 @@ const VehicleManagement = () => {
             <p>Tổng số xe</p>
           </div>
         </div>
-        
+
         <div className="stat-card">
           <div className="stat-icon yellow">
             <i className="bi bi-exclamation-triangle-fill"></i>
@@ -256,7 +260,7 @@ const VehicleManagement = () => {
             <p>Cần bảo dưỡng</p>
           </div>
         </div>
-        
+
         <div className="stat-card">
           <div className="stat-icon green">
             <i className="bi bi-check-circle-fill"></i>
@@ -274,15 +278,15 @@ const VehicleManagement = () => {
           <thead>
             <tr>
               <th>STT</th>
-              <th>Tên khách hàng</th>
-              <th>Model xe (Full)</th>
-              <th>Biển số</th>
-              <th>Sửa chữa lần cuối</th>
-              <th>Bảo dưỡng tiếp theo</th>
-              <th>Km đã chạy</th>
-              <th>Sức khỏe pin</th>
-              <th>Trạng thái</th>
-              <th>Thao tác</th>
+              <th>👤 Tên khách hàng</th>
+              <th>🚗 Model xe (Full)</th>
+              <th>🔖 Biển số</th>
+              <th>🔧 Sửa chữa lần cuối</th>
+              <th>📅 Bảo dưỡng tiếp theo</th>
+              <th>📏 Km đã chạy</th>
+              <th>🔋 Sức khỏe pin</th>
+              <th>📊 Trạng thái</th>
+              <th>⚙️ Thao tác</th>
             </tr>
           </thead>
           <tbody>
@@ -311,8 +315,8 @@ const VehicleManagement = () => {
                   <td>{vehicle.mileage?.toLocaleString() || 0} km</td>
                   <td>
                     <div className="battery-bar">
-                      <div 
-                        className="battery-fill" 
+                      <div
+                        className="battery-fill"
                         style={{
                           width: `${vehicle.batteryHealthPercent}%`,
                           backgroundColor: getBatteryHealthColor(vehicle.batteryHealthPercent)
@@ -349,14 +353,14 @@ const VehicleManagement = () => {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="pagination">
-          <button 
+          <button
             className="page-btn"
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 1}
           >
             <i className="bi bi-chevron-left"></i>
           </button>
-          
+
           {[...Array(totalPages)].map((_, i) => (
             <button
               key={i + 1}
@@ -366,8 +370,8 @@ const VehicleManagement = () => {
               {i + 1}
             </button>
           ))}
-          
-          <button 
+
+          <button
             className="page-btn"
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
@@ -377,7 +381,7 @@ const VehicleManagement = () => {
         </div>
       )}
 
-  <style>{`
+      <style>{`
         .loading {
           text-align: center;
           padding: 3rem;
