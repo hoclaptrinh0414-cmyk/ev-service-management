@@ -1,4 +1,4 @@
-// src/contexts/AuthContext.jsx
+﻿// src/contexts/AuthContext.jsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import authService from '../services/authService';
 import { authUtils } from '../services/apiService';
@@ -22,12 +22,12 @@ export const AuthProvider = ({ children }) => {
           setToken(storedToken);
           setUser(storedUser);
           setIsAuthenticated(true);
-          console.log('✅ Auth initialized from localStorage:', storedUser);
+          console.log('âœ… Auth initialized from localStorage:', storedUser);
         } else {
-          console.log('⚠️ No auth data found in localStorage');
+          console.log('âš ï¸ No auth data found in localStorage');
         }
       } catch (error) {
-        console.error('❌ Error initializing auth:', error);
+        console.error('âŒ Error initializing auth:', error);
         authUtils.clearAuth();
       } finally {
         setLoading(false);
@@ -51,13 +51,13 @@ export const AuthProvider = ({ children }) => {
         setUser(storedUser);
         setIsAuthenticated(true);
 
-        console.log('✅ Login successful, auth context updated');
+        console.log('âœ… Login successful, auth context updated');
         return { success: true, data: response.data };
       } else {
-        throw new Error(response.message || 'Đăng nhập thất bại');
+        throw new Error(response.message || 'ÄÄƒng nháº­p tháº¥t báº¡i');
       }
     } catch (error) {
-      console.error('❌ Login error in AuthContext:', error);
+      console.error('âŒ Login error in AuthContext:', error);
       throw error;
     } finally {
       setLoading(false);
@@ -69,10 +69,10 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       const response = await authService.register(userData);
-      console.log('✅ Registration successful');
+      console.log('âœ… Registration successful');
       return response;
     } catch (error) {
-      console.error('❌ Registration error in AuthContext:', error);
+      console.error('âŒ Registration error in AuthContext:', error);
       throw error;
     } finally {
       setLoading(false);
@@ -93,13 +93,13 @@ export const AuthProvider = ({ children }) => {
         setUser(storedUser);
         setIsAuthenticated(true);
 
-        console.log('✅ Google login successful, auth context updated');
+        console.log('âœ… Google login successful, auth context updated');
         return { success: true, data: response.data };
       } else {
-        throw new Error(response.message || 'Google login thất bại');
+        throw new Error(response.message || 'Google login tháº¥t báº¡i');
       }
     } catch (error) {
-      console.error('❌ Google login error in AuthContext:', error);
+      console.error('âŒ Google login error in AuthContext:', error);
       throw error;
     } finally {
       setLoading(false);
@@ -120,13 +120,13 @@ export const AuthProvider = ({ children }) => {
         setUser(storedUser);
         setIsAuthenticated(true);
 
-        console.log('✅ Facebook login successful, auth context updated');
+        console.log('âœ… Facebook login successful, auth context updated');
         return { success: true, data: response.data };
       } else {
-        throw new Error(response.message || 'Facebook login thất bại');
+        throw new Error(response.message || 'Facebook login tháº¥t báº¡i');
       }
     } catch (error) {
-      console.error('❌ Facebook login error in AuthContext:', error);
+      console.error('âŒ Facebook login error in AuthContext:', error);
       throw error;
     } finally {
       setLoading(false);
@@ -137,19 +137,20 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       setLoading(true);
-      await authService.logout();
+      await authService.logout(); // calls /api/auth/logout under the hood
 
       setUser(null);
       setToken(null);
       setIsAuthenticated(false);
+      authUtils.clearAuth();
 
-      console.log('✅ Logout successful, auth context cleared');
+      console.log('Logout successful, auth context cleared');
     } catch (error) {
-      console.error('❌ Logout error in AuthContext:', error);
-      // Clear auth state even on error
+      console.error('Logout error in AuthContext:', error);
       setUser(null);
       setToken(null);
       setIsAuthenticated(false);
+      try { authUtils.clearAuth(); } catch {}
     } finally {
       setLoading(false);
     }
@@ -164,9 +165,9 @@ export const AuthProvider = ({ children }) => {
       authUtils.setAuth(token, updatedUser);
       setUser(updatedUser);
 
-      console.log('✅ User data updated in auth context:', updatedUser);
+      console.log('âœ… User data updated in auth context:', updatedUser);
     } catch (error) {
-      console.error('❌ Error updating user in AuthContext:', error);
+      console.error('âŒ Error updating user in AuthContext:', error);
     }
   };
 
@@ -184,10 +185,10 @@ export const AuthProvider = ({ children }) => {
           const token = authUtils.getToken();
           setIsAuthenticated(Boolean(token && freshUser));
         } catch {}
-        console.log('✅ User data refreshed from localStorage');
+        console.log('âœ… User data refreshed from localStorage');
       }
     } catch (error) {
-      console.error('❌ Error refreshing user:', error);
+      console.error('âŒ Error refreshing user:', error);
     } finally {
       setLoading(false);
     }
@@ -290,3 +291,4 @@ export const useAuth = () => {
 };
 
 export default AuthContext;
+

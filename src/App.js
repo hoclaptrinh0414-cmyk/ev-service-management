@@ -12,6 +12,7 @@ import "./App.css";
 
 // Import components
 import ProtectedRoute from "./components/ProtectedRoute";
+import ChatWidget from "./components/ChatWidget";
 
 // Import pages
 import Home from "./pages/Home";
@@ -19,6 +20,7 @@ import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import ResetPassword from "./pages/auth/ResetPassword";
+import ResetPasswordSuccess from "./pages/auth/ResetPasswordSuccess";
 import EmailVerificationPage from "./pages/auth/EmailVerificationPage";
 import ResendVerification from "./pages/auth/ResendVerification";
 import CustomerDashboard from "./pages/customer/Dashboard";
@@ -34,6 +36,10 @@ import MySubscriptions from "./pages/customer/MySubscriptions";
 import Records from "./pages/customer/Records";
 import TrackingHistory from "./pages/customer/TrackingHistory";
 import VehicleDetail from "./pages/customer/VehicleDetail";
+import TrackReminder from "./pages/TrackReminder";
+import PaymentCallback from "./pages/payment/PaymentCallback";
+import Blog from "./pages/Blog";
+import BlogPost from "./pages/BlogPost";
 
 // Import test components
 import PasswordResetTest from "./components/PasswordResetTest";
@@ -61,7 +67,6 @@ import CarBrands from "./pages/admin/CarBrands";
 import ServiceSchedule from "./pages/admin/ServiceSchedule";
 import PartManagement from "./pages/admin/PartManagement";
 
-// Force re-compile
 function App() {
   return (
     <Router>
@@ -75,12 +80,22 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route
+            path="/reset-password-success"
+            element={<ResetPasswordSuccess />}
+          />
           <Route path="/verify-email" element={<EmailVerificationPage />} />
           <Route path="/resend-verification" element={<ResendVerification />} />
 
           {/* Test routes */}
           <Route path="/test-password-reset" element={<PasswordResetTest />} />
           <Route path="/api-debug" element={<APIDebug />} />
+
+          {/* Public routes */}
+          <Route path="/blog" element={<Blog />} />
+          <Route path="/blog/:postId" element={<BlogPost />} />
+          <Route path="/payment/callback" element={<PaymentCallback />} />
+          <Route path="/payment/result" element={<PaymentCallback />} />
 
           {/* Protected routes - Customer */}
           <Route
@@ -124,6 +139,15 @@ function App() {
             element={
               <ProtectedRoute>
                 <Services />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/track-reminder"
+            element={
+              <ProtectedRoute>
+                <TrackReminder />
               </ProtectedRoute>
             }
           />
@@ -234,10 +258,16 @@ function App() {
               </ProtectedRoute>
             }
           >
-            <Route index element={<Navigate to="/technician/work-orders" replace />} />
+            <Route
+              index
+              element={<Navigate to="/technician/work-orders" replace />}
+            />
             {/* <Route path="dashboard" element={<TechnicianDashboard />} /> */}
             <Route path="work-orders" element={<TechnicianWorkOrders />} />
-            <Route path="maintenance/:workOrderId" element={<TechnicianChecklist />} />
+            <Route
+              path="maintenance/:workOrderId"
+              element={<TechnicianChecklist />}
+            />
             <Route path="flow" element={<TechnicianFlow />} />
           </Route>
 
@@ -262,25 +292,21 @@ function App() {
                 </div>
               }
             />
-            <Route
-              path="parts"
-              element={<PartManagement />}
-            />
+            <Route path="parts" element={<PartManagement />} />
             <Route path="staff" element={<StaffManagement />} />
             <Route path="finance" element={<FinancialReport />} />
             <Route path="time-slots" element={<TimeSlots />} />
             <Route path="brands" element={<CarBrands />} />
             <Route
               path="settings"
-              element={
-                <div className="placeholder">Settings - Coming Soon</div>
-              }
+              element={<div className="placeholder">Settings - Coming Soon</div>}
             />
           </Route>
 
           {/* Catch all route */}
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
+        <ChatWidget />
       </div>
     </Router>
   );

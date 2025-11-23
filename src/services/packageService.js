@@ -1,7 +1,9 @@
 // src/services/packageService.js
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5153/api';
+const API_BASE_URL =
+  process.env.REACT_APP_API_URL ||
+  'https://unprepared-kade-nonpossibly.ngrok-free.dev/api';
 
 // Get auth token from localStorage
 const getAuthHeaders = () => {

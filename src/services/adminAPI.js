@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || "https://2bc85e2d7dea.ngrok-free.app/api";
+const API_BASE_URL =
+  process.env.REACT_APP_API_URL ||
+  "https://unprepared-kade-nonpossibly.ngrok-free.dev/api";
 
 // Create axios instance with default config
 const adminAPI = axios.create({

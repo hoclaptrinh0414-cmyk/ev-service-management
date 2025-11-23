@@ -6,6 +6,7 @@ import { useCart } from '../../contexts/CartContext';
 import GlobalNavbar from '../../components/GlobalNavbar';
 import Cart from '../../components/Cart';
 import { formatCurrency } from '../../utils/currencyUtils';
+import { maintenanceService } from '../../services/maintenanceService';
 import appointmentService from '../../services/appointmentService';
 import {
   getMaintenanceServices,
@@ -42,8 +43,8 @@ const buildCartPayload = (service) => {
 
 const ProductIndividual = () => {
   const navigate = useNavigate();
-  const { addToCart, clearCart } = useCart();
-  const { bookingState } = useSchedule();
+  const { addToCart, clearCart, cartItems = [] } = useCart();
+  const { bookingState, saveBookingState } = useSchedule();
 
   const [services, setServices] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -58,6 +59,8 @@ const ProductIndividual = () => {
   const [loadingVehicles, setLoadingVehicles] = useState(true);
   const [applicableServices, setApplicableServices] = useState([]);
   const [loadingApplicable, setLoadingApplicable] = useState(false);
+  const [appliedPrice, setAppliedPrice] = useState(null);
+  const [pricingLoading, setPricingLoading] = useState(false);
 
   useEffect(() => {
     const loadCatalog = async () => {
@@ -108,6 +111,7 @@ const ProductIndividual = () => {
   useEffect(() => {
     if (!selectedVehicleId) {
       setApplicableServices([]);
+      setAppliedPrice(null);
       return;
     }
 
@@ -132,6 +136,71 @@ const ProductIndividual = () => {
     loadApplicable();
   }, [selectedVehicleId]);
 
+  // Fetch vehicle-specific pricing for the selected service
+  useEffect(() => {
+    if (!selectedProduct) {
+      setAppliedPrice(null);
+      return;
+    }
+
+    const base = selectedProduct.basePrice ?? selectedProduct.price ?? 0;
+
+    if (!selectedVehicleId) {
+      setAppliedPrice(base);
+      return;
+    }
+
+    const vehicle = vehicles.find(
+      (v) => String(v.vehicleId) === String(selectedVehicleId)
+    );
+    const modelId =
+      vehicle?.modelId ||
+      vehicle?.model?.modelId ||
+      vehicle?.model?.id ||
+      vehicle?.modelID;
+    const serviceId = selectedProduct.serviceId ?? selectedProduct.id;
+
+    if (!modelId || !serviceId) {
+      setAppliedPrice(base);
+      return;
+    }
+
+    const forDate = new Date().toISOString().split('T')[0];
+
+    const fetchPricing = async () => {
+      try {
+        setPricingLoading(true);
+        const res = await maintenanceService.getModelServicePricing({
+          modelId,
+          serviceId,
+          forDate,
+        });
+        const price =
+          res?.finalPrice ??
+          res?.customPrice ??
+          res?.price ??
+          res?.amount ??
+          res?.appliedPrice ??
+          res?.data?.finalPrice ??
+          res?.data?.customPrice ??
+          res?.data?.price ??
+          base;
+        setAppliedPrice(price);
+      } catch (err) {
+        if (err?.response?.status === 404) {
+          setAppliedPrice(base);
+        } else {
+          console.error('Error fetching model-service pricing:', err);
+          setAppliedPrice(base);
+        }
+      } finally {
+        setPricingLoading(false);
+      }
+    };
+
+    fetchPricing();
+  }, [selectedProduct, selectedVehicleId, vehicles]);
+
   const applicableServiceIds = useMemo(() => {
     const ids = applicableServices
       .map(
@@ -153,22 +222,58 @@ const ProductIndividual = () => {
       String(selectedProduct.serviceId ?? selectedProduct.id)
     );
 
+  const selectedServiceId = selectedProduct?.serviceId ?? selectedProduct?.id;
+  const alreadyInCart = !!(
+    selectedServiceId &&
+    cartItems.some(
+      (item) =>
+        !item.isPackage &&
+        String(item.serviceId) === String(selectedServiceId)
+    )
+  );
+
+  const basePriceSelected =
+    selectedProduct?.basePrice ?? selectedProduct?.price ?? 0;
+  const currentPrice = isSelectedServiceFree
+    ? 0
+    : appliedPrice ?? basePriceSelected;
+  const hasOverride =
+    !isSelectedServiceFree &&
+    appliedPrice !== null &&
+    appliedPrice !== undefined &&
+    appliedPrice !== basePriceSelected;
+  const priceLabel = isSelectedServiceFree
+    ? 'Included'
+    : hasOverride
+    ? 'Vehicle price'
+    : 'Base price';
+
   const buildCartItem = () => {
     if (!selectedProduct) return null;
     const payload = buildCartPayload(selectedProduct);
     if (!payload) return null;
+    if (alreadyInCart) {
+      return { ...payload, basePrice: currentPrice, duplicate: true };
+    }
     return isSelectedServiceFree
       ? {
           ...payload,
           basePrice: 0,
           isComplimentary: true,
         }
-      : payload;
+      : {
+          ...payload,
+          basePrice: currentPrice,
+        };
   };
 
   const handleAddToCart = () => {
     const cartItem = buildCartItem();
     if (!cartItem) return;
+    if (cartItem.duplicate) {
+      toast.info('Dịch vụ này đã có trong giỏ/lịch hiện tại.');
+      return;
+    }
     addToCart(cartItem);
     toast.success(
       cartItem.isComplimentary
@@ -180,7 +285,26 @@ const ProductIndividual = () => {
   const handleBookNow = () => {
     const cartItem = buildCartItem();
     if (!cartItem) return;
-    clearCart();
+    if (cartItem.duplicate) {
+      toast.info('Dịch vụ này đã có trong giỏ/lịch hiện tại.');
+      return;
+    }
+    const comingFromSchedule = !!bookingState;
+
+    if (selectedVehicleId) {
+      // keep existing booking state so we return to the same step
+      saveBookingState({
+        ...(bookingState || {}),
+        currentStep: bookingState?.currentStep || 3,
+        selectedVehicleId,
+      });
+    }
+
+    if (!comingFromSchedule) {
+      // browsing standalone: replace cart with this item
+      clearCart();
+    }
+
     addToCart(cartItem);
     toast.success(
       cartItem.isComplimentary
@@ -237,7 +361,11 @@ const ProductIndividual = () => {
           <div className="product-price-block">
             {isFree && <span className="product-badge free">Free</span>}
             <span className={`product-price ${isFree ? 'price-free' : ''}`}>
-              {isFree ? 'Free' : formatCurrency(service.basePrice ?? service.price ?? 0)}
+              {isFree
+                ? 'Free'
+                : isActive && !pricingLoading
+                ? formatCurrency(currentPrice)
+                : formatCurrency(service.basePrice ?? service.price ?? 0)}
             </span>
           </div>
         </button>
@@ -300,9 +428,18 @@ const ProductIndividual = () => {
 
           <section className="product-detail-card">
             <div className="detail-pill">Select your product</div>
+            {bookingState && (
+              <button
+                type="button"
+                className="btn btn-outline-secondary btn-sm mb-2"
+                onClick={() => navigate('/schedule-service')}
+              >
+                ← Back to booking
+              </button>
+            )}
             {selectedVehicleId && (
               <span className={`detail-badge ${isSelectedServiceFree ? 'free' : 'base'}`}>
-                {isSelectedServiceFree ? 'Included' : 'Base price'}
+                {priceLabel}
               </span>
             )}
 
@@ -340,8 +477,13 @@ const ProductIndividual = () => {
                     <strong className={`stat-value price ${isSelectedServiceFree ? 'price-free' : ''}`}>
                       {isSelectedServiceFree
                         ? 'Free'
-                        : formatCurrency(selectedProduct.basePrice ?? selectedProduct.price ?? 0)}
+                        : pricingLoading
+                        ? '...'
+                        : formatCurrency(currentPrice)}
                     </strong>
+                    {hasOverride && !isSelectedServiceFree && (
+                      <small className="text-muted d-block mt-1">Applied for this vehicle</small>
+                    )}
                   </div>
                 </div>
 

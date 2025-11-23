@@ -2,7 +2,7 @@
 
 const API_CONFIG = {
   baseURL:
-    process.env.REACT_APP_API_URL || "https://57013b70a404.ngrok-free.app/api",
+    process.env.REACT_APP_API_URL || "https://unprepared-kade-nonpossibly.ngrok-free.dev/api",
   timeout: 15000,
   headers: {
     "Content-Type": "application/json",
@@ -1841,6 +1841,50 @@ export const checklistAPI = {
       body: JSON.stringify({ notes }),
     });
     console.log('[checklistAPI.bulkCompleteAllItems] Response:', response);
+    return response?.data || response;
+  },
+};
+
+// Notifications API - thông báo người dùng
+export const notificationAPI = {
+  // GET /notifications?page=&pageSize=&isRead=
+  getNotifications: async (page = 1, pageSize = 20, params = {}) => {
+    const query = new URLSearchParams(
+      Object.entries({
+        page,
+        pageSize,
+        ...params,
+      }).filter(([_, v]) => v !== undefined && v !== null && v !== "")
+    ).toString();
+
+    const response = await apiService.request(
+      `/notifications${query ? `?${query}` : ""}`
+    );
+    return response?.data || response;
+  },
+
+  // GET /notifications/unread-count
+  getUnreadCount: async () => {
+    const response = await apiService.request("/notifications/unread-count");
+    return response?.data || response;
+  },
+
+  // POST /notifications/{id}/read
+  markAsRead: async (notificationId) => {
+    if (!notificationId) throw new Error("Notification ID is required");
+    const response = await apiService.request(
+      `/notifications/${notificationId}/read`,
+      { method: "POST" }
+    );
+    return response?.data || response;
+  },
+
+  // POST /notifications/mark-all-read
+  markAllAsRead: async () => {
+    const response = await apiService.request(
+      "/notifications/mark-all-read",
+      { method: "POST" }
+    );
     return response?.data || response;
   },
 };

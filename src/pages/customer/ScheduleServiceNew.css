@@ -225,6 +225,7 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
+  position: relative;
 }
 
 .vehicle-card:hover {
@@ -238,6 +239,24 @@
   background: rgba(76, 175, 80, 0.1);
   border-color: #4CAF50;
   box-shadow: 0 0 20px rgba(76, 175, 80, 0.2);
+}
+
+.history-inline {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 5px 9px;
+  background: #0f172a;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.78rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+.history-inline:hover {
+  background: #111827;
+  transform: translateY(-1px);
 }
 
 .vehicle-icon {
@@ -714,6 +733,7 @@
   justify-content: space-between;
   align-items: center;
   border: 1px solid #e0e0e0;
+  gap: 0.75rem;
 }
 
 .item-info {
@@ -747,6 +767,53 @@
   font-weight: 700;
   color: #000;
   font-size: 1rem;
+}
+
+.item-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.history-cta {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.75rem;
+}
+
+.history-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.history-item {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 12px;
+  background: #fff;
+}
+
+.history-date {
+  font-weight: 700;
+  color: #111827;
+}
+
+.history-title {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.history-meta {
+  display: flex;
+  gap: 16px;
+  font-size: 0.9rem;
+  color: #4b5563;
+}
+
+.history-notes {
+  margin-top: 6px;
+  font-size: 0.9rem;
 }
 
 .total-preview {

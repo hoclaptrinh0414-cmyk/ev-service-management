@@ -71,6 +71,10 @@ const normalizeServiceEntry = (service, fallbackKey = '') => {
       includedUses: null,
       remainingUses: null,
       usedCount: 0,
+      lastUsedDate: null,
+      lastUsedAppointmentId: null,
+      usagePercentage: null,
+      isFullyUsed: null,
     };
   }
 
@@ -92,6 +96,7 @@ const normalizeServiceEntry = (service, fallbackKey = '') => {
       'Service',
     includedUses:
       service.includedUses ??
+      service.totalAllowedQuantity ??
       service.quantity ??
       service.totalUses ??
       service.allowedUses ??
@@ -99,8 +104,23 @@ const normalizeServiceEntry = (service, fallbackKey = '') => {
       service.quota ??
       service.maxUsage ??
       null,
-    remainingUses: service.remainingUses ?? service.remainingCount ?? service.remaining ?? null,
-    usedCount: service.usedCount ?? service.timesUsed ?? service.quantityUsed ?? service.usageCount ?? 0,
+    remainingUses:
+      service.remainingUses ??
+      service.remainingCount ??
+      service.remainingQuantity ??
+      service.remaining ??
+      null,
+    usedCount:
+      service.usedCount ??
+      service.timesUsed ??
+      service.quantityUsed ??
+      service.usageCount ??
+      service.usedQuantity ??
+      0,
+    lastUsedDate: service.lastUsedDate ?? service.usedAt ?? null,
+    lastUsedAppointmentId: service.lastUsedAppointmentId ?? null,
+    usagePercentage: service.usagePercentage ?? null,
+    isFullyUsed: service.isFullyUsed ?? null,
   };
 };
 
@@ -636,17 +656,41 @@ const CustomerDashboard = () => {
                       <h5>Services in this package</h5>
                       {includedServices.length > 0 ? (
                         <ul className="vehicle-modal-list">
-                          {includedServices.map((service, index) => (
-                            <li key={service.serviceId || service.id || index}>
-                              <div className="service-row">
-                                <span>{service.serviceName || 'Service'}</span>
-                                <small>
-                                  {service.includedUses != null ? `SL: ${service.includedUses}` : ''}
-                                  {service.remainingUses != null ? ` · Con lai: ${service.remainingUses}` : ''}
-                                </small>
-                              </div>
-                            </li>
-                          ))}
+                          {includedServices.map((service, index) => {
+                            const total = service.includedUses ?? null;
+                            const remaining = service.remainingUses ?? null;
+                            const used = total != null && remaining != null
+                              ? Math.max(total - remaining, 0)
+                              : service.usedCount ?? 0;
+                            const progress = total
+                              ? Math.min(100, Math.round((used / total) * 100))
+                              : service.usagePercentage != null
+                                ? Math.min(100, Math.round(service.usagePercentage))
+                                : null;
+
+                            return (
+                              <li key={service.serviceId || service.id || index}>
+                                <div className="service-row">
+                                  <div>
+                                    <span>{service.serviceName || 'Service'}</span>
+                                    <div className="muted-label mt-1">
+                                      {total != null ? `Tong: ${total}` : 'Chua co quota'}
+                                      {remaining != null ? ` · Con: ${remaining}` : ''}
+                                      {service.lastUsedDate ? ` · Lan cuoi: ${formatDate(service.lastUsedDate)}` : ''}
+                                    </div>
+                                  </div>
+                                  {progress !== null && (
+                                    <span className="pill pill-ghost">{progress}% used</span>
+                                  )}
+                                </div>
+                                {progress !== null && (
+                                  <div className="usage-bar">
+                                    <div className="usage-bar-fill" style={{ width: `${progress}%` }}></div>
+                                  </div>
+                                )}
+                              </li>
+                            );
+                          })}
                         </ul>
                       ) : (
                         <p className="vehicle-modal-empty">Khong tim thay danh sach dich vu cua goi nay.</p>
