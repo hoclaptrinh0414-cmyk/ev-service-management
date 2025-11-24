@@ -171,7 +171,11 @@ const ScheduleServiceNew = () => {
     try {
       setLoading(true);
       const response = await appointmentService.getMyVehicles();
-      setVehicles(response.data || []);
+      const vehiclesData = (response.data || []).map(vehicle => ({
+        ...vehicle,
+        hasMaintenanceHistory: vehicle.hasMaintenanceHistory || false,
+      }));
+      setVehicles(vehiclesData);
     } catch (error) {
       console.error('Error loading vehicles:', error);
       if (handleAuthError(error)) return;
@@ -911,6 +915,9 @@ const ScheduleServiceNew = () => {
                                   className={`vehicle-card ${isSelected ? 'selected' : ''}`}
                                   onClick={() => setSelectedVehicleId(vehicle.vehicleId)}
                                 >
+                                  {vehicle.hasMaintenanceHistory && (
+                                    <span className="history-dot" title="Xe có lịch sử bảo dưỡng"></span>
+                                  )}
                                   <i className="bi bi-car-front vehicle-icon"></i>
                                   <div className="vehicle-info">
                                     <h5>{vehicle.fullModelName || vehicle.modelName}</h5>

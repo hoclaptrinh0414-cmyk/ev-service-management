@@ -241,12 +241,11 @@
 .vh-timeline-notes { margin-top: 12px; font-size: 0.9rem; color: #4a5568; background-color: #f8f9fa; border-left: 3px solid #4a90e2; padding: 8px 12px; border-radius: 4px; }
 
 /* Empty & Loading States */
-.vh-empty, .vh-center {
+.vh-center {
   display: flex;
-  flex-direction: column;
   justify-content: center;
   align-items: center;
-  height: 100%;
+  flex-grow: 1; /* Changed from height: 100% */
   text-align: center;
   color: #6b7280;
 }

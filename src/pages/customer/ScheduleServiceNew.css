@@ -225,7 +225,19 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  position: relative;
+  position: relative; /* Ensure position relative for absolute positioning of the dot */
+}
+
+.history-dot {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 12px;
+  height: 12px;
+  background-color: #4a90e2; /* Changed to blue */
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5); /* White border for visibility against dark backgrounds */
+  z-index: 10; /* Ensure dot is on top */
 }
 
 .vehicle-card:hover {
