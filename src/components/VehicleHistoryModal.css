@@ -1,9 +1,105 @@
+/* Overriding react-calendar default styles */
+.react-calendar {
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  font-family: inherit;
+  background-color: #fff;
+  padding: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.react-calendar__navigation button {
+  font-weight: 700;
+  color: #2d3748;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+}
+.react-calendar__navigation button:hover {
+  background-color: #f0f4f8;
+}
+
+.react-calendar__month-view__weekdays__weekday {
+  text-align: center;
+  font-weight: 600;
+  color: #718096;
+  text-decoration: none;
+  font-size: 0.8rem;
+}
+
+.react-calendar__tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  height: 52px;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+  position: relative;
+  font-size: 0.9rem;
+}
+
+.react-calendar__tile:enabled:hover,
+.react-calendar__tile:enabled:focus {
+  background-color: #f0f4f8;
+}
+
+.react-calendar__tile--now {
+  background-color: #e6f2ff;
+  color: #005fcc;
+  font-weight: 700;
+}
+.react-calendar__tile--now:enabled:hover,
+.react-calendar__tile--now:enabled:focus {
+  background-color: #dbeaff;
+}
+
+.react-calendar__tile--active {
+  background: #4a90e2;
+  color: white;
+  font-weight: 700;
+}
+.react-calendar__tile--active:enabled:hover,
+.react-calendar__tile--active:enabled:focus {
+  background: #3a7bc8;
+}
+
+/* Custom class for days with history */
+.has-history::after {
+  content: '';
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: #4a90e2;
+}
+.react-calendar__tile--active .has-history::after {
+  background-color: white;
+}
+
+
+/* General Modal Styling */
+@keyframes vh-overlay-show {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes vh-content-show {
+  from { opacity: 0; transform: translate(-50%, -48%) scale(0.96); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
 
 .vh-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
   z-index: 1040;
+}
+.vh-backdrop[data-state='open'] {
+  animation: vh-overlay-show 150ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .vh-modal {
@@ -11,83 +107,147 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: min(90vw, 720px);
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  width: min(95vw, 1100px); /* Increased width for two columns */
+  max-height: 85vh;
+  background: #f4f7f9;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px -10px rgba(0, 0, 0, 0.25);
   z-index: 1041;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+}
+.vh-modal[data-state='open'] {
+  animation: vh-content-show 150ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.vh-header,
-.vh-footer {
-  padding: 12px 16px;
-  border-bottom: 1px solid #e5e7eb;
+.vh-header {
+  padding: 16px 24px;
+  border-bottom: 1px solid #dee5e9;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  background-color: #fff;
+  flex-shrink: 0;
 }
-.vh-footer {
-  border-top: 1px solid #e5e7eb;
-  border-bottom: none;
+
+.vh-title-text {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1a202c;
 }
-.vh-body {
-  padding: 16px;
-  max-height: 60vh;
-  overflow-y: auto;
-}
+
 .vh-close {
-  background: none;
+  background: #e9ecef;
   border: none;
-  font-size: 20px;
-  line-height: 1;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  font-size: 16px;
   cursor: pointer;
+  transition: background-color 0.2s, transform 0.2s;
 }
-.vh-center {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+.vh-close:hover {
+  background-color: #dbe1e5;
+  transform: rotate(90deg);
 }
-.vh-empty {
-  text-align: center;
-  color: #6b7280;
-  padding: 24px 0;
+
+.vh-body {
+  flex-grow: 1;
+  display: flex; /* Moved from vh-main-content */
+  height: 100%;   /* Moved from vh-main-content */
+  overflow: hidden; /* Add overflow hidden here to contain children */
 }
-.vh-empty-icon {
-  font-size: 32px;
-  margin-bottom: 8px;
-}
-.vh-timeline {
+
+/* Main Two-Column Layout (vh-main-content is removed) */
+
+.vh-calendar-container {
+  flex: 0 0 380px; /* Fixed width for the calendar */
+  padding: 24px;
+  border-right: 1px solid #dee5e9;
+  background-color: #f8f9fa;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-}
-.vh-item {
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  padding: 12px;
-  background: #f9fafb;
-}
-.vh-date {
-  font-weight: 700;
-  color: #111827;
-}
-.vh-title {
-  font-weight: 600;
-  color: #0f172a;
-  margin-top: 4px;
-}
-.vh-meta {
-  display: flex;
   gap: 16px;
-  font-size: 0.9rem;
-  color: #4b5563;
-  margin-top: 6px;
 }
-.vh-notes {
-  margin-top: 6px;
-  font-size: 0.9rem;
-  color: #374151;
+
+.vh-show-all-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background-color: #4a90e2;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
 }
+.vh-show-all-btn:hover {
+  background-color: #3a7bc8;
+}
+
+.vh-timeline-container {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 24px 32px;
+}
+
+/* Timeline Design (mostly unchanged) */
+.vh-timeline {
+  position: relative;
+  border-left: 3px solid #cbd5e0;
+  padding-left: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.vh-timeline-item { position: relative; }
+
+.vh-timeline-dot {
+  position: absolute;
+  left: -44px;
+  top: 5px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background-color: #fff;
+  border: 3px solid #4a90e2;
+}
+
+.vh-timeline-content {
+  background-color: #fff;
+  border-radius: 12px;
+  padding: 16px 20px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.3s ease;
+  box-shadow: 0 3px 15px -3px rgba(0, 0, 0, 0.05);
+}
+.vh-timeline-item:hover .vh-timeline-content {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px -5px rgba(74, 144, 226, 0.2);
+  border-color: #a3c9f5;
+}
+
+.vh-timeline-header, .vh-timeline-details, .vh-timeline-notes { margin-bottom: 0; }
+.vh-timeline-header { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+.vh-timeline-date { font-weight: 600; font-size: 0.9rem; color: #4a5568; display: flex; align-items: center; }
+.vh-timeline-service { font-weight: 700; font-size: 1.1rem; color: #2d3748; margin: 0; display: flex; align-items: center; }
+.vh-icon { margin-right: 8px; color: #4a90e2; flex-shrink: 0; }
+.vh-timeline-details { display: flex; gap: 24px; font-size: 0.95rem; color: #718096; padding-top: 12px; border-top: 1px dashed #e2e8f0; }
+.vh-detail-item { display: flex; align-items: center; }
+.vh-timeline-notes { margin-top: 12px; font-size: 0.9rem; color: #4a5568; background-color: #f8f9fa; border-left: 3px solid #4a90e2; padding: 8px 12px; border-radius: 4px; }
+
+/* Empty & Loading States */
+.vh-empty, .vh-center {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  text-align: center;
+  color: #6b7280;
+}
+.vh-empty-icon { font-size: 48px; margin-bottom: 16px; color: #4a90e2; }
