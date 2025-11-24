@@ -1,6 +1,6 @@
 ﻿// src/pages/customer/ScheduleServiceNew.jsx
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import appointmentService from '../../services/appointmentService';
 import packageService from '../../services/packageService';
 import paymentService from '../../services/paymentService';
@@ -18,6 +18,7 @@ import './ScheduleServiceNew.css';
 
 const ScheduleServiceNew = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, isAuthenticated } = useAuth();
   const { cartItems, getTotalPrice, clearCart, removeFromCart } = useCart();
   const { saveBookingState, restoreBookingState, hasBookingState, clearBookingState } = useSchedule();
@@ -126,8 +127,18 @@ const ScheduleServiceNew = () => {
       return;
     }
 
+    // Check for pre-selected vehicle from navigation state
+    if (location.state?.vehicleId) {
+      const vehicleId = location.state.vehicleId;
+      setSelectedVehicleId(vehicleId);
+      setCurrentStep(2); // Skip to step 2
+      toast.info(`Vehicle pre-selected. Please choose time and location.`);
+      // Clear the state to prevent re-triggering on refresh
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+
     // Check if there's a saved booking state (coming back from products page)
-    if (hasBookingState()) {
+    else if (hasBookingState()) {
       const savedState = restoreBookingState();
       if (savedState) {
         console.log('🔄 Restoring booking state:', savedState);
@@ -153,7 +164,7 @@ const ScheduleServiceNew = () => {
 
     // Normal flow: start from beginning
     loadVehicles();
-  }, [isAuthenticated, hasBookingState, restoreBookingState]);
+  }, [isAuthenticated, hasBookingState, restoreBookingState, location.state]);
 
   // ============ STEP 1: LOAD VEHICLES ============
 

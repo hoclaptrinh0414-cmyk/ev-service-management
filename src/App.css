@@ -67,3 +67,27 @@
 .notification-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #555;
 }
+
+/* Styles for Refactored VehicleDetail Page */
+.group-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e9ecef;
+  color: #343a40;
+}
+
+.form-control-plaintext {
+  padding-top: .5rem;
+  padding-bottom: .5rem;
+  margin-bottom: 0;
+  line-height: 1.5;
+  background-color: transparent;
+  border: solid transparent;
+  border-width: 1px 0;
+  font-size: 1rem;
+  min-height: calc(1.5em + 1rem + 2px);
+  padding-left: 0.75rem;
+  color: #212529;
+}
