@@ -3,7 +3,7 @@ import apiService, { vehicleAPI, lookupAPI } from './api';
 
 /**
  * Vehicle Service
- * Cung cấp các phương thức quản lý xe của khách hàng theo tài liệu CUSTOMER_API_ENDPOINTS.md
+ * Quản lý các thao tác xe của khách hàng
  */
 export const vehicleService = {
   // ============ 3. MY VEHICLES - XE CỦA TÔI ============
@@ -15,10 +15,10 @@ export const vehicleService = {
   async getMyVehicles() {
     try {
       const response = await vehicleAPI.getMyVehicles();
-      console.log('✅ Get my vehicles success:', response);
+      console.log('Get my vehicles success:', response);
       return response;
     } catch (error) {
-      console.error('❌ Get my vehicles failed:', error);
+      console.error('Get my vehicles failed:', error);
       throw error;
     }
   },
@@ -40,10 +40,10 @@ export const vehicleService = {
         insuranceExpiry: vehicleData.insuranceExpiry || '',
         registrationExpiry: vehicleData.registrationExpiry || ''
       });
-      console.log('✅ Register vehicle success:', response);
+      console.log('Register vehicle success:', response);
       return response;
     } catch (error) {
-      console.error('❌ Register vehicle failed:', error);
+      console.error('Register vehicle failed:', error);
       throw error;
     }
   },
@@ -55,10 +55,10 @@ export const vehicleService = {
   async getVehicleDetail(vehicleId) {
     try {
       const response = await vehicleAPI.getVehicleDetail(vehicleId);
-      console.log('✅ Get vehicle detail success:', response);
+      console.log('Get vehicle detail success:', response);
       return response;
     } catch (error) {
-      console.error('❌ Get vehicle detail failed:', error);
+      console.error('Get vehicle detail failed:', error);
       throw error;
     }
   },
@@ -77,10 +77,10 @@ export const vehicleService = {
       }
 
       const response = await vehicleAPI.deleteVehicle(vehicleId);
-      console.log('✅ Delete vehicle success:', response);
+      console.log('Delete vehicle success:', response);
       return response;
     } catch (error) {
-      console.error('❌ Delete vehicle failed:', error);
+      console.error('Delete vehicle failed:', error);
       throw error;
     }
   },
@@ -92,10 +92,10 @@ export const vehicleService = {
   async canDeleteVehicle(vehicleId) {
     try {
       const response = await vehicleAPI.canDeleteVehicle(vehicleId);
-      console.log('✅ Can delete vehicle check:', response);
+      console.log('Can delete vehicle check:', response);
       return response;
     } catch (error) {
-      console.error('❌ Can delete vehicle check failed:', error);
+      console.error('Can delete vehicle check failed:', error);
       throw error;
     }
   },
@@ -107,10 +107,10 @@ export const vehicleService = {
   async getCarBrands() {
     try {
       const response = await lookupAPI.getCarBrands();
-      console.log('✅ Get car brands success:', response);
+      console.log('Get car brands success:', response);
       return response;
     } catch (error) {
-      console.error('❌ Get car brands failed:', error);
+      console.error('Get car brands failed:', error);
       throw error;
     }
   },
@@ -122,26 +122,47 @@ export const vehicleService = {
   async getCarModelsByBrand(brandId) {
     try {
       const response = await lookupAPI.getCarModelsByBrand(brandId);
-      console.log('✅ Get car models success:', response);
+      console.log('Get car models success:', response);
       return response;
     } catch (error) {
-      console.error('❌ Get car models failed:', error);
+      console.error('Get car models failed:', error);
       throw error;
     }
   },
 
   /**
-   * Cập nhật thông tin xe (nếu BE hỗ trợ trong tương lai)
+   * Cập nhật thông tin xe (partial update, chỉ gửi các trường có giá trị)
+   * PUT /api/customer/profile/my-vehicles/{vehicleId}
    */
-  async updateVehicle(vehicleId, vehicleData) {
+  async updateVehicle(vehicleId, vehicleData = {}) {
     try {
-      const response = await vehicleAPI.updateVehicle(vehicleId, vehicleData);
-      console.log('✅ Update vehicle success:', response);
+      const payload = {
+        mileage: vehicleData.mileage,
+        color: vehicleData.color?.trim(),
+        batteryHealthPercent: vehicleData.batteryHealthPercent,
+        vehicleCondition: vehicleData.vehicleCondition?.trim(),
+        insuranceNumber: vehicleData.insuranceNumber?.trim(),
+        insuranceExpiry: vehicleData.insuranceExpiry,
+        registrationExpiry: vehicleData.registrationExpiry
+      };
+
+      // Loại bỏ undefined và chuỗi rỗng để tránh ghi đè không cần thiết
+      const cleanedPayload = Object.fromEntries(
+        Object.entries(payload).filter(([, value]) => value !== undefined && value !== '')
+      );
+
+      const response = await vehicleAPI.updateVehicle(vehicleId, cleanedPayload);
+      console.log('Update vehicle success:', response);
       return response;
     } catch (error) {
-      console.error('❌ Update vehicle failed:', error);
+      console.error('Update vehicle failed:', error);
       throw error;
     }
+  },
+
+  // Alias tiện dụng
+  async updateMyVehicle(vehicleId, vehicleData) {
+    return this.updateVehicle(vehicleId, vehicleData);
   }
 };
 

@@ -1,8 +1,7 @@
 // src/pages/customer/VehicleDetail.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import appointmentService from '../../services/appointmentService'; 
-import { useAuth } from '../../contexts/AuthContext';
+import vehicleService from '../../services/vehicleService';
 import MainLayout from '../../components/layout/MainLayout';
 import {
   Card,
@@ -20,7 +19,8 @@ import {
   message,
   Divider,
   Space,
-  Tooltip
+  Tooltip,
+  Select
 } from 'antd';
 import { CarOutlined, EditOutlined, SaveOutlined, CloseOutlined, ArrowLeftOutlined, HistoryOutlined, ToolOutlined } from '@ant-design/icons';
 import moment from 'moment';
@@ -48,7 +48,7 @@ const VehicleDetail = () => {
   const loadVehicleData = async () => {
     setLoading(true);
     try {
-      const response = await appointmentService.getMyVehicles(); 
+      const response = await vehicleService.getMyVehicles(); 
       const allVehicles = response.data || [];
       const vehicle = allVehicles.find(v => v.vehicleId === parseInt(id));
 
@@ -57,7 +57,7 @@ const VehicleDetail = () => {
           ...vehicle,
           purchaseDate: vehicle.purchaseDate ? moment(vehicle.purchaseDate) : null,
           insuranceExpiry: vehicle.insuranceExpiry ? moment(vehicle.insuranceExpiry) : null,
-          registrationExpiry: vehicle.registrationExpiry ? moment(vehicle.registrationExpiry) : null,
+          registrationExpiry: vehicle.registrationExpiry ? moment(vehicle.registrationExpiry) : null
         };
         setVehicleData(formattedData);
         form.setFieldsValue(formattedData);
@@ -83,17 +83,27 @@ const VehicleDetail = () => {
   const handleSave = async () => {
     try {
       const values = await form.validateFields();
+      const currentMileage = vehicleData?.mileage || 0;
+
+      if (values.mileage !== undefined && values.mileage < currentMileage) {
+        return message.error('Mileage must be greater than or equal to current value.');
+      }
+
       setSaving(true);
       
       const updateData = {
         ...values,
-        purchaseDate: values.purchaseDate ? values.purchaseDate.format('YYYY-MM-DD') : null,
-        insuranceExpiry: values.insuranceExpiry ? values.insuranceExpiry.format('YYYY-MM-DD') : null,
-        registrationExpiry: values.registrationExpiry ? values.registrationExpiry.format('YYYY-MM-DD') : null,
+        color: values.color || undefined,
+        mileage: values.mileage !== undefined ? Number(values.mileage) : undefined,
+        batteryHealthPercent: values.batteryHealthPercent !== undefined ? Number(values.batteryHealthPercent) : undefined,
+        vehicleCondition: values.vehicleCondition || undefined,
+        insuranceNumber: values.insuranceNumber || undefined,
+        purchaseDate: undefined, // not updatable via API
+        insuranceExpiry: values.insuranceExpiry ? values.insuranceExpiry.format('YYYY-MM-DD') : undefined,
+        registrationExpiry: values.registrationExpiry ? values.registrationExpiry.format('YYYY-MM-DD') : undefined,
       };
       
-      // This should ideally be a dedicated method, but using what's available
-      const response = await appointmentService.updateMyVehicle(id, updateData);
+      const response = await vehicleService.updateMyVehicle(id, updateData);
       
       if (response.success) {
         await loadVehicleData();
@@ -152,9 +162,16 @@ const VehicleDetail = () => {
                         <Col xs={24} sm={12}><Form.Item label="Model Name" name="modelName"><Input disabled /></Form.Item></Col>
                         <Col xs={24} sm={12}><Form.Item label="License Plate" name="licensePlate" rules={[{ required: true }]}><Input /></Form.Item></Col>
                         <Col xs={24} sm={12}><Form.Item label="VIN" name="vin"><Input /></Form.Item></Col>
-                        <Col xs={24} sm={12}><Form.Item label="Color" name="color"><Input /></Form.Item></Col>
-                        <Col xs={24} sm={12}><Form.Item label="Mileage (km)" name="mileage"><InputNumber style={{ width: '100%' }} /></Form.Item></Col>
+                        <Col xs={24} sm={12}><Form.Item label="Color" name="color" rules={[{ max: 50, message: 'Max 50 characters' }]}><Input /></Form.Item></Col>
+                        <Col xs={24} sm={12}><Form.Item label="Mileage (km)" name="mileage"><InputNumber style={{ width: '100%' }} min={0} precision={0} /></Form.Item></Col>
                         <Col xs={24} sm={12}><Form.Item label="Purchase Date" name="purchaseDate"><DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" disabled /></Form.Item></Col>
+                        <Col xs={24} sm={12}><Form.Item label="Battery Health (%)" name="batteryHealthPercent" rules={[{ type: 'number', min: 0, max: 100, message: '0 - 100' }]}><InputNumber style={{ width: '100%' }} min={0} max={100} /></Form.Item></Col>
+                        <Col xs={24} sm={12}><Form.Item label="Vehicle Condition" name="vehicleCondition" rules={[{ max: 20, message: 'Max 20 characters' }]}><Select allowClear options={[
+                          { label: 'Excellent', value: 'Excellent' },
+                          { label: 'Good', value: 'Good' },
+                          { label: 'Fair', value: 'Fair' },
+                          { label: 'Poor', value: 'Poor' }
+                        ]} /></Form.Item></Col>
                       </Row>
                     ) : (
                       <Descriptions column={2} bordered size="small" className="profile-descriptions">
@@ -164,6 +181,8 @@ const VehicleDetail = () => {
                         <Descriptions.Item label="Color">{renderValue(vehicleData.color)}</Descriptions.Item>
                         <Descriptions.Item label="Mileage (km)">{renderValue(vehicleData.mileage?.toLocaleString())}</Descriptions.Item>
                         <Descriptions.Item label="Purchase Date">{renderValue(vehicleData.purchaseDate ? vehicleData.purchaseDate.format('DD/MM/YYYY') : null)}</Descriptions.Item>
+                        <Descriptions.Item label="Battery Health (%)">{renderValue(vehicleData.batteryHealthPercent)}</Descriptions.Item>
+                        <Descriptions.Item label="Vehicle Condition">{renderValue(vehicleData.vehicleCondition)}</Descriptions.Item>
                       </Descriptions>
                     )}
 

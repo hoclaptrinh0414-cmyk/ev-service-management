@@ -42,7 +42,7 @@ const VehicleFlipCard = ({ vehicle, onDelete, onViewDetails }) => {
   const handleBookClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    navigate("/schedule-service");
+    navigate("/schedule-service", { state: { vehicleId: vehicle.id } });
   };
 
   const handleViewDetailsClick = (e) => {
