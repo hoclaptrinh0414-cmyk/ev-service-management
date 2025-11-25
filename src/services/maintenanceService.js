@@ -6,6 +6,12 @@ const API_BASE_URL =
   'https://unprepared-kade-nonpossibly.ngrok-free.dev/api';
 
 export const maintenanceService = {
+  // ===== Helpers =====
+  buildAuthHeaders: () => {
+    const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  },
+
   // Get all maintenance services with pagination and filters
   getAllServices: async (params = {}) => {
     try {
@@ -102,16 +108,64 @@ export const maintenanceService = {
     return response.data;
   },
 
+  // ===== Vehicle Maintenance (Customer) =====
+
+  // Tổng quan trạng thái bảo dưỡng cho tất cả xe của user
+  getMyVehiclesMaintenanceStatus: async () => {
+    const authHeader = maintenanceService.buildAuthHeaders();
+    const response = await axios.get(
+      `${API_BASE_URL}/VehicleMaintenance/my-vehicles/status`,
+      { headers: { 'ngrok-skip-browser-warning': 'true', ...authHeader } }
+    );
+    return response.data;
+  },
+
+  // Danh sách nhắc nhở (NeedAttention, Urgent) + summary
+  getMaintenanceReminders: async () => {
+    const authHeader = maintenanceService.buildAuthHeaders();
+    const response = await axios.get(
+      `${API_BASE_URL}/VehicleMaintenance/reminders`,
+      { headers: { 'ngrok-skip-browser-warning': 'true', ...authHeader } }
+    );
+    return response.data;
+  },
+
+  // Trạng thái chi tiết 1 xe
+  getVehicleMaintenanceStatus: async (vehicleId) => {
+    if (!vehicleId) throw new Error('vehicleId is required to fetch maintenance status');
+    const authHeader = maintenanceService.buildAuthHeaders();
+    const response = await axios.get(
+      `${API_BASE_URL}/VehicleMaintenance/${vehicleId}/status`,
+      { headers: { 'ngrok-skip-browser-warning': 'true', ...authHeader } }
+    );
+    return response.data;
+  },
+
   // Get maintenance history for a vehicle (customer)
   getVehicleMaintenanceHistory: async (vehicleId) => {
     if (!vehicleId) {
       throw new Error('vehicleId is required to fetch maintenance history');
     }
-    const token = localStorage.getItem('accessToken');
-    const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
+    const authHeader = maintenanceService.buildAuthHeaders();
     const response = await axios.get(
       `${API_BASE_URL}/VehicleMaintenance/${vehicleId}/history`,
       { headers: { 'ngrok-skip-browser-warning': 'true', ...authHeader } }
+    );
+    return response.data;
+  },
+
+  // Cập nhật odo hiện tại để dự báo chính xác hơn
+  updateVehicleMileage: async (vehicleId, { currentMileage, notes }) => {
+    if (!vehicleId) throw new Error('vehicleId is required to update mileage');
+    const authHeader = maintenanceService.buildAuthHeaders();
+    const payload = {
+      currentMileage,
+      notes
+    };
+    const response = await axios.put(
+      `${API_BASE_URL}/VehicleMaintenance/${vehicleId}/mileage`,
+      payload,
+      { headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true', ...authHeader } }
     );
     return response.data;
   },

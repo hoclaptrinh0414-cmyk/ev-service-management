@@ -3,7 +3,13 @@ import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import FancyButton from "./FancyButton";
 
-const VehicleFlipCard = ({ vehicle, onDelete, onViewDetails }) => {
+const VehicleFlipCard = ({
+  vehicle,
+  onDelete,
+  onViewDetails,
+  maintenanceStatus,
+  onUpdateMileage,
+}) => {
   const navigate = useNavigate();
   const [showConfirm, setShowConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -67,6 +73,22 @@ const VehicleFlipCard = ({ vehicle, onDelete, onViewDetails }) => {
         <div className="card-content">
           {!showConfirm ? (
             <>
+              {maintenanceStatus && (
+                <div
+                  className="status-pill"
+                  style={{
+                    backgroundColor:
+                      statusColors[maintenanceStatus.status]?.bg || "#eef2f7",
+                    color:
+                      statusColors[maintenanceStatus.status]?.text || "#1f2933",
+                  }}
+                >
+                  {maintenanceStatus.status || "Status"}{" "}
+                  {maintenanceStatus.remainingKm != null
+                    ? `• Còn ${maintenanceStatus.remainingKm.toLocaleString()} km`
+                    : ""}
+                </div>
+              )}
               <h3 className="model-name">{vehicle.model}</h3>
               <div className="vehicle-info">
                 <p>
@@ -79,9 +101,42 @@ const VehicleFlipCard = ({ vehicle, onDelete, onViewDetails }) => {
                   <strong>Next service:</strong>
                 </p>
                 <p className="next-service">{vehicle.nextService}</p>
+                {maintenanceStatus?.message && (
+                  <p className="maintenance-message">
+                    {maintenanceStatus.message}
+                  </p>
+                )}
+                {maintenanceStatus?.progressPercent != null && (
+                  <div className="progress-wrapper">
+                    <div className="progress-bar">
+                      <div
+                        className="progress-fill"
+                        style={{
+                          width: `${Math.min(
+                            100,
+                            Math.max(0, maintenanceStatus.progressPercent)
+                          )}%`,
+                        }}
+                      />
+                    </div>
+                    <small className="progress-label">
+                      {distanceLabel || ""}
+                      {maintenanceStatus.estimatedDaysUntilMaintenance != null
+                        ? ` • ~${maintenanceStatus.estimatedDaysUntilMaintenance} ngày`
+                        : ""}
+                    </small>
+                  </div>
+                )}
               </div>
               <div className="primary-actions">
-                <div style={{width : '100%',display: 'flex', justifyContent : 'space-between'}}>
+                <div
+                  style={{
+                    width: "100%",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    gap: "0.5rem",
+                  }}
+                >
                   <button
                     style={{ borderRadius: "25px" }}
                     type="button"
@@ -97,6 +152,22 @@ const VehicleFlipCard = ({ vehicle, onDelete, onViewDetails }) => {
                     onClick={handleViewDetailsClick}
                   >
                     View details
+                  </button>
+                  <button
+                    style={{
+                      borderRadius: "25px",
+                      height: "47px",
+                      marginTop: "15px",
+                    }}
+                    type="button"
+                    className="view-details-button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onUpdateMileage && onUpdateMileage(vehicle.id);
+                    }}
+                  >
+                    Update mileage
                   </button>
                 </div>
               </div>
@@ -238,6 +309,15 @@ const StyledWrapper = styled.div`
     pointer-events: auto;
   }
 
+  .status-pill {
+    align-self: flex-start;
+    padding: 6px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
   .car-icon {
     font-size: 4rem;
     margin-bottom: 1rem;
@@ -286,6 +366,37 @@ const StyledWrapper = styled.div`
   .next-service {
     color: #d4a574 !important;
     font-weight: 600;
+  }
+
+  .maintenance-message {
+    margin-top: 8px;
+    color: #344054;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  .progress-wrapper {
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  .progress-bar {
+    width: 100%;
+    height: 6px;
+    background: #e5e7eb;
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #2e6edc, #4f46e5);
+  }
+
+  .progress-label {
+    display: block;
+    margin-top: 6px;
+    color: #556575;
   }
 
   .schedule-button {
@@ -460,3 +571,9 @@ const StyledWrapper = styled.div`
 `;
 
 export default VehicleFlipCard;
+  const distanceLabel = maintenanceStatus?.distanceLabel;
+  const statusColors = {
+    Normal: { bg: "#e7f7ed", text: "#1b7045" },
+    NeedAttention: { bg: "#fff4e5", text: "#b35b00" },
+    Urgent: { bg: "#ffecec", text: "#c53030" },
+  };

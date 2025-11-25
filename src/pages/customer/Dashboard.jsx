@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import VehicleFlipCard from "../../components/VehicleFlipCard";
 import appointmentService from "../../services/appointmentService";
+import { maintenanceService } from "../../services/maintenanceService";
 import {
   getActiveSubscriptionsByVehicle,
   getApplicableServicesByVehicle,
@@ -185,6 +186,46 @@ const deriveServicesFromUsage = (entries = []) => {
   return deduped;
 };
 
+const computeMaintenanceView = (item = {}) => {
+  const remainingKm = item.remainingKm ?? item.RemainingKm;
+  let status = item.status || item.Status || "Normal";
+  let message = item.message || item.Message || "";
+  let distanceLabel = null;
+
+  if (remainingKm !== undefined && remainingKm !== null) {
+    if (remainingKm < 0) {
+      const overdueKm = Math.abs(remainingKm);
+      status = "Urgent";
+      distanceLabel = `Quá hạn khoảng ${overdueKm.toLocaleString()} km`;
+      message =
+        message ||
+        `[URGENT] Xe của bạn đã quá hạn bảo dưỡng khoảng ${overdueKm.toLocaleString()} km. Vui lòng đặt lịch ngay.`;
+    } else if (remainingKm === 0) {
+      status = "Urgent";
+      distanceLabel = "Đã đến hạn bảo dưỡng";
+      message =
+        message ||
+        "[URGENT] Xe của bạn đã đến hạn bảo dưỡng. Vui lòng đặt lịch ngay.";
+    } else {
+      distanceLabel = `Còn khoảng ${remainingKm.toLocaleString()} km`;
+      if (remainingKm <= 2000) {
+        status = "NeedAttention";
+        message =
+          message ||
+          "[REMINDER] Xe của bạn sắp đến hạn bảo dưỡng. Vui lòng đặt lịch sớm.";
+      }
+    }
+  }
+
+  return {
+    ...item,
+    remainingKm,
+    status,
+    message,
+    distanceLabel,
+  };
+};
+
 const CustomerDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -199,6 +240,12 @@ const CustomerDashboard = () => {
   const [modalVehicle, setModalVehicle] = useState(null);
   const [modalPackages, setModalPackages] = useState([]);
   const [modalServices, setModalServices] = useState([]);
+  const [maintenanceStatuses, setMaintenanceStatuses] = useState({});
+  const [maintenanceLoading, setMaintenanceLoading] = useState(false);
+  const [reminders, setReminders] = useState([]);
+  const [reminderSummary, setReminderSummary] = useState(null);
+  const [remindersLoading, setRemindersLoading] = useState(false);
+  const [modalMaintenanceStatus, setModalMaintenanceStatus] = useState(null);
 
   const [selectedSubscriptionId, setSelectedSubscriptionId] = useState(null);
   const [selectedSubscriptionTitle, setSelectedSubscriptionTitle] =
@@ -295,11 +342,101 @@ const CustomerDashboard = () => {
         }));
 
       setVehicles(mappedVehicles);
+      await Promise.all([
+        fetchMaintenanceStatuses(),
+        fetchMaintenanceReminders(),
+      ]);
     } catch (error) {
       console.error("❌ Error loading dashboard data:", error);
       setError("Không thể tải dữ liệu. Vui lòng thử lại sau.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchMaintenanceStatuses = async () => {
+    try {
+      setMaintenanceLoading(true);
+      const res = await maintenanceService.getMyVehiclesMaintenanceStatus();
+      const list =
+        res?.data ||
+        res?.Data ||
+        (Array.isArray(res)
+          ? res
+          : Array.isArray(res?.items)
+          ? res.items
+          : []);
+      const map = {};
+      list.forEach((item) => {
+        const id = item.vehicleId || item.VehicleId;
+        if (!id) return;
+        map[id] = computeMaintenanceView({
+          ...item,
+          estimatedDaysUntilMaintenance:
+            item.estimatedDaysUntilMaintenance ??
+            item.EstimatedDaysUntilMaintenance,
+          progressPercent:
+            item.progressPercent ??
+            item.ProgressPercent ??
+            item.progress ??
+            item.Progress,
+          lastMaintenanceKm:
+            item.lastMaintenanceKm ?? item.LastMaintenanceKm ?? null,
+          lastMaintenanceDate:
+            item.lastMaintenanceDate ?? item.LastMaintenanceDate ?? null,
+          estimatedCurrentKm:
+            item.estimatedCurrentKm ??
+            item.EstimatedCurrentKm ??
+            item.currentMileage ??
+            item.CurrentMileage,
+          nextMaintenanceKm:
+            item.nextMaintenanceKm ?? item.NextMaintenanceKm ?? null,
+          hasSufficientHistory:
+            item.hasSufficientHistory ?? item.HasSufficientHistory,
+          historyCount: item.historyCount ?? item.HistoryCount,
+          estimatedNextMaintenanceDate:
+            item.estimatedNextMaintenanceDate ??
+            item.EstimatedNextMaintenanceDate ??
+            null,
+        });
+      });
+      setMaintenanceStatuses(map);
+    } catch (err) {
+      console.error("Failed to load maintenance status:", err);
+    } finally {
+      setMaintenanceLoading(false);
+    }
+  };
+
+  const fetchMaintenanceReminders = async () => {
+    try {
+      setRemindersLoading(true);
+      const res = await maintenanceService.getMaintenanceReminders();
+      const data =
+        res?.data ||
+        res?.Data ||
+        (Array.isArray(res) ? res : Array.isArray(res?.items) ? res.items : []);
+      const rawList = Array.isArray(data?.data)
+        ? data.data
+        : Array.isArray(data)
+        ? data
+        : [];
+      const processed = rawList.map((item) => computeMaintenanceView(item));
+      const summary = processed.reduce(
+        (acc, cur) => {
+          if (cur.status === "Urgent") acc.urgent += 1;
+          else if (cur.status === "NeedAttention") acc.needsAttention += 1;
+          else acc.normal += 1;
+          return acc;
+        },
+        { urgent: 0, needsAttention: 0, normal: 0 }
+      );
+      setReminders(processed);
+      setReminderSummary(summary);
+    } catch (err) {
+      console.error("Failed to load maintenance reminders:", err);
+    } finally {
+      setRemindersLoading(false);
     }
   };
 
@@ -357,7 +494,7 @@ const CustomerDashboard = () => {
     }
   };
 
-  const handleDeleteVehicle = async (vehicleId) => {
+const handleDeleteVehicle = async (vehicleId) => {
     if (!vehicleId) return;
 
     const toastCfg = {
@@ -396,6 +533,40 @@ const CustomerDashboard = () => {
     }
   };
 
+  const handleUpdateMileage = async (vehicleId) => {
+    const status = maintenanceStatuses[vehicleId];
+    const suggested =
+      status?.estimatedCurrentKm || status?.estimatedCurrentMileage || "";
+    const input = window.prompt(
+      "Nhập số km hiện tại để cập nhật",
+      suggested ? String(suggested) : ""
+    );
+    if (input === null) return;
+    const value = Number(input);
+    if (Number.isNaN(value) || value < 0) {
+      toast.error("Số km không hợp lệ.");
+      return;
+    }
+    try {
+      await maintenanceService.updateVehicleMileage(vehicleId, {
+        currentMileage: value,
+      });
+      toast.success("Đã cập nhật km. Đang tải lại trạng thái...");
+      await Promise.all([
+        fetchMaintenanceStatuses(),
+        fetchMaintenanceReminders(),
+      ]);
+    } catch (err) {
+      console.error("Update mileage failed:", err);
+      const msg =
+        err.response?.data?.message ||
+        err.response?.data?.Message ||
+        err.message ||
+        "Không thể cập nhật km.";
+      toast.error(msg);
+    }
+  };
+
   const handleViewVehicleDetails = async (vehicle) => {
     if (!vehicle) return;
     const vehicleId = vehicle.id || vehicle.vehicleId;
@@ -403,13 +574,18 @@ const CustomerDashboard = () => {
     setShowVehicleModal(true);
     setVehicleModalLoading(true);
     setVehicleModalError("");
+    setModalMaintenanceStatus(null);
     try {
-      const [packagesRes, servicesRes] = await Promise.all([
+      const [packagesRes, servicesRes, statusRes] = await Promise.all([
         getActiveSubscriptionsByVehicle(vehicleId),
         getApplicableServicesByVehicle(vehicleId),
+        maintenanceService.getVehicleMaintenanceStatus(vehicleId),
       ]);
       setModalPackages(extractApiList(packagesRes));
       setModalServices(extractApiList(servicesRes));
+      setModalMaintenanceStatus(
+        computeMaintenanceView(statusRes?.data || statusRes)
+      );
     } catch (err) {
       console.error("Error loading vehicle entitlements:", err);
       setVehicleModalError(
@@ -483,6 +659,7 @@ const CustomerDashboard = () => {
     setSelectedSubscriptionUsage(null);
     setSubscriptionDetailLoading(false);
     setSubscriptionDetailError("");
+    setModalMaintenanceStatus(null);
   };
 
   return (
@@ -528,6 +705,80 @@ const CustomerDashboard = () => {
               </div>
             ) : (
               <>
+                <section className="dashboard-section mb-4">
+                  <h2
+                    className="mb-3"
+                    style={{ fontSize: "1.4rem", fontWeight: 600 }}
+                  >
+                    Maintenance reminders
+                  </h2>
+                  {remindersLoading ? (
+                    <div className="text-center py-3">
+                      <div className="spinner-border" role="status">
+                        <span className="visually-hidden">Loading...</span>
+                      </div>
+                    </div>
+                  ) : reminders.length > 0 ? (
+                    <div className="alert alert-warning">
+                      <div className="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                          <strong>
+                            {reminderSummary?.urgent || 0} urgent /{" "}
+                            {reminderSummary?.needsAttention || 0} need attention
+                          </strong>
+                        </div>
+                        <button
+                          className="btn btn-sm btn-outline-secondary"
+                          onClick={() => fetchMaintenanceReminders()}
+                        >
+                          Refresh
+                        </button>
+                      </div>
+                      <ul className="mb-0" style={{ listStyle: "none", padding: 0 }}>
+                        {reminders.map((item) => (
+                          <li
+                            key={item.vehicleId || item.VehicleId}
+                            className="d-flex justify-content-between align-items-center py-2 border-bottom"
+                          >
+                            <div>
+                              <div className="fw-bold">
+                                {item.licensePlate || item.LicensePlate || "Xe"}
+                              </div>
+                              <small>
+                                {item.message || item.Message || ""}
+                                {item.distanceLabel
+                                  ? ` • ${item.distanceLabel}`
+                                  : ""}
+                              </small>
+                            </div>
+                            <span
+                              className={`badge ${
+                                (item.status || "").toLowerCase() === "urgent"
+                                  ? "bg-danger"
+                                  : (item.status || "").toLowerCase() ===
+                                    "needattention"
+                                  ? "bg-warning text-dark"
+                                  : "bg-secondary"
+                              }`}
+                            >
+                              {item.status || item.Status}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : (
+                    <div className="alert alert-success mb-0">
+                      No maintenance reminders.
+                      <button
+                        className="btn btn-sm btn-link ms-2"
+                        onClick={() => fetchMaintenanceReminders()}
+                      >
+                        Refresh
+                      </button>
+                    </div>
+                  )}
+                </section>
                 <section className="dashboard-section mb-5">
                   <h2
                     className="mb-4"
@@ -553,6 +804,10 @@ const CustomerDashboard = () => {
                               onViewDetails={() =>
                                 handleViewVehicleDetails(vehicle)
                               }
+                              maintenanceStatus={
+                                maintenanceStatuses[vehicle.id]
+                              }
+                              onUpdateMileage={handleUpdateMileage}
                             />
                           </div>
                         ))}
@@ -613,6 +868,65 @@ const CustomerDashboard = () => {
               </div>
             ) : (
               <div className="vehicle-modal-grid">
+                {modalMaintenanceStatus && (
+                  <div className="vehicle-modal-card">
+                    <div className="vehicle-card-header">
+                      <div>
+                        <p className="vehicle-card-kicker">B?o d??ng</p>
+                        <h4>
+                          {modalMaintenanceStatus.status ||
+                            modalMaintenanceStatus.Status ||
+                            "Status"}
+                        </h4>
+                      </div>
+                    </div>
+                    <p className="maintenance-message">
+                      {modalMaintenanceStatus.message ||
+                        modalMaintenanceStatus.Message ||
+                        "No message"}
+                    </p>
+                    <div
+                      className="subscription-info-grid"
+                      style={{ marginTop: "12px" }}
+                    >
+                      <div>
+                        <p className="muted-label">C?n l?i</p>
+                        <strong>
+                          {modalMaintenanceStatus.remainingKm != null
+                            ? `${modalMaintenanceStatus.remainingKm.toLocaleString()} km`
+                            : "-"}
+                        </strong>
+                      </div>
+                      <div>
+                        <p className="muted-label">D? ki?n c?n</p>
+                        <strong>
+                          {modalMaintenanceStatus.estimatedDaysUntilMaintenance !=
+                          null
+                            ? `~${modalMaintenanceStatus.estimatedDaysUntilMaintenance} ng�y`
+                            : "-"}
+                        </strong>
+                      </div>
+                      <div>
+                        <p className="muted-label">M?c km k? ti?p</p>
+                        <strong>
+                          {modalMaintenanceStatus.nextMaintenanceKm != null
+                            ? `${modalMaintenanceStatus.nextMaintenanceKm.toLocaleString()} km`
+                            : "-"}
+                        </strong>
+                      </div>
+                      <div>
+                        <p className="muted-label">L?n cu?i</p>
+                        <strong>
+                          {modalMaintenanceStatus.lastMaintenanceDate
+                            ? new Date(
+                                modalMaintenanceStatus.lastMaintenanceDate
+                              ).toLocaleDateString("vi-VN")
+                            : "-"}
+                        </strong>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <div className="vehicle-modal-card">
                   <div className="vehicle-card-header">
                     <div>
