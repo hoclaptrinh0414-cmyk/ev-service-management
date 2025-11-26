@@ -3,17 +3,11 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import "./AdminLayout.css";
 
 const NAV_ITEMS = [
-  { label: "Dashboard", path: "/admin", icon: "bi-speedometer2" },
   { label: "Customer Management", path: "/admin/customers", icon: "bi-people" },
   {
     label: "Vehicle Management",
     path: "/admin/vehicles",
     icon: "bi-car-front",
-  },
-  {
-    label: "Service Schedule",
-    path: "/admin/schedule",
-    icon: "bi-calendar-check",
   },
   {
     label: "Maintenance Packages",
@@ -34,7 +28,6 @@ const NAV_ITEMS = [
   },
   { label: "Time Slots", path: "/admin/time-slots", icon: "bi-calendar3" },
   { label: "Car Brands", path: "/admin/brands", icon: "bi-building" },
-  { label: "Settings", path: "/admin/settings", icon: "bi-gear" },
 ];
 
 const SEARCH_SUGGESTIONS_ID = "admin-search-suggestions";
