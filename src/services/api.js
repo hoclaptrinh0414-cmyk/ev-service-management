@@ -2,7 +2,8 @@
 
 const API_CONFIG = {
   baseURL:
-    process.env.REACT_APP_API_URL || "https://unprepared-kade-nonpossibly.ngrok-free.dev/api",
+    process.env.REACT_APP_API_URL ||
+    "https://unprepared-kade-nonpossibly.ngrok-free.dev/api",
   timeout: 15000,
   headers: {
     "Content-Type": "application/json",

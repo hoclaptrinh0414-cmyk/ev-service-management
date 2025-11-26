@@ -195,24 +195,56 @@ const resolveApiMessage = (response, fallback = "") => {
   return fallback;
 };
 
-const extractPayload = (response) => {
-  if (response == null) return null;
+const hasPagingMeta = (obj) => {
+  if (obj == null || typeof obj !== "object") return false;
+  const metaKeys = [
+    "totalCount",
+    "TotalCount",
+    "totalItems",
+    "TotalItems",
+    "totalPages",
+    "TotalPages",
+    "pageCount",
+    "PageCount",
+    "page",
+    "Page",
+    "pageNumber",
+    "PageNumber",
+    "currentPage",
+    "CurrentPage",
+    "pageSize",
+    "PageSize",
+    "limit",
+    "Limit",
+  ];
+  return metaKeys.some((key) => Object.hasOwn(obj, key));
+};
 
-  if (Array.isArray(response)) return response;
+const unwrapPayload = (value, depth = 0) => {
+  // Recursively unwrap common API envelope keys but keep paging metadata objects intact.
+  if (value == null || depth > 4) return value;
+  if (Array.isArray(value)) return value;
+  if (typeof value !== "object") return value;
 
-  if (typeof response === "object") {
-    if (response.data !== undefined) return response.data;
-    if (response.Data !== undefined) return response.Data;
-    if (response.payload !== undefined) return response.payload;
-    if (response.Payload !== undefined) return response.Payload;
-    if (response.result !== undefined) return response.result;
-    if (response.Result !== undefined) return response.Result;
-    if (response.items !== undefined) return response.items;
-    if (response.Items !== undefined) return response.Items;
+  if (hasPagingMeta(value)) {
+    return value;
   }
 
-  return response;
+  const unwrapKeys = ["data", "Data", "payload", "Payload", "result", "Result"];
+  for (const key of unwrapKeys) {
+    if (value[key] !== undefined) {
+      return unwrapPayload(value[key], depth + 1);
+    }
+  }
+
+  // If only items exist and no meta, unwrap to items; otherwise return as-is.
+  if (value.items !== undefined) return unwrapPayload(value.items, depth + 1);
+  if (value.Items !== undefined) return unwrapPayload(value.Items, depth + 1);
+
+  return value;
 };
+
+const extractPayload = (response) => unwrapPayload(response);
 
 const normalizePagedResult = (response) => {
   const fallback = {

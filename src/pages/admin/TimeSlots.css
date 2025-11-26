@@ -75,6 +75,25 @@
   border: 1px solid #ddd;
   border-radius: 25px;
   font-size: 14px;
+  background-color: #fff;
+  color: #333;
+}
+
+.panel select option {
+  background-color: #fff;
+  color: #333;
+  padding: 8px;
+}
+
+.panel textarea {
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  background-color: #fff;
+  color: #333;
 }
 
 .filters .btn {

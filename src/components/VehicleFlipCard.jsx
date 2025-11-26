@@ -59,6 +59,13 @@ const VehicleFlipCard = ({
     }
   };
 
+  const distanceLabel = maintenanceStatus?.distanceLabel;
+  const statusColors = {
+    Normal: { bg: "#e7f7ed", text: "#1b7045" },
+    NeedAttention: { bg: "#fff4e5", text: "#b35b00" },
+    Urgent: { bg: "#ffecec", text: "#c53030" },
+  };
+
   return (
     <StyledWrapper>
       <div className="card" onClick={handleCardClick}>
@@ -120,13 +127,13 @@ const VehicleFlipCard = ({
                       />
                     </div>
                     <small className="progress-label">
-                      {distanceLabel || ""}
-                      {maintenanceStatus.estimatedDaysUntilMaintenance != null
-                        ? ` • ~${maintenanceStatus.estimatedDaysUntilMaintenance} ngày`
-                        : ""}
-                    </small>
-                  </div>
-                )}
+              {distanceLabel || ""}
+              {maintenanceStatus.estimatedDaysUntilMaintenance > 0
+                ? ` • ~${maintenanceStatus.estimatedDaysUntilMaintenance} ngày`
+                : ""}
+            </small>
+          </div>
+        )}
               </div>
               <div className="primary-actions">
                 <div
@@ -571,9 +578,3 @@ const StyledWrapper = styled.div`
 `;
 
 export default VehicleFlipCard;
-  const distanceLabel = maintenanceStatus?.distanceLabel;
-  const statusColors = {
-    Normal: { bg: "#e7f7ed", text: "#1b7045" },
-    NeedAttention: { bg: "#fff4e5", text: "#b35b00" },
-    Urgent: { bg: "#ffecec", text: "#c53030" },
-  };

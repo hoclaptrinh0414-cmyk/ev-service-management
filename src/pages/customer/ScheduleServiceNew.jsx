@@ -16,6 +16,8 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import './ScheduleServiceNew.css';
 
+const PRESELECT_TOAST_ID = 'preselect-vehicle';
+
 const ScheduleServiceNew = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -57,6 +59,7 @@ const ScheduleServiceNew = () => {
   const [appointmentData, setAppointmentData] = useState(null);
   const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [isFreeAppointment, setIsFreeAppointment] = useState(false);
+  const [preselectHandled, setPreselectHandled] = useState(false);
 
   const normalizeApiResponse = (response) => {
     if (!response) return null;
@@ -128,13 +131,18 @@ const ScheduleServiceNew = () => {
     }
 
     // Check for pre-selected vehicle from navigation state
-    if (location.state?.vehicleId) {
+    if (location.state?.vehicleId && !preselectHandled) {
       const vehicleId = location.state.vehicleId;
       setSelectedVehicleId(vehicleId);
       setCurrentStep(2); // Skip to step 2
-      toast.info(`Vehicle pre-selected. Please choose time and location.`);
+      if (!toast.isActive(PRESELECT_TOAST_ID)) {
+        toast.info(`Vehicle pre-selected. Please choose time and location.`, {
+          toastId: PRESELECT_TOAST_ID
+        });
+      }
       // Clear the state to prevent re-triggering on refresh
       navigate(location.pathname, { replace: true, state: {} });
+      setPreselectHandled(true);
     }
 
     // Check if there's a saved booking state (coming back from products page)
@@ -164,7 +172,7 @@ const ScheduleServiceNew = () => {
 
     // Normal flow: start from beginning
     loadVehicles();
-  }, [isAuthenticated, hasBookingState, restoreBookingState, location.state]);
+  }, [isAuthenticated, hasBookingState, restoreBookingState, location.state, preselectHandled]);
 
   // ============ STEP 1: LOAD VEHICLES ============
 

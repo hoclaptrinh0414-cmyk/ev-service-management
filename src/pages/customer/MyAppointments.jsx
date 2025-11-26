@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import appointmentService from "../../services/appointmentService";
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import {
   Card,
@@ -591,16 +591,7 @@ const MyAppointments = () => {
 
   return (
     <MainLayout>
-      <ToastContainer
-        position="top-right"
-        autoClose={10000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        draggable
-        pauseOnHover
-        theme="colored"
-      />
+
       {/* Main Content */}
       <section style={{ marginTop: "20px", minHeight: "60vh" }}>
         <div className="container">

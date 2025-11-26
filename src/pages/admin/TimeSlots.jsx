@@ -13,6 +13,19 @@ const buildQuery = (params) => {
   return s ? `?${s}` : "";
 };
 
+const fetchServiceCenters = async () => {
+  const res = await apiService.request("/service-centers/active");
+  // Backend returns: { data: [...], isSuccess: true, message: "..." }
+  if (res?.data && Array.isArray(res.data)) {
+    return res.data;
+  }
+  // Fallback if structure is different
+  if (Array.isArray(res)) {
+    return res;
+  }
+  return [];
+};
+
 const fetchTimeSlots = async (filters) => {
   const query = buildQuery(filters);
   const res = await apiService.request(`/time-slots${query}`);
@@ -44,16 +57,25 @@ const deleteSlot = async (slotId) => {
   return apiService.request(`/time-slots/${slotId}`, { method: "DELETE" });
 };
 
+const deleteEmptySlots = async ({ centerId, date }) => {
+  return apiService.request(
+    `/time-slots/center/${centerId}/date/${date}/empty`,
+    { method: "DELETE" }
+  );
+};
+
 const TimeSlots = () => {
   const queryClient = useQueryClient();
 
   const [mode, setMode] = useState("single");
 
+  const [dateFilterMode, setDateFilterMode] = useState("single"); // "single" or "range"
+
   const [filters, setFilters] = useState({
     centerId: "",
     startDate: "",
     endDate: "",
-    status: "",
+    isBlocked: "", // Changed from "status" to match API
     page: 1,
     pageSize: 20,
   });
@@ -66,6 +88,7 @@ const TimeSlots = () => {
     maxBookings: 1,
     slotType: "Standard",
     isBlocked: false,
+    notes: "", // Added notes field
   });
 
   const [bulkPayload, setBulkPayload] = useState({
@@ -78,19 +101,50 @@ const TimeSlots = () => {
     overwriteExisting: false,
   });
 
+  const centersQuery = useQuery({
+    queryKey: ["service-centers"],
+    queryFn: fetchServiceCenters,
+  });
+
   const slotsQuery = useQuery({
     queryKey: ["time-slots", filters],
     queryFn: () => fetchTimeSlots(filters),
+    enabled: !!filters.centerId, // Only fetch when centerId is selected
   });
 
   const createMutation = useMutation({
     mutationFn: createSlot,
-    onSuccess: () => queryClient.invalidateQueries(["time-slots"]),
+    onSuccess: () => {
+      queryClient.invalidateQueries(["time-slots"]);
+      // Reset form
+      setSinglePayload({
+        centerId: "",
+        slotDate: "",
+        startTime: "",
+        endTime: "",
+        maxBookings: 1,
+        slotType: "Standard",
+        isBlocked: false,
+        notes: "",
+      });
+    },
   });
 
   const generateMutation = useMutation({
     mutationFn: generateSlots,
-    onSuccess: () => queryClient.invalidateQueries(["time-slots"]),
+    onSuccess: () => {
+      queryClient.invalidateQueries(["time-slots"]);
+      // Reset form
+      setBulkPayload({
+        centerId: "",
+        startDate: "",
+        endDate: "",
+        slotDurationMinutes: 60,
+        maxBookingsPerSlot: 1,
+        slotType: "Standard",
+        overwriteExisting: false,
+      });
+    },
   });
 
   const blockMutation = useMutation({
@@ -103,9 +157,30 @@ const TimeSlots = () => {
     onSuccess: () => queryClient.invalidateQueries(["time-slots"]),
   });
 
+  const deleteEmptyMutation = useMutation({
+    mutationFn: deleteEmptySlots,
+    onSuccess: () => queryClient.invalidateQueries(["time-slots"]),
+  });
+
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
-    setFilters((prev) => ({ ...prev, [name]: value }));
+    if (name === "startDate" && dateFilterMode === "single") {
+      // Nếu chế độ single date, tự động set endDate = startDate
+      setFilters((prev) => ({ ...prev, startDate: value, endDate: value }));
+    } else {
+      setFilters((prev) => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handleDateFilterModeChange = (newMode) => {
+    setDateFilterMode(newMode);
+    if (newMode === "single") {
+      // Khi chuyển sang single, nếu có startDate thì set endDate = startDate
+      setFilters((prev) => ({
+        ...prev,
+        endDate: prev.startDate || prev.endDate,
+      }));
+    }
   };
 
   const handleSingleChange = (e) => {
@@ -150,6 +225,32 @@ const TimeSlots = () => {
     return [];
   }, [slotsQuery.data]);
 
+  const serviceCenters = useMemo(() => {
+    return centersQuery.data || [];
+  }, [centersQuery.data]);
+
+  const getCenterName = (centerId) => {
+    const center = serviceCenters.find((c) => c.centerId === centerId);
+    return center ? (center.centerName || center.name) : `Trung tâm #${centerId}`;
+  };
+
+  const handleDeleteEmptySlots = () => {
+    if (!filters.centerId) {
+      alert("Vui lòng chọn trung tâm");
+      return;
+    }
+    if (!filters.startDate) {
+      alert("Vui lòng chọn ngày");
+      return;
+    }
+    if (window.confirm(`Xác nhận xóa tất cả slots trống ngày ${filters.startDate}?`)) {
+      deleteEmptyMutation.mutate({
+        centerId: filters.centerId,
+        date: filters.startDate,
+      });
+    }
+  };
+
   return (
     <div className="timeslots-page">
       <div className="page-head">
@@ -161,52 +262,109 @@ const TimeSlots = () => {
         <h3>Bộ lọc</h3>
         <div className="filters">
           <label>
-            Trung tâm (ID)
-            <input
+            Trung tâm dịch vụ
+            <select
               name="centerId"
               value={filters.centerId}
               onChange={handleFilterChange}
-              placeholder="vd: 1"
-            />
+              required
+              disabled={centersQuery.isLoading}
+              style={{ color: '#333', backgroundColor: '#fff' }}
+            >
+              <option value="" style={{ color: '#333' }}>
+                {centersQuery.isLoading
+                  ? "Đang tải..."
+                  : serviceCenters.length === 0
+                    ? "Không có trung tâm nào"
+                    : "-- Chọn trung tâm --"}
+              </option>
+              {serviceCenters.map((center) => (
+                <option
+                  key={center.centerId}
+                  value={center.centerId}
+                  style={{ color: '#333', backgroundColor: '#fff' }}
+                >
+                  {center.centerName || center.name}
+                </option>
+              ))}
+            </select>
           </label>
+
           <label>
-            Từ ngày
-            <input
-              type="date"
-              name="startDate"
-              value={filters.startDate}
-              onChange={handleFilterChange}
-            />
+            Lọc theo ngày
+            <select
+              value={dateFilterMode}
+              onChange={(e) => handleDateFilterModeChange(e.target.value)}
+            >
+              <option value="single">Một ngày cụ thể</option>
+              <option value="range">Khoảng thời gian</option>
+            </select>
           </label>
-          <label>
-            Đến ngày
-            <input
-              type="date"
-              name="endDate"
-              value={filters.endDate}
-              onChange={handleFilterChange}
-            />
-          </label>
+
+          {dateFilterMode === "single" ? (
             <label>
-              Trạng thái
+              Chọn ngày
+              <input
+                type="date"
+                name="startDate"
+                value={filters.startDate}
+                onChange={handleFilterChange}
+                placeholder="Chọn một ngày"
+              />
+            </label>
+          ) : (
+            <>
+              <label>
+                Từ ngày
+                <input
+                  type="date"
+                  name="startDate"
+                  value={filters.startDate}
+                  onChange={handleFilterChange}
+                />
+              </label>
+              <label>
+                Đến ngày
+                <input
+                  type="date"
+                  name="endDate"
+                  value={filters.endDate}
+                  onChange={handleFilterChange}
+                />
+              </label>
+            </>
+          )}
+
+            <label>
+              Trạng thái khóa
               <select
-                name="status"
-                value={filters.status}
+                name="isBlocked"
+                value={filters.isBlocked}
                 onChange={handleFilterChange}
               >
                 <option value="">Tất cả</option>
-                <option value="Available">Khả dụng</option>
-                <option value="Blocked">Đã khóa</option>
-                <option value="Full">Đầy</option>
+                <option value="true">Đã khóa</option>
+                <option value="false">Chưa khóa</option>
               </select>
             </label>
             <button
               type="button"
               className="btn"
               onClick={() => slotsQuery.refetch()}
+              disabled={!filters.centerId}
             >
               Tải danh sách
             </button>
+            {dateFilterMode === "single" && filters.startDate && filters.centerId && (
+              <button
+                type="button"
+                className="btn danger"
+                onClick={handleDeleteEmptySlots}
+                disabled={deleteEmptyMutation.isLoading}
+              >
+                {deleteEmptyMutation.isLoading ? "Đang xóa..." : "Xóa slots trống"}
+              </button>
+            )}
           </div>
       </div>
 
@@ -229,13 +387,28 @@ const TimeSlots = () => {
         {mode === "single" ? (
           <form className="form-grid two-col" onSubmit={onCreate}>
             <label>
-              Trung tâm (ID)
-              <input
+              Trung tâm dịch vụ
+              <select
                 name="centerId"
                 value={singlePayload.centerId}
                 onChange={handleSingleChange}
                 required
-              />
+                disabled={centersQuery.isLoading}
+                style={{ color: '#333', backgroundColor: '#fff' }}
+              >
+                <option value="" style={{ color: '#333' }}>
+                  {centersQuery.isLoading ? "Đang tải..." : "-- Chọn trung tâm --"}
+                </option>
+                {serviceCenters.map((center) => (
+                  <option
+                    key={center.centerId}
+                    value={center.centerId}
+                    style={{ color: '#333', backgroundColor: '#fff' }}
+                  >
+                    {center.centerName || center.name}
+                  </option>
+                ))}
+              </select>
             </label>
             <label>
               Ngày
@@ -279,13 +452,28 @@ const TimeSlots = () => {
             </label>
             <label>
               Loại khung giờ
-              <input
+              <select
                 name="slotType"
                 value={singlePayload.slotType}
                 onChange={handleSingleChange}
+              >
+                <option value="Standard">Standard</option>
+                <option value="Repair">Repair</option>
+                <option value="Maintenance">Maintenance</option>
+                <option value="Emergency">Emergency</option>
+              </select>
+            </label>
+            <label style={{ gridColumn: "1 / -1" }}>
+              Ghi chú
+              <textarea
+                name="notes"
+                value={singlePayload.notes}
+                onChange={handleSingleChange}
+                placeholder="Ghi chú thêm về slot này (tùy chọn)"
+                rows="2"
               />
             </label>
-            <div className="form-actions inline">
+            <div className="form-actions inline" style={{ gridColumn: "1 / -1" }}>
               <label className="checkbox">
                 <input
                   type="checkbox"
@@ -307,13 +495,28 @@ const TimeSlots = () => {
         ) : (
           <form className="form-grid two-col" onSubmit={onGenerate}>
             <label>
-              Trung tâm (ID)
-              <input
+              Trung tâm dịch vụ
+              <select
                 name="centerId"
                 value={bulkPayload.centerId}
                 onChange={handleBulkChange}
                 required
-              />
+                disabled={centersQuery.isLoading}
+                style={{ color: '#333', backgroundColor: '#fff' }}
+              >
+                <option value="" style={{ color: '#333' }}>
+                  {centersQuery.isLoading ? "Đang tải..." : "-- Chọn trung tâm --"}
+                </option>
+                {serviceCenters.map((center) => (
+                  <option
+                    key={center.centerId}
+                    value={center.centerId}
+                    style={{ color: '#333', backgroundColor: '#fff' }}
+                  >
+                    {center.centerName || center.name}
+                  </option>
+                ))}
+              </select>
             </label>
             <label>
               Từ ngày
@@ -358,13 +561,18 @@ const TimeSlots = () => {
             </label>
             <label>
               Loại khung giờ
-              <input
+              <select
                 name="slotType"
                 value={bulkPayload.slotType}
                 onChange={handleBulkChange}
-              />
+              >
+                <option value="Standard">Standard</option>
+                <option value="Repair">Repair</option>
+                <option value="Maintenance">Maintenance</option>
+                <option value="Emergency">Emergency</option>
+              </select>
             </label>
-            <div className="form-actions inline">
+            <div className="form-actions inline" style={{ gridColumn: "1 / -1" }}>
               <label className="checkbox">
                 <input
                   type="checkbox"
@@ -421,13 +629,14 @@ const TimeSlots = () => {
                   0;
                 const blocked =
                   slot.isBlocked ?? slot.status === "Blocked" ?? false;
+                const centerId = slot.centerId || slot.CenterId;
                 return (
                   <tr key={slot.slotId || slot.id}>
                     <td>{slot.slotDate || slot.date}</td>
                     <td>
                       {slot.startTime} - {slot.endTime}
                     </td>
-                    <td>{slot.centerId || slot.CenterId}</td>
+                    <td>{getCenterName(centerId)}</td>
                     <td>{slot.maxBookings ?? "-"}</td>
                     <td>{bookingCount}</td>
                     <td>{slot.slotType || "-"}</td>
@@ -445,14 +654,18 @@ const TimeSlots = () => {
                             isBlocked: !blocked,
                           })
                         }
+                        disabled={blockMutation.isLoading}
                       >
                         {blocked ? "Mở khóa" : "Khóa"}
                       </button>
                       <button
                         className="btn danger"
-                        onClick={() =>
-                          deleteMutation.mutate(slot.slotId || slot.id)
-                        }
+                        onClick={() => {
+                          if (window.confirm("Xác nhận xóa slot này?")) {
+                            deleteMutation.mutate(slot.slotId || slot.id);
+                          }
+                        }}
+                        disabled={deleteMutation.isLoading}
                       >
                         Xóa
                       </button>

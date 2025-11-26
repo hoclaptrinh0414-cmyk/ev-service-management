@@ -1,4 +1,4 @@
-﻿// src/pages/customer/Dashboard.jsx
+// src/pages/customer/Dashboard.jsx
 import React, { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
@@ -12,6 +12,8 @@ import {
   getSubscriptionUsage,
 } from "../../services/productService";
 import MainLayout from "../../components/layout/MainLayout";
+
+import "antd/dist/reset.css";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -19,6 +21,8 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import "../Home.css";
 import "./Dashboard.css";
+
+import { Card, List, Tag, Button, Skeleton, Result, Modal, InputNumber } from "antd";
 
 const extractApiList = (payload) => {
   if (!payload) return [];
@@ -123,7 +127,7 @@ const normalizeServiceEntry = (service, fallbackKey = "") => {
     usagePercentage: service.usagePercentage ?? null,
     isFullyUsed: service.isFullyUsed ?? null,
   };
-};
+}; // ✅ FIX: đóng hàm đúng cú pháp
 
 const extractSubscriptionServices = (detail) => {
   if (!detail) return [];
@@ -160,7 +164,7 @@ const formatDate = (value) => {
   try {
     return new Date(value).toLocaleDateString("vi-VN");
   } catch {
-    return value;
+    return String(value);
   }
 };
 
@@ -188,34 +192,12 @@ const deriveServicesFromUsage = (entries = []) => {
 
 const computeMaintenanceView = (item = {}) => {
   const remainingKm = item.remainingKm ?? item.RemainingKm;
-  let status = item.status || item.Status || "Normal";
-  let message = item.message || item.Message || "";
-  let distanceLabel = null;
-
-  if (remainingKm !== undefined && remainingKm !== null) {
-    if (remainingKm < 0) {
-      const overdueKm = Math.abs(remainingKm);
-      status = "Urgent";
-      distanceLabel = `Quá hạn khoảng ${overdueKm.toLocaleString()} km`;
-      message =
-        message ||
-        `[URGENT] Xe của bạn đã quá hạn bảo dưỡng khoảng ${overdueKm.toLocaleString()} km. Vui lòng đặt lịch ngay.`;
-    } else if (remainingKm === 0) {
-      status = "Urgent";
-      distanceLabel = "Đã đến hạn bảo dưỡng";
-      message =
-        message ||
-        "[URGENT] Xe của bạn đã đến hạn bảo dưỡng. Vui lòng đặt lịch ngay.";
-    } else {
-      distanceLabel = `Còn khoảng ${remainingKm.toLocaleString()} km`;
-      if (remainingKm <= 2000) {
-        status = "NeedAttention";
-        message =
-          message ||
-          "[REMINDER] Xe của bạn sắp đến hạn bảo dưỡng. Vui lòng đặt lịch sớm.";
-      }
-    }
-  }
+  const status = item.status || item.Status || "Normal";
+  const message = item.message || item.Message || "";
+  const distanceLabel =
+    remainingKm != null && remainingKm > 0
+      ? `Còn khoảng ${Number(remainingKm).toLocaleString()} km`
+      : null;
 
   return {
     ...item,
@@ -226,9 +208,123 @@ const computeMaintenanceView = (item = {}) => {
   };
 };
 
+const getStatusTag = (status) => {
+  switch (status) {
+    case "Urgent":
+      return <Tag color="error">Urgent</Tag>;
+    case "NeedAttention":
+      return <Tag color="warning">Need Attention</Tag>;
+    default:
+      return <Tag>{status}</Tag>;
+  }
+};
+
+const getErrorMessage = (err, fallback = "Something went wrong") => {
+  return (
+    err?.response?.data?.message ||
+    err?.response?.data?.Message ||
+    err?.message ||
+    fallback
+  );
+};
+
+const toNumberOrNull = (value) => {
+  if (value === undefined || value === null) return null;
+  const num = Number(value);
+  return Number.isNaN(num) ? null : num;
+};
+
+const normalizeReminderServiceIds = (value) => {
+  if (!value) return [];
+
+  if (Array.isArray(value)) {
+    return value
+      .map((entry) => {
+        if (typeof entry === "object") {
+          return toNumberOrNull(
+            entry.serviceId ??
+              entry.ServiceId ??
+              entry.maintenanceServiceId ??
+              entry.MaintenanceServiceId ??
+              entry.id ??
+              entry.service?.serviceId ??
+              entry.service?.id
+          );
+        }
+        return toNumberOrNull(entry);
+      })
+      .filter((v) => v !== null);
+  }
+
+  const single = toNumberOrNull(value);
+  return single !== null ? [single] : [];
+};
+
+const buildReminderAppointmentPayload = (item = {}) => {
+  const vehicleId =
+    toNumberOrNull(item.vehicleId) ??
+    toNumberOrNull(item.VehicleId) ??
+    toNumberOrNull(item.id);
+
+  const serviceCenterId =
+    toNumberOrNull(item.serviceCenterId) ??
+    toNumberOrNull(item.ServiceCenterId) ??
+    toNumberOrNull(item.serviceCenterID) ??
+    toNumberOrNull(item.preferredServiceCenterId) ??
+    toNumberOrNull(item.PreferredServiceCenterId) ??
+    toNumberOrNull(item.recommendedServiceCenterId) ??
+    toNumberOrNull(item.RecommendedServiceCenterId) ??
+    toNumberOrNull(item.serviceCenter?.serviceCenterId) ??
+    toNumberOrNull(item.serviceCenter?.id);
+
+  const slotId =
+    toNumberOrNull(item.slotId) ??
+    toNumberOrNull(item.SlotId) ??
+    toNumberOrNull(item.recommendedSlotId) ??
+    toNumberOrNull(item.RecommendedSlotId) ??
+    toNumberOrNull(item.nextSlotId) ??
+    toNumberOrNull(item.NextSlotId) ??
+    toNumberOrNull(item.nextAvailableSlotId) ??
+    toNumberOrNull(item.NextAvailableSlotId);
+
+  const serviceIds = normalizeReminderServiceIds(
+    item.serviceIds ??
+      item.ServiceIds ??
+      item.maintenanceServiceIds ??
+      item.MaintenanceServiceIds ??
+      item.serviceId ??
+      item.ServiceId ??
+      item.maintenanceServiceId ??
+      item.MaintenanceServiceId ??
+      item.services ??
+      item.Services ??
+      item.recommendedServiceIds ??
+      item.RecommendedServiceIds ??
+      item.recommendedServices
+  );
+
+  const packageId =
+    toNumberOrNull(item.packageId) ??
+    toNumberOrNull(item.PackageId) ??
+    toNumberOrNull(item.subscriptionPackageId) ??
+    toNumberOrNull(item.SubscriptionPackageId);
+
+  const customerNotes =
+    item.message || item.Message || item.note || item.Note || "";
+
+  return {
+    vehicleId,
+    serviceCenterId,
+    slotId,
+    serviceIds,
+    packageId,
+    customerNotes,
+  };
+};
+
 const CustomerDashboard = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // (giữ lại nếu có use sau này)
 
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -245,6 +341,10 @@ const CustomerDashboard = () => {
   const [reminders, setReminders] = useState([]);
   const [reminderSummary, setReminderSummary] = useState(null);
   const [remindersLoading, setRemindersLoading] = useState(false);
+  const [mileageModalOpen, setMileageModalOpen] = useState(false);
+  const [mileageModalVehicleId, setMileageModalVehicleId] = useState(null);
+  const [mileageInput, setMileageInput] = useState(null);
+  const [mileageModalSubmitting, setMileageModalSubmitting] = useState(false);
   const [modalMaintenanceStatus, setModalMaintenanceStatus] = useState(null);
 
   const [selectedSubscriptionId, setSelectedSubscriptionId] = useState(null);
@@ -292,10 +392,9 @@ const CustomerDashboard = () => {
 
     loadDashboardData();
 
-    // Reload data when user navigates back to this page
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        console.log("👀 Page visible again - reloading data");
+        console.log("✅ Page visible again - reloading data");
         loadDashboardData();
       }
     };
@@ -312,13 +411,14 @@ const CustomerDashboard = () => {
       setError("");
 
       const vehiclesRes = await appointmentService.getMyVehicles();
+      console.log("✅ Vehicles from API:", vehiclesRes);
 
-      console.log("🚗 Vehicles from API:", vehiclesRes);
+      // Robust extract list
+      const rawVehicles = extractApiList(vehiclesRes);
 
-      // Map vehicles to dashboard format - chỉ filter xe đã xóa từ backend
-      const mappedVehicles = (vehiclesRes.data || [])
+      // Filter xe bị soft delete ở backend
+      const mappedVehicles = rawVehicles
         .filter((vehicle) => {
-          // Chỉ filter out backend soft-deleted vehicles
           const isDeleted = vehicle.isDeleted || vehicle.IsDeleted || false;
           if (isDeleted) {
             console.log(
@@ -329,7 +429,7 @@ const CustomerDashboard = () => {
           return true;
         })
         .map((vehicle) => ({
-          id: vehicle.vehicleId,
+          id: vehicle.vehicleId ?? vehicle.id,
           model: vehicle.fullModelName || vehicle.modelName,
           vin: vehicle.vin,
           year: vehicle.purchaseDate
@@ -339,15 +439,17 @@ const CustomerDashboard = () => {
           licensePlate: vehicle.licensePlate,
           color: vehicle.color,
           mileage: vehicle.mileage,
-        }));
+        }))
+        .filter((v) => !!v.id);
 
       setVehicles(mappedVehicles);
+
       await Promise.all([
         fetchMaintenanceStatuses(),
         fetchMaintenanceReminders(),
       ]);
-    } catch (error) {
-      console.error("❌ Error loading dashboard data:", error);
+    } catch (err) {
+      console.error("❌ Error loading dashboard data:", err);
       setError("Không thể tải dữ liệu. Vui lòng thử lại sau.");
     } finally {
       setLoading(false);
@@ -358,18 +460,17 @@ const CustomerDashboard = () => {
     try {
       setMaintenanceLoading(true);
       const res = await maintenanceService.getMyVehiclesMaintenanceStatus();
+
       const list =
         res?.data ||
         res?.Data ||
-        (Array.isArray(res)
-          ? res
-          : Array.isArray(res?.items)
-          ? res.items
-          : []);
+        (Array.isArray(res) ? res : Array.isArray(res?.items) ? res.items : []);
+
       const map = {};
       list.forEach((item) => {
         const id = item.vehicleId || item.VehicleId;
         if (!id) return;
+
         map[id] = computeMaintenanceView({
           ...item,
           estimatedDaysUntilMaintenance:
@@ -400,6 +501,7 @@ const CustomerDashboard = () => {
             null,
         });
       });
+
       setMaintenanceStatuses(map);
     } catch (err) {
       console.error("Failed to load maintenance status:", err);
@@ -412,15 +514,18 @@ const CustomerDashboard = () => {
     try {
       setRemindersLoading(true);
       const res = await maintenanceService.getMaintenanceReminders();
+
       const data =
         res?.data ||
         res?.Data ||
         (Array.isArray(res) ? res : Array.isArray(res?.items) ? res.items : []);
+
       const rawList = Array.isArray(data?.data)
         ? data.data
         : Array.isArray(data)
         ? data
         : [];
+
       const processed = rawList.map((item) => computeMaintenanceView(item));
       const summary = processed.reduce(
         (acc, cur) => {
@@ -431,6 +536,7 @@ const CustomerDashboard = () => {
         },
         { urgent: 0, needsAttention: 0, normal: 0 }
       );
+
       setReminders(processed);
       setReminderSummary(summary);
     } catch (err) {
@@ -442,7 +548,7 @@ const CustomerDashboard = () => {
 
   const handleEditVehicle = async (vehicleId, updatedData) => {
     try {
-      console.log("✏️ Attempting to edit vehicle ID:", vehicleId);
+      console.log("✅ Attempting to edit vehicle ID:", vehicleId);
 
       const response = await appointmentService.updateMyVehicle(
         vehicleId,
@@ -450,7 +556,7 @@ const CustomerDashboard = () => {
       );
       console.log("✅ Vehicle updated successfully:", response);
 
-      toast.success("✏️ Cập nhật thông tin xe thành công!", {
+      toast.success("✅ Cập nhật thông tin xe thành công!", {
         position: "bottom-right",
         autoClose: 3000,
         hideProgressBar: false,
@@ -494,7 +600,7 @@ const CustomerDashboard = () => {
     }
   };
 
-const handleDeleteVehicle = async (vehicleId) => {
+  const handleDeleteVehicle = async (vehicleId) => {
     if (!vehicleId) return;
 
     const toastCfg = {
@@ -507,80 +613,166 @@ const handleDeleteVehicle = async (vehicleId) => {
       theme: "colored",
     };
 
-    try {
-      console.log("Attempting to delete vehicle ID:", vehicleId);
-      const response = await appointmentService.deleteVehicle(
-        vehicleId
-      );
-      console.log("Vehicle deleted (customer endpoint) response:", response);
-
-      setVehicles((prev) => prev.filter((v) => v.id !== vehicleId));
-      toast.success("Đã xóa xe thành công.", toastCfg);
-      setTimeout(() => loadDashboardData(), 600);
-    } catch (error) {
-      console.error("Error deleting vehicle:", error);
-      const errMsg =
-        error.response?.data?.message ||
-        error.response?.data?.Message ||
-        (error.response?.status === 403
-          ? "Bạn không có quyền xóa xe này."
-          : error.response?.status === 404
-          ? "Không tìm thấy xe cần xóa."
-          : error.response?.status === 400
-          ? "Không thể xóa xe có lịch hẹn hoặc phiếu công việc."
-          : "Không thể xóa xe. Vui lòng thử lại.");
-      toast.error(errMsg, toastCfg);
-    }
+    await toast.promise(
+      (async () => {
+        console.log("Attempting to delete vehicle ID:", vehicleId);
+        const response = await appointmentService.deleteVehicle(vehicleId);
+        console.log("Vehicle deleted (customer endpoint) response:", response);
+        setVehicles((prev) => prev.filter((v) => v.id !== vehicleId));
+        setTimeout(() => loadDashboardData(), 600);
+        return response;
+      })(),
+      {
+        pending: "Deleting vehicle...",
+        success: "Vehicle deleted successfully.",
+        error: {
+          render({ data }) {
+            const error = data;
+            if (error?.response?.status === 403)
+              return "Bạn không có quyền xóa xe này.";
+            if (error?.response?.status === 404)
+              return "Không tìm thấy xe cần xóa.";
+            if (error?.response?.status === 400)
+              return "Không thể xóa xe có lịch hẹn hoặc phiếu công việc.";
+            return getErrorMessage(error, "Không thể xóa xe. Vui lòng thử lại.");
+          },
+        },
+      },
+      toastCfg
+    );
   };
 
-  const handleUpdateMileage = async (vehicleId) => {
-    const status = maintenanceStatuses[vehicleId];
-    const suggested =
-      status?.estimatedCurrentKm || status?.estimatedCurrentMileage || "";
-    const input = window.prompt(
-      "Nhập số km hiện tại để cập nhật",
-      suggested ? String(suggested) : ""
-    );
-    if (input === null) return;
-    const value = Number(input);
-    if (Number.isNaN(value) || value < 0) {
-      toast.error("Số km không hợp lệ.");
+  const openMileageModal = (vehicleId) => {
+    if (!vehicleId) {
+      toast.error("Could not find vehicle to update mileage.");
       return;
     }
+
+    const status = maintenanceStatuses[vehicleId];
+    const suggested =
+      status?.estimatedCurrentKm ||
+      status?.estimatedCurrentMileage ||
+      status?.currentMileage ||
+      "";
+    const numericSuggested =
+      suggested === "" || suggested === null || suggested === undefined
+        ? null
+        : Number(suggested);
+
+    setMileageModalVehicleId(vehicleId);
+    setMileageInput(
+      Number.isNaN(numericSuggested) ? null : numericSuggested
+    );
+    setMileageModalOpen(true);
+  };
+
+  const closeMileageModal = () => {
+    setMileageModalOpen(false);
+    setMileageModalVehicleId(null);
+    setMileageInput(null);
+  };
+
+  const submitMileageUpdate = async () => {
+    const value = mileageInput;
+    const vehicleId = mileageModalVehicleId;
+
+    if (value === null || value === undefined || value === "") {
+      toast.error("Please enter mileage.");
+      return;
+    }
+
+    const parsed = Number(value);
+    if (Number.isNaN(parsed) || parsed < 0) {
+      toast.error("Mileage is not valid.");
+      return;
+    }
+
     try {
-      await maintenanceService.updateVehicleMileage(vehicleId, {
-        currentMileage: value,
-      });
-      toast.success("Đã cập nhật km. Đang tải lại trạng thái...");
+      setMileageModalSubmitting(true);
+      await toast.promise(
+        maintenanceService.updateVehicleMileage(vehicleId, {
+          currentMileage: parsed,
+        }),
+        {
+          pending: "Updating mileage...",
+          success: {
+            render({ data }) {
+              const msg =
+                data?.data?.message ||
+                data?.message ||
+                `Mileage updated to ${parsed.toLocaleString()} km.`;
+              return msg;
+            },
+          },
+          error: {
+            render({ data }) {
+              return getErrorMessage(data, "Unable to update mileage.");
+            },
+          },
+        }
+      );
+      closeMileageModal();
       await Promise.all([
         fetchMaintenanceStatuses(),
         fetchMaintenanceReminders(),
       ]);
-    } catch (err) {
-      console.error("Update mileage failed:", err);
-      const msg =
-        err.response?.data?.message ||
-        err.response?.data?.Message ||
-        err.message ||
-        "Không thể cập nhật km.";
-      toast.error(msg);
+    } catch (error) {
+      // toast.promise already shows the error toast.
+      // We catch the error here to prevent an uncaught promise rejection crash.
+      console.error("Handled mileage update error:", error);
+    } finally {
+      setMileageModalSubmitting(false);
     }
+  };
+
+  const handleReminderMileageUpdate = (reminder) => {
+    const vehicleId =
+      reminder?.vehicleId || reminder?.VehicleId || reminder?.id || null;
+    if (!vehicleId) {
+      toast.error(
+        "Could not find vehicle ID for this reminder to update mileage."
+      );
+      return;
+    }
+
+    openMileageModal(vehicleId);
+  };
+
+  const handleBookReminderAppointment = async (reminder) => {
+    const payload = buildReminderAppointmentPayload(reminder);
+    const vehicleId = payload.vehicleId;
+
+    if (!vehicleId) {
+      toast.error("Khong tim thay vehicleId cua nhac nho.");
+      return;
+    }
+
+    navigate("/schedule-service", {
+      state: {
+        vehicleId,
+        fromReminder: true,
+      },
+    });
   };
 
   const handleViewVehicleDetails = async (vehicle) => {
     if (!vehicle) return;
+
     const vehicleId = vehicle.id || vehicle.vehicleId;
+
     setModalVehicle(vehicle);
     setShowVehicleModal(true);
     setVehicleModalLoading(true);
     setVehicleModalError("");
     setModalMaintenanceStatus(null);
+
     try {
       const [packagesRes, servicesRes, statusRes] = await Promise.all([
         getActiveSubscriptionsByVehicle(vehicleId),
         getApplicableServicesByVehicle(vehicleId),
         maintenanceService.getVehicleMaintenanceStatus(vehicleId),
       ]);
+
       setModalPackages(extractApiList(packagesRes));
       setModalServices(extractApiList(servicesRes));
       setModalMaintenanceStatus(
@@ -588,9 +780,7 @@ const handleDeleteVehicle = async (vehicleId) => {
       );
     } catch (err) {
       console.error("Error loading vehicle entitlements:", err);
-      setVehicleModalError(
-        "Unable to load package and service data for this vehicle."
-      );
+      setVehicleModalError("Không thể tải dữ liệu gói và dịch vụ cho xe này.");
       setModalPackages([]);
       setModalServices([]);
     } finally {
@@ -611,7 +801,7 @@ const handleDeleteVehicle = async (vehicleId) => {
       selectedSubscriptionDetail &&
       !subscriptionDetailLoading
     ) {
-      // Collapse if already showing
+      // Collapse nếu đang mở
       setSelectedSubscriptionId(null);
       setSelectedSubscriptionTitle("");
       setSelectedSubscriptionDetail(null);
@@ -662,9 +852,66 @@ const handleDeleteVehicle = async (vehicleId) => {
     setModalMaintenanceStatus(null);
   };
 
+  const renderReminderActions = (item) => {
+    const status = item.status || item.Status || "Normal";
+    const vehicleId = item.vehicleId || item.VehicleId || item.id;
+
+    const actions = [];
+
+    if (status === "Urgent") {
+      actions.push(
+        <Button
+          key="book-now"
+          type="primary"
+          danger
+          size="small"
+          onClick={() => handleBookReminderAppointment(item)}
+        >
+          Book now
+        </Button>
+      );
+      actions.push(
+        <Button
+          key="update-km"
+          size="small"
+          onClick={() => handleReminderMileageUpdate(item)}
+        >
+          Update mileage
+        </Button>
+      );
+    } else if (status === "NeedAttention") {
+      actions.push(
+        <Button
+          key="book"
+          type="primary"
+          size="small"
+          onClick={() => handleBookReminderAppointment(item)}
+        >
+          Schedule
+        </Button>
+      );
+      actions.push(
+        <Button
+          key="update-km"
+          size="small"
+          onClick={() => handleReminderMileageUpdate(item)}
+        >
+          Update mileage
+        </Button>
+      );
+    }
+
+    actions.push(
+      <div key="status" style={{ minWidth: "90px", textAlign: "right" }}>
+        {getStatusTag(status)}
+      </div>
+    );
+
+    return actions;
+  };
+
   return (
     <MainLayout>
-      {/* Dashboard Content */}
       <div
         className="dashboard-container"
         style={{ marginTop: "20px", minHeight: "60vh" }}
@@ -678,7 +925,6 @@ const handleDeleteVehicle = async (vehicleId) => {
               Welcome,{" "}
               {user?.fullName || user?.name || user?.username || "Khách hàng"}!
             </h1>
-            {/* <p className="text-muted">Quản lý thông tin xe và lịch dịch vụ của bạn</p> */}
           </header>
 
           <div className="dashboard-content">
@@ -706,79 +952,73 @@ const handleDeleteVehicle = async (vehicleId) => {
             ) : (
               <>
                 <section className="dashboard-section mb-4">
-                  <h2
-                    className="mb-3"
-                    style={{ fontSize: "1.4rem", fontWeight: 600 }}
-                  >
-                    Maintenance reminders
-                  </h2>
-                  {remindersLoading ? (
-                    <div className="text-center py-3">
-                      <div className="spinner-border" role="status">
-                        <span className="visually-hidden">Loading...</span>
-                      </div>
-                    </div>
-                  ) : reminders.length > 0 ? (
-                    <div className="alert alert-warning">
-                      <div className="d-flex justify-content-between align-items-center mb-2">
-                        <div>
-                          <strong>
-                            {reminderSummary?.urgent || 0} urgent /{" "}
-                            {reminderSummary?.needsAttention || 0} need attention
-                          </strong>
-                        </div>
-                        <button
-                          className="btn btn-sm btn-outline-secondary"
-                          onClick={() => fetchMaintenanceReminders()}
-                        >
-                          Refresh
-                        </button>
-                      </div>
-                      <ul className="mb-0" style={{ listStyle: "none", padding: 0 }}>
-                        {reminders.map((item) => (
-                          <li
-                            key={item.vehicleId || item.VehicleId}
-                            className="d-flex justify-content-between align-items-center py-2 border-bottom"
-                          >
-                            <div>
-                              <div className="fw-bold">
-                                {item.licensePlate || item.LicensePlate || "Xe"}
-                              </div>
-                              <small>
-                                {item.message || item.Message || ""}
-                                {item.distanceLabel
-                                  ? ` • ${item.distanceLabel}`
-                                  : ""}
-                              </small>
-                            </div>
-                            <span
-                              className={`badge ${
-                                (item.status || "").toLowerCase() === "urgent"
-                                  ? "bg-danger"
-                                  : (item.status || "").toLowerCase() ===
-                                    "needattention"
-                                  ? "bg-warning text-dark"
-                                  : "bg-secondary"
-                              }`}
-                            >
-                              {item.status || item.Status}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ) : (
-                    <div className="alert alert-success mb-0">
-                      No maintenance reminders.
-                      <button
-                        className="btn btn-sm btn-link ms-2"
+                  <Card
+                    title={
+                      <h2
+                        style={{
+                          fontSize: "1.4rem",
+                          fontWeight: 600,
+                          margin: 0,
+                        }}
+                      >
+                        Maintenance Reminders
+                      </h2>
+                    }
+                    extra={
+                      <Button
                         onClick={() => fetchMaintenanceReminders()}
+                        disabled={remindersLoading}
                       >
                         Refresh
-                      </button>
-                    </div>
-                  )}
+                      </Button>
+                    }
+                  >
+                    {remindersLoading ? (
+                      <Skeleton active paragraph={{ rows: 3 }} />
+                    ) : reminders.length > 0 ? (
+                      <>
+                        <div
+                          style={{ marginBottom: "16px", fontWeight: "bold" }}
+                        >
+                          <span>{reminderSummary?.urgent || 0} urgent</span> /{" "}
+                          <span>
+                            {reminderSummary?.needsAttention || 0} need
+                            attention
+                          </span>
+                        </div>
+
+                        <List
+                          itemLayout="horizontal"
+                          dataSource={reminders}
+                          renderItem={(item) => (
+                            <List.Item actions={renderReminderActions(item)}>
+                              <List.Item.Meta
+                                title={
+                                  item.licensePlate || item.LicensePlate || "Xe"
+                                }
+                                description={
+                                  <>
+                                    {item.message || item.Message || ""}
+                                    {item.distanceLabel
+                                      ? ` • ${item.distanceLabel}`
+                                      : ""}
+                                  </>
+                                }
+                              />
+                            </List.Item>
+                          )}
+                        />
+                      </>
+                    ) : (
+                      <Result
+                        status="success"
+                        title="All caught up!"
+                        subTitle="No maintenance reminders at the moment."
+                      />
+                    )}
+                  </Card>
                 </section>
+
                 <section className="dashboard-section mb-5">
                   <h2
                     className="mb-4"
@@ -786,6 +1026,7 @@ const handleDeleteVehicle = async (vehicleId) => {
                   >
                     Your Vehicles
                   </h2>
+
                   <div>
                     {vehicles.length > 0 ? (
                       <div
@@ -807,7 +1048,9 @@ const handleDeleteVehicle = async (vehicleId) => {
                               maintenanceStatus={
                                 maintenanceStatuses[vehicle.id]
                               }
-                              onUpdateMileage={handleUpdateMileage}
+                              onUpdateMileage={() =>
+                                openMileageModal(vehicle.id)
+                              }
                             />
                           </div>
                         ))}
@@ -846,6 +1089,7 @@ const handleDeleteVehicle = async (vehicleId) => {
                   </span>
                 </div>
               </div>
+
               <button
                 type="button"
                 className="vehicle-modal-close"
@@ -872,7 +1116,7 @@ const handleDeleteVehicle = async (vehicleId) => {
                   <div className="vehicle-modal-card">
                     <div className="vehicle-card-header">
                       <div>
-                        <p className="vehicle-card-kicker">B?o d??ng</p>
+                        <p className="vehicle-card-kicker">Bảo dưỡng</p>
                         <h4>
                           {modalMaintenanceStatus.status ||
                             modalMaintenanceStatus.Status ||
@@ -880,42 +1124,62 @@ const handleDeleteVehicle = async (vehicleId) => {
                         </h4>
                       </div>
                     </div>
+
                     <p className="maintenance-message">
                       {modalMaintenanceStatus.message ||
                         modalMaintenanceStatus.Message ||
                         "No message"}
                     </p>
+
                     <div
                       className="subscription-info-grid"
                       style={{ marginTop: "12px" }}
                     >
                       <div>
-                        <p className="muted-label">C?n l?i</p>
+                        <p className="muted-label">Còn lại</p>
                         <strong>
                           {modalMaintenanceStatus.remainingKm != null
-                            ? `${modalMaintenanceStatus.remainingKm.toLocaleString()} km`
+                            ? `${Number(
+                                modalMaintenanceStatus.remainingKm
+                              ).toLocaleString()} km`
                             : "-"}
                         </strong>
                       </div>
+
                       <div>
-                        <p className="muted-label">D? ki?n c?n</p>
+                        <p className="muted-label">Dự kiến còn</p>
                         <strong>
-                          {modalMaintenanceStatus.estimatedDaysUntilMaintenance !=
-                          null
-                            ? `~${modalMaintenanceStatus.estimatedDaysUntilMaintenance} ng�y`
+                          {modalMaintenanceStatus.estimatedDaysUntilMaintenance >
+                          0
+                            ? `~${modalMaintenanceStatus.estimatedDaysUntilMaintenance} ngày`
                             : "-"}
                         </strong>
                       </div>
+
                       <div>
-                        <p className="muted-label">M?c km k? ti?p</p>
+                        <p className="muted-label">Mốc km kế tiếp</p>
                         <strong>
                           {modalMaintenanceStatus.nextMaintenanceKm != null
-                            ? `${modalMaintenanceStatus.nextMaintenanceKm.toLocaleString()} km`
+                            ? `${Number(
+                                modalMaintenanceStatus.nextMaintenanceKm
+                              ).toLocaleString()} km`
                             : "-"}
                         </strong>
                       </div>
+
                       <div>
-                        <p className="muted-label">L?n cu?i</p>
+                        <p className="muted-label">Ngày dự kiến</p>
+                        <strong>
+                          {modalMaintenanceStatus.estimatedNextMaintenanceDate
+                            ? new Date(
+                                modalMaintenanceStatus.estimatedNextMaintenanceDate
+                              ).toLocaleDateString("vi-VN")
+                            : "-"}
+                        </strong>
+                      </div>
+
+                      <div>
+                        <p className="muted-label">Lần cuối</p>
                         <strong>
                           {modalMaintenanceStatus.lastMaintenanceDate
                             ? new Date(
@@ -927,6 +1191,7 @@ const handleDeleteVehicle = async (vehicleId) => {
                     </div>
                   </div>
                 )}
+
                 <div className="vehicle-modal-card">
                   <div className="vehicle-card-header">
                     <div>
@@ -934,12 +1199,13 @@ const handleDeleteVehicle = async (vehicleId) => {
                       <h4>Active combo packages</h4>
                     </div>
                   </div>
+
                   {modalPackages.length > 0 ? (
                     <div className="combo-list">
                       {modalPackages.map((pkg) => (
                         <div
                           className="combo-item"
-                          key={pkg.subscriptionId || pkg.packageId}
+                          key={pkg.subscriptionId || pkg.packageId || pkg.id}
                         >
                           <div className="combo-title-row">
                             <h5>{pkg.packageName || pkg.name}</h5>
@@ -947,6 +1213,7 @@ const handleDeleteVehicle = async (vehicleId) => {
                               {pkg.statusName || pkg.status || "Active"}
                             </span>
                           </div>
+
                           <div className="combo-meta">
                             Hiệu lực:{" "}
                             {pkg.startDate
@@ -961,13 +1228,14 @@ const handleDeleteVehicle = async (vehicleId) => {
                                 )
                               : "—"}
                           </div>
+
                           <button
                             type="button"
                             className="subscription-detail-btn"
                             onClick={() => handleViewSubscriptionDetail(pkg)}
                           >
                             {selectedSubscriptionId ===
-                            (pkg.subscriptionId || pkg.packageId)
+                            (pkg.subscriptionId || pkg.packageId || pkg.id)
                               ? "Thu gọn"
                               : "Xem chi tiết"}
                           </button>
@@ -988,6 +1256,7 @@ const handleDeleteVehicle = async (vehicleId) => {
                       <h4>Services included</h4>
                     </div>
                   </div>
+
                   {modalServices.length > 0 ? (
                     <div className="vehicle-modal-tags">
                       {modalServices.map((service) => (
@@ -1043,6 +1312,7 @@ const handleDeleteVehicle = async (vehicleId) => {
                             "—"}
                         </strong>
                       </div>
+
                       <div>
                         <p className="muted-label">Trạng thái</p>
                         <strong>
@@ -1051,6 +1321,7 @@ const handleDeleteVehicle = async (vehicleId) => {
                             "—"}
                         </strong>
                       </div>
+
                       <div>
                         <p className="muted-label">Kích hoạt</p>
                         <strong>
@@ -1060,6 +1331,7 @@ const handleDeleteVehicle = async (vehicleId) => {
                           )}
                         </strong>
                       </div>
+
                       <div>
                         <p className="muted-label">Hết hạn</p>
                         <strong>
@@ -1082,6 +1354,7 @@ const handleDeleteVehicle = async (vehicleId) => {
                               total != null && remaining != null
                                 ? Math.max(total - remaining, 0)
                                 : service.usedCount ?? 0;
+
                             const progress = total
                               ? Math.min(100, Math.round((used / total) * 100))
                               : service.usagePercentage != null
@@ -1105,21 +1378,23 @@ const handleDeleteVehicle = async (vehicleId) => {
                                         ? `Tổng: ${total}`
                                         : "Chưa có quota"}
                                       {remaining != null
-                                        ? ` · Còn: ${remaining}`
+                                        ? ` • Còn: ${remaining}`
                                         : ""}
                                       {service.lastUsedDate
-                                        ? ` · Lần cuối: ${formatDate(
+                                        ? ` • Lần cuối: ${formatDate(
                                             service.lastUsedDate
                                           )}`
                                         : ""}
                                     </div>
                                   </div>
+
                                   {progress !== null && (
                                     <span className="pill pill-ghost">
                                       {progress}% used
                                     </span>
                                   )}
                                 </div>
+
                                 {progress !== null && (
                                   <div className="usage-bar">
                                     <div
@@ -1158,13 +1433,13 @@ const handleDeleteVehicle = async (vehicleId) => {
                                   entry.usageCount ??
                                   0}
                                 {entry.remainingUses ?? entry.remainingCount
-                                  ? ` · Còn lại: ${
+                                  ? ` • Còn lại: ${
                                       entry.remainingUses ??
                                       entry.remainingCount
                                     }`
                                   : ""}
                                 {entry.lastUsedDate || entry.usedAt
-                                  ? ` · Lần cuối: ${formatDate(
+                                  ? ` • Lần cuối: ${formatDate(
                                       entry.lastUsedDate || entry.usedAt
                                     )}`
                                   : ""}
@@ -1191,9 +1466,31 @@ const handleDeleteVehicle = async (vehicleId) => {
           </div>
         </div>
       )}
+
+      <Modal
+        open={mileageModalOpen}
+        title="Update mileage"
+        okText="Update"
+        cancelText="Cancel"
+        confirmLoading={mileageModalSubmitting}
+        onOk={submitMileageUpdate}
+        onCancel={closeMileageModal}
+        destroyOnClose
+      >
+        <p style={{ marginBottom: 8 }}>
+          Enter current odometer (km) for this vehicle.
+        </p>
+        <InputNumber
+          style={{ width: "100%" }}
+          min={0}
+          step={100}
+          value={mileageInput}
+          onChange={(val) => setMileageInput(val ?? null)}
+          placeholder="Enter mileage"
+        />
+      </Modal>
     </MainLayout>
   );
 };
 
 export default CustomerDashboard;
-
