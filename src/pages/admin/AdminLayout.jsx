@@ -21,6 +21,11 @@ const NAV_ITEMS = [
     icon: "bi-tools",
   },
   { label: "Parts Inventory", path: "/admin/parts", icon: "bi-box-seam" },
+  {
+    label: "Part Categories",
+    path: "/admin/part-categories",
+    icon: "bi-tags",
+  },
   { label: "Staff Management", path: "/admin/staff", icon: "bi-person-badge" },
   {
     label: "Financial Report",

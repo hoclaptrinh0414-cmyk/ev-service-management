@@ -105,14 +105,24 @@ export const partAPI = {
   delete: (id) => adminAPI.delete(`/parts/${id}`),
   search: (params) => adminAPI.get("/parts/search", { params }),
   getActive: () => adminAPI.get("/parts/active"),
+  getBrands: () => adminAPI.get("/parts/brands"),
+};
+
+// ==================== PART CATEGORIES ====================
+export const partCategoryAPI = {
+  getAll: (params) => adminAPI.get("/part-categories", { params }),
+  getById: (id) => adminAPI.get(`/part-categories/${id}`),
+  create: (data) => adminAPI.post("/part-categories", data),
+  update: (id, data) => adminAPI.put(`/part-categories/${id}`, data),
+  delete: (id) => adminAPI.delete(`/part-categories/${id}`),
 };
 
 // ==================== INVENTORY MANAGEMENT ====================
 export const inventoryAPI = {
   getAll: (params) => adminAPI.get("/inventory", { params }),
   getByPartAndCenter: (partId, centerId) => adminAPI.get(`/inventory/part/${partId}/center/${centerId}`),
-  getLowStockAlerts: () => adminAPI.get("/inventory/low-stock-alerts"),
-  getTotalValue: () => adminAPI.get("/inventory/total-value"),
+  getLowStockAlerts: (params) => adminAPI.get("/inventory/low-stock-alerts", { params }),
+  getTotalValue: (params) => adminAPI.get("/inventory/total-value", { params }),
   reserve: (data) => adminAPI.post("/inventory/reserve", data),
   release: (data) => adminAPI.post("/inventory/release", data),
 };

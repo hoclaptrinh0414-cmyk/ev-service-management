@@ -57,6 +57,14 @@ const deleteSlot = async (slotId) => {
   return apiService.request(`/time-slots/${slotId}`, { method: "DELETE" });
 };
 
+const updateSlot = async (payload) => {
+  const { slotId } = payload;
+  return apiService.request(`/time-slots/${slotId}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+};
+
 const deleteEmptySlots = async ({ centerId, date }) => {
   return apiService.request(
     `/time-slots/center/${centerId}/date/${date}/empty`,
@@ -99,6 +107,18 @@ const TimeSlots = () => {
     maxBookingsPerSlot: 1,
     slotType: "Standard",
     overwriteExisting: false,
+  });
+
+  const [editingSlot, setEditingSlot] = useState(null);
+  const [editPayload, setEditPayload] = useState({
+    centerId: "",
+    slotDate: "",
+    startTime: "",
+    endTime: "",
+    maxBookings: 1,
+    slotType: "Standard",
+    isBlocked: false,
+    notes: "",
   });
 
   const centersQuery = useQuery({
@@ -160,6 +180,14 @@ const TimeSlots = () => {
   const deleteEmptyMutation = useMutation({
     mutationFn: deleteEmptySlots,
     onSuccess: () => queryClient.invalidateQueries(["time-slots"]),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: updateSlot,
+    onSuccess: () => {
+      queryClient.invalidateQueries(["time-slots"]);
+      closeEditModal();
+    },
   });
 
   const handleFilterChange = (e) => {
@@ -249,6 +277,58 @@ const TimeSlots = () => {
         date: filters.startDate,
       });
     }
+  };
+
+  const openEditModal = (slot) => {
+    setEditingSlot(slot);
+    setEditPayload({
+      centerId: slot.centerId || slot.CenterId,
+      slotDate: slot.slotDate || slot.date,
+      startTime: slot.startTime,
+      endTime: slot.endTime,
+      maxBookings: slot.maxBookings,
+      slotType: slot.slotType || "Standard",
+      isBlocked: slot.isBlocked || false,
+      notes: slot.notes || "",
+    });
+  };
+
+  const closeEditModal = () => {
+    setEditingSlot(null);
+    setEditPayload({
+      centerId: "",
+      slotDate: "",
+      startTime: "",
+      endTime: "",
+      maxBookings: 1,
+      slotType: "Standard",
+      isBlocked: false,
+      notes: "",
+    });
+  };
+
+  const handleEditChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setEditPayload((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  const onUpdate = (e) => {
+    e.preventDefault();
+    const payload = {
+      slotId: editingSlot.slotId || editingSlot.id,
+      centerId: Number(editPayload.centerId),
+      slotDate: editPayload.slotDate,
+      startTime: editPayload.startTime,
+      endTime: editPayload.endTime,
+      maxBookings: Number(editPayload.maxBookings || 1),
+      slotType: editPayload.slotType,
+      isBlocked: editPayload.isBlocked,
+      notes: editPayload.notes || "",
+    };
+    updateMutation.mutate(payload);
   };
 
   return (
@@ -648,6 +728,13 @@ const TimeSlots = () => {
                     <td className="actions">
                       <button
                         className="btn"
+                        onClick={() => openEditModal(slot)}
+                        title="Chỉnh sửa slot"
+                      >
+                        Sửa
+                      </button>
+                      <button
+                        className="btn"
                         onClick={() =>
                           blockMutation.mutate({
                             slotId: slot.slotId || slot.id,
@@ -677,6 +764,131 @@ const TimeSlots = () => {
           </table>
         </div>
       </div>
+
+      {/* Edit Modal */}
+      {editingSlot && (
+        <div className="modal-backdrop" onClick={closeEditModal}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Chỉnh sửa Time Slot</h3>
+              <button className="btn-close" onClick={closeEditModal}>
+                ×
+              </button>
+            </div>
+            <form className="form-grid two-col" onSubmit={onUpdate}>
+              <label>
+                Trung tâm dịch vụ
+                <select
+                  name="centerId"
+                  value={editPayload.centerId}
+                  onChange={handleEditChange}
+                  required
+                  style={{ color: '#333', backgroundColor: '#fff' }}
+                >
+                  <option value="" style={{ color: '#333' }}>-- Chọn trung tâm --</option>
+                  {serviceCenters.map((center) => (
+                    <option
+                      key={center.centerId}
+                      value={center.centerId}
+                      style={{ color: '#333', backgroundColor: '#fff' }}
+                    >
+                      {center.centerName || center.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Ngày
+                <input
+                  type="date"
+                  name="slotDate"
+                  value={editPayload.slotDate}
+                  onChange={handleEditChange}
+                  required
+                />
+              </label>
+              <label>
+                Bắt đầu
+                <input
+                  type="time"
+                  name="startTime"
+                  value={editPayload.startTime}
+                  onChange={handleEditChange}
+                  required
+                />
+              </label>
+              <label>
+                Kết thúc
+                <input
+                  type="time"
+                  name="endTime"
+                  value={editPayload.endTime}
+                  onChange={handleEditChange}
+                  required
+                />
+              </label>
+              <label>
+                Số booking tối đa
+                <input
+                  type="number"
+                  min="1"
+                  name="maxBookings"
+                  value={editPayload.maxBookings}
+                  onChange={handleEditChange}
+                />
+              </label>
+              <label>
+                Loại khung giờ
+                <select
+                  name="slotType"
+                  value={editPayload.slotType}
+                  onChange={handleEditChange}
+                >
+                  <option value="Standard">Standard</option>
+                  <option value="Repair">Repair</option>
+                  <option value="Maintenance">Maintenance</option>
+                  <option value="Emergency">Emergency</option>
+                </select>
+              </label>
+              <label style={{ gridColumn: "1 / -1" }}>
+                Ghi chú
+                <textarea
+                  name="notes"
+                  value={editPayload.notes}
+                  onChange={handleEditChange}
+                  placeholder="Ghi chú thêm về slot này (tùy chọn)"
+                  rows="2"
+                />
+              </label>
+              <div className="form-actions inline" style={{ gridColumn: "1 / -1" }}>
+                <label className="checkbox">
+                  <input
+                    type="checkbox"
+                    name="isBlocked"
+                    checked={editPayload.isBlocked}
+                    onChange={handleEditChange}
+                  />
+                  Khóa slot
+                </label>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={closeEditModal}
+                >
+                  Hủy
+                </button>
+                <button
+                  className="btn primary"
+                  type="submit"
+                  disabled={updateMutation.isLoading}
+                >
+                  {updateMutation.isLoading ? "Đang cập nhật..." : "Cập nhật"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

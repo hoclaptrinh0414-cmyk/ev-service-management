@@ -68,6 +68,7 @@ import TimeSlots from "./pages/admin/TimeSlots";
 import CarBrands from "./pages/admin/CarBrands";
 import ServiceSchedule from "./pages/admin/ServiceSchedule";
 import PartManagement from "./pages/admin/PartManagement";
+import PartCategories from "./pages/admin/PartCategories";
 
 function App() {
   return (
@@ -310,6 +311,7 @@ function App() {
             <Route path="staff" element={<StaffManagement />} />
             <Route path="finance" element={<FinancialReport />} />
             <Route path="time-slots" element={<TimeSlots />} />
+            <Route path="part-categories" element={<PartCategories />} />
             <Route path="brands" element={<CarBrands />} />
             <Route
               path="settings"

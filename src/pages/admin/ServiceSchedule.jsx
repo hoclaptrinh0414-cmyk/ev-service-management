@@ -105,9 +105,11 @@ const ServiceSchedule = () => {
     try {
       const res = await technicianAPI.getAll();
       const data = res?.data || res || [];
-      setTechniciansList(data);
+      // Ensure it's always an array
+      setTechniciansList(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Failed to fetch technicians:", error);
+      setTechniciansList([]); // Set empty array on error
     }
   };
 
@@ -116,7 +118,9 @@ const ServiceSchedule = () => {
       appointments.map((apt) => apt.resource.technician).filter(Boolean)
     );
     // Also include technicians from API list
-    techniciansList.forEach(t => unique.add(t.fullName || t.name));
+    if (Array.isArray(techniciansList)) {
+      techniciansList.forEach(t => unique.add(t.fullName || t.name));
+    }
     return ['all', ...unique];
   }, [appointments, techniciansList]);
 

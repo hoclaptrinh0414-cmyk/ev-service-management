@@ -364,6 +364,8 @@ const InvoiceTab = () => {
   const toast = useToast();
   const [startDate, setStartDate] = useState(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
   const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
+  const [statusFilter, setStatusFilter] = useState('');
+  const [includeAnalysis, setIncludeAnalysis] = useState(false);
 
   const { data: monthData, isLoading: loadingMonth, error: monthError } = useQuery({
     queryKey: ['invoices-this-month'],
@@ -376,8 +378,15 @@ const InvoiceTab = () => {
   });
 
   const { data: invoicesData, isLoading, error } = useQuery({
-    queryKey: ['invoices', startDate, endDate],
-    queryFn: () => financialReportsAPI.getInvoices({ startDate, endDate }),
+    queryKey: ['invoices', startDate, endDate, statusFilter, includeAnalysis],
+    queryFn: () => financialReportsAPI.getInvoices({
+      startDate,
+      endDate,
+      status: statusFilter || undefined,
+      includeAgingAnalysis: includeAnalysis,
+      includeDiscountAnalysis: includeAnalysis,
+      includeTaxSummary: includeAnalysis,
+    }),
   });
 
   useEffect(() => {
@@ -408,6 +417,25 @@ const InvoiceTab = () => {
           onStartChange={setStartDate}
           onEndChange={setEndDate}
         />
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="filter-select"
+        >
+          <option value="">Tất cả trạng thái</option>
+          <option value="Pending">Chờ thanh toán</option>
+          <option value="Paid">Đã thanh toán</option>
+          <option value="PartiallyPaid">Thanh toán một phần</option>
+          <option value="Overdue">Quá hạn</option>
+        </select>
+        <label className="checkbox-label">
+          <input
+            type="checkbox"
+            checked={includeAnalysis}
+            onChange={(e) => setIncludeAnalysis(e.target.checked)}
+          />
+          <span>Phân tích chi tiết</span>
+        </label>
       </div>
 
       <div className="summary-grid">
@@ -460,6 +488,40 @@ const InvoiceTab = () => {
             </div>
           </div>
 
+          {/* Status Distribution */}
+          {invoicesData.statusDistribution && invoicesData.statusDistribution.length > 0 && (
+            <div className="breakdown-section">
+              <h3>Phân bố theo trạng thái</h3>
+              <div className="table-wrapper">
+                <table className="report-table">
+                  <thead>
+                    <tr>
+                      <th>Trạng thái</th>
+                      <th>Số lượng</th>
+                      <th>Tổng giá trị</th>
+                      <th>Tỷ lệ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {invoicesData.statusDistribution.map((status, idx) => (
+                      <tr key={idx}>
+                        <td>
+                          <span className={`status-badge status-${status.status?.toLowerCase()}`}>
+                            {status.status}
+                          </span>
+                        </td>
+                        <td>{status.count || 0}</td>
+                        <td>{formatCurrency(status.totalAmount)}</td>
+                        <td>{status.percentage?.toFixed(1)}%</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Discount Analysis */}
           {invoicesData.discountAnalysis && (
             <div className="breakdown-section">
               <h3>Phân tích giảm giá</h3>
@@ -476,6 +538,56 @@ const InvoiceTab = () => {
                   <span className="stat-label">Tỷ lệ:</span>
                   <span className="stat-value">{invoicesData.discountAnalysis.discountRate?.toFixed(1)}%</span>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Aging Analysis */}
+          {invoicesData.agingAnalysis && invoicesData.agingAnalysis.length > 0 && (
+            <div className="breakdown-section">
+              <h3>Phân tích độ tuổi công nợ</h3>
+              <div className="table-wrapper">
+                <table className="report-table">
+                  <thead>
+                    <tr>
+                      <th>Khoảng thời gian</th>
+                      <th>Số lượng</th>
+                      <th>Tổng giá trị</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {invoicesData.agingAnalysis.map((aging, idx) => (
+                      <tr key={idx}>
+                        <td>{aging.agingBucket}</td>
+                        <td>{aging.count || 0}</td>
+                        <td>{formatCurrency(aging.totalAmount)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Tax Summary */}
+          {invoicesData.taxSummary && (
+            <div className="breakdown-section">
+              <h3>Tổng hợp thuế</h3>
+              <div className="stats-row">
+                <div className="stat-item">
+                  <span className="stat-label">Tổng thuế:</span>
+                  <span className="stat-value">{formatCurrency(invoicesData.taxSummary.totalTax)}</span>
+                </div>
+                <div className="stat-item">
+                  <span className="stat-label">Số hóa đơn có thuế:</span>
+                  <span className="stat-value">{invoicesData.taxSummary.invoicesWithTax || 0}</span>
+                </div>
+                {invoicesData.taxSummary.averageTaxRate && (
+                  <div className="stat-item">
+                    <span className="stat-label">Thuế suất TB:</span>
+                    <span className="stat-value">{invoicesData.taxSummary.averageTaxRate.toFixed(1)}%</span>
+                  </div>
+                )}
               </div>
             </div>
           )}
