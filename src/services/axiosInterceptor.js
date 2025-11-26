@@ -133,11 +133,20 @@ axiosInstance.interceptors.response.use(
       const refreshToken = localStorage.getItem("refreshToken");
 
       if (!refreshToken) {
-        console.error("❌ No refreshToken found, redirecting to login");
+        console.error(
+          "❌ No refreshToken found, will redirect to login shortly"
+        );
+        // Remove sensitive auth keys but avoid immediate hard redirect so the UI
+        // doesn't abruptly lose state (useful while editing forms)
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
         localStorage.removeItem("user");
-        window.location.href = "/login";
+        // Delay redirect slightly to give user a chance to see the error and
+        // potentially copy unsaved data. Use a short timeout instead of
+        // immediate navigation.
+        setTimeout(() => {
+          window.location.href = "/login";
+        }, 1200);
         return Promise.reject(error);
       }
 
@@ -195,14 +204,17 @@ axiosInstance.interceptors.response.use(
       } catch (refreshError) {
         console.error("❌ Token refresh failed:", refreshError.message);
 
-        // Xóa auth data và redirect to login
+        // Clear auth data but avoid an immediate hard redirect so user doesn't
+        // lose unsaved form data. Redirect after a short delay.
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
         localStorage.removeItem("user");
 
         processQueue(refreshError, null);
 
-        window.location.href = "/login";
+        setTimeout(() => {
+          window.location.href = "/login";
+        }, 1200);
         return Promise.reject(refreshError);
       }
     }
