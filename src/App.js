@@ -68,6 +68,7 @@ import TimeSlots from "./pages/admin/TimeSlots";
 import CarBrands from "./pages/admin/CarBrands";
 import ServiceSchedule from "./pages/admin/ServiceSchedule";
 import PartManagement from "./pages/admin/PartManagement";
+import MaintenancePackages from "./pages/admin/MaintenancePackages";
 import PartCategories from "./pages/admin/PartCategories";
 
 function App() {
@@ -299,14 +300,7 @@ function App() {
             <Route path="vehicles" element={<VehicleManagement />} />
             <Route path="customers" element={<CustomerManagement />} />
             <Route path="schedule" element={<ServiceSchedule />} />
-            <Route
-              path="maintenance"
-              element={
-                <div className="placeholder">
-                  Maintenance Progress - Coming Soon
-                </div>
-              }
-            />
+            <Route path="maintenance" element={<MaintenancePackages />} />
             <Route path="parts" element={<PartManagement />} />
             <Route path="staff" element={<StaffManagement />} />
             <Route path="finance" element={<FinancialReport />} />

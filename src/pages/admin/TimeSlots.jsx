@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import apiService from "../../services/api";
+import { useToast } from "../../contexts/ToastContext";
 import "./TimeSlots.css";
 
 const buildQuery = (params) => {
@@ -57,19 +58,43 @@ const deleteSlot = async (slotId) => {
   return apiService.request(`/time-slots/${slotId}`, { method: "DELETE" });
 };
 
+const normalizeTime = (timeStr) => {
+  if (!timeStr) return "";
+  const trimmed = String(timeStr).trim();
+  if (/^\d{2}:\d{2}:\d{2}$/.test(trimmed)) return trimmed;
+  if (/^\d{2}:\d{2}$/.test(trimmed)) return `${trimmed}:00`;
+  const ampmMatch = trimmed.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (ampmMatch) {
+    let [_, h, m, ap] = ampmMatch;
+    let hour = parseInt(h, 10);
+    if (ap.toUpperCase() === "PM" && hour !== 12) hour += 12;
+    if (ap.toUpperCase() === "AM" && hour === 12) hour = 0;
+    const hh = hour.toString().padStart(2, "0");
+    return `${hh}:${m}:00`;
+  }
+  const d = new Date(`1970-01-01T${trimmed}`);
+  if (!Number.isNaN(d.getTime())) {
+    const hh = d.getHours().toString().padStart(2, "0");
+    const mm = d.getMinutes().toString().padStart(2, "0");
+    const ss = d.getSeconds().toString().padStart(2, "0");
+    return `${hh}:${mm}:${ss}`;
+  }
+  return trimmed;
+};
+
+const deleteEmptySlots = async ({ centerId, date }) => {
+  return apiService.request(`/time-slots/empty`, {
+    method: "DELETE",
+    body: JSON.stringify({ centerId: Number(centerId), date }),
+  });
+};
+
 const updateSlot = async (payload) => {
   const { slotId } = payload;
   return apiService.request(`/time-slots/${slotId}`, {
     method: "PUT",
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ ...payload, slotId: Number(slotId) }),
   });
-};
-
-const deleteEmptySlots = async ({ centerId, date }) => {
-  return apiService.request(
-    `/time-slots/center/${centerId}/date/${date}/empty`,
-    { method: "DELETE" }
-  );
 };
 
 const TimeSlots = () => {
@@ -229,10 +254,18 @@ const TimeSlots = () => {
 
   const onCreate = (e) => {
     e.preventDefault();
+    const start = normalizeTime(singlePayload.startTime);
+    const end = normalizeTime(singlePayload.endTime);
+    if (!start || !end) {
+      alert("Vui lòng nhập giờ bắt đầu/kết thúc hợp lệ (HH:mm hoặc HH:mm:ss).");
+      return;
+    }
     createMutation.mutate({
       ...singlePayload,
       centerId: Number(singlePayload.centerId),
       maxBookings: Number(singlePayload.maxBookings || 1),
+      startTime: start,
+      endTime: end,
     });
   };
 
@@ -321,8 +354,8 @@ const TimeSlots = () => {
       slotId: editingSlot.slotId || editingSlot.id,
       centerId: Number(editPayload.centerId),
       slotDate: editPayload.slotDate,
-      startTime: editPayload.startTime,
-      endTime: editPayload.endTime,
+      startTime: normalizeTime(editPayload.startTime),
+      endTime: normalizeTime(editPayload.endTime),
       maxBookings: Number(editPayload.maxBookings || 1),
       slotType: editPayload.slotType,
       isBlocked: editPayload.isBlocked,

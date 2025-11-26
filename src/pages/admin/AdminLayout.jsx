@@ -16,9 +16,9 @@ const NAV_ITEMS = [
     icon: "bi-calendar-check",
   },
   {
-    label: "Maintenance Progress",
+    label: "Maintenance Packages",
     path: "/admin/maintenance",
-    icon: "bi-tools",
+    icon: "bi-box-seam-fill",
   },
   { label: "Parts Inventory", path: "/admin/parts", icon: "bi-box-seam" },
   {

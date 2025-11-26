@@ -166,8 +166,9 @@ export const maintenancePackageAPI = {
   delete: (id) => adminAPI.delete(`/maintenance-packages/${id}`),
   getByCode: (code) => adminAPI.get(`/maintenance-packages/code/${code}`),
   getPopular: () => adminAPI.get("/maintenance-packages/popular"),
-  getRecommended: () => adminAPI.get("/maintenance-packages/recommended"),
+  getRecommended: (params) => adminAPI.get("/maintenance-packages/recommended", { params }),
   canDelete: (id) => adminAPI.get(`/maintenance-packages/${id}/can-delete`),
+  addService: (id, data) => adminAPI.post(`/maintenance-packages/${id}/services`, data),
 };
 
 // ==================== MAINTENANCE SERVICES ====================
