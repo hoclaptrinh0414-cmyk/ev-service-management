@@ -28,7 +28,6 @@ import ResendVerification from "./pages/auth/ResendVerification";
 import CustomerDashboard from "./pages/customer/Dashboard";
 import RegisterVehicle from "./pages/customer/RegisterVehicle";
 import CustomerProfile from "./pages/customer/Profile";
-import Services from "./pages/Services";
 import MyAppointments from "./pages/customer/MyAppointments";
 import ScheduleServiceNew from "./pages/customer/ScheduleServiceNew";
 import Packages from "./pages/customer/Packages";
@@ -40,8 +39,6 @@ import TrackingHistory from "./pages/customer/TrackingHistory";
 import VehicleDetail from "./pages/customer/VehicleDetail";
 import TrackReminder from "./pages/TrackReminder";
 import PaymentCallback from "./pages/payment/PaymentCallback";
-import Blog from "./pages/Blog";
-import BlogPost from "./pages/BlogPost";
 
 // Import test components
 import PasswordResetTest from "./components/PasswordResetTest";
@@ -64,12 +61,29 @@ import TechnicianLayout from "./pages/technician/TechnicianLayout";
 import TechnicianWorkOrders from "./pages/technician/MyWorkOrders";
 import TechnicianChecklist from "./pages/technician/MaintenanceChecklist";
 import TechnicianFlow from "./pages/technician/TechnicianFlow";
+import TechnicianSettings from "./pages/technician/Settings";
 import TimeSlots from "./pages/admin/TimeSlots";
 import CarBrands from "./pages/admin/CarBrands";
 import ServiceSchedule from "./pages/admin/ServiceSchedule";
 import PartManagement from "./pages/admin/PartManagement";
 
+// Chat visibility helper
+import { useLocation } from "react-router-dom";
+
+const ChatWrapper = () => {
+  const location = useLocation();
+  const path = location.pathname || "";
+  const authPaths = ["/login", "/register", "/forgot-password", "/reset-password", "/verify-email", "/resend-verification"];
+  const hideChat =
+    authPaths.includes(path) ||
+    path.startsWith("/staff") ||
+    path.startsWith("/technician");
+  if (hideChat) return null;
+  return <ChatWidget />;
+};
+
 function App() {
+
   return (
     <Router>
       <div className="App">
@@ -106,8 +120,6 @@ function App() {
           <Route path="/api-debug" element={<APIDebug />} />
 
           {/* Public routes */}
-          <Route path="/blog" element={<Blog />} />
-          <Route path="/blog/:postId" element={<BlogPost />} />
           <Route path="/payment/callback" element={<PaymentCallback />} />
           <Route path="/payment/result" element={<PaymentCallback />} />
 
@@ -144,15 +156,6 @@ function App() {
             element={
               <ProtectedRoute>
                 <CustomerProfile />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/services"
-            element={
-              <ProtectedRoute>
-                <Services />
               </ProtectedRoute>
             }
           />
@@ -274,7 +277,7 @@ function App() {
           >
             <Route
               index
-              element={<Navigate to="/technician/work-orders" replace />}
+              element={<Navigate to="/technician/flow" replace />}
             />
             {/* <Route path="dashboard" element={<TechnicianDashboard />} /> */}
             <Route path="work-orders" element={<TechnicianWorkOrders />} />
@@ -283,6 +286,7 @@ function App() {
               element={<TechnicianChecklist />}
             />
             <Route path="flow" element={<TechnicianFlow />} />
+            <Route path="settings" element={<TechnicianSettings />} />
           </Route>
 
           {/* Admin routes */}
@@ -320,7 +324,7 @@ function App() {
           {/* Catch all route */}
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
-        <ChatWidget />
+        <ChatWrapper />
       </div>
     </Router>
   );

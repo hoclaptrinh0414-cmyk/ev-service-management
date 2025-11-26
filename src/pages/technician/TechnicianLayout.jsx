@@ -9,14 +9,14 @@ export default function TechnicianLayout() {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [hoveredItem, setHoveredItem] = useState(null);
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 
   const menuItems = [
     { path: "/technician/flow", label: "Daily Flow", icon: "bi-play-circle", exact: false },
   ];
 
   const handleLogout = () => {
-    logout();
-    window.location.href = "/login";
+    setShowLogoutDialog(true);
   };
 
   return (
@@ -68,7 +68,11 @@ export default function TechnicianLayout() {
         {/* User Info */}
         <div className="sidebar-footer">
           {sidebarOpen ? (
-            <div className="user-info-expanded">
+            <div
+              className="user-info-expanded clickable"
+              onClick={() => navigate('/technician/settings')}
+              title="Open Settings"
+            >
               <div className="user-avatar">
                 <i className="bi bi-person-circle"></i>
               </div>
@@ -76,15 +80,16 @@ export default function TechnicianLayout() {
                 <div className="user-name">{user?.fullName || 'Technician'}</div>
                 <div className="user-role">Kỹ Thuật Viên</div>
               </div>
-              <button className="logout-btn" onClick={handleLogout} title="Logout">
-                <i className="bi bi-box-arrow-right"></i>
-              </button>
             </div>
           ) : (
-            <div className="user-info-collapsed">
-              <button className="logout-btn-icon" onClick={handleLogout} title="Logout">
-                <i className="bi bi-box-arrow-right"></i>
-              </button>
+            <div
+              className="user-info-collapsed clickable"
+              onClick={() => navigate('/technician/settings')}
+              title="Open Settings"
+            >
+              <div className="user-avatar-small">
+                <i className="bi bi-person-circle"></i>
+              </div>
             </div>
           )}
         </div>
@@ -94,6 +99,100 @@ export default function TechnicianLayout() {
       <main className="tech-content">
         <Outlet />
       </main>
+
+      {showLogoutDialog && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 999999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: 'rgba(0, 0, 0, 0.6)'
+        }}
+        onClick={() => setShowLogoutDialog(false)}
+        >
+          <div
+            style={{
+              position: 'relative',
+              zIndex: 1000000,
+              width: '90%',
+              maxWidth: '450px',
+              borderRadius: '16px',
+              backgroundColor: 'white',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+              padding: '40px',
+              margin: '20px'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ textAlign: 'center' }}>
+              <div style={{
+                width: '80px',
+                height: '80px',
+                borderRadius: '50%',
+                backgroundColor: '#fee2e2',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 20px'
+              }}>
+                <i className="bi bi-box-arrow-right" style={{ fontSize: '40px', color: '#dc2626' }}></i>
+              </div>
+              <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '12px', color: '#1f2937' }}>
+                Đăng xuất
+              </h2>
+              <p style={{ color: '#6b7280', fontSize: '15px', marginBottom: '32px', lineHeight: '1.6' }}>
+                Bạn có chắc chắn muốn đăng xuất không?
+              </p>
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+                <button
+                  onClick={() => setShowLogoutDialog(false)}
+                  style={{
+                    padding: '14px 28px',
+                    backgroundColor: '#f3f4f6',
+                    color: '#374151',
+                    borderRadius: '25px',
+                    border: 'none',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    fontSize: '15px'
+                  }}
+                  onMouseEnter={(e) => e.target.style.backgroundColor = '#e5e7eb'}
+                  onMouseLeave={(e) => e.target.style.backgroundColor = '#f3f4f6'}
+                >
+                  Hủy
+                </button>
+                <button
+                  onClick={() => {
+                    logout();
+                    navigate("/login", { replace: true });
+                  }}
+                  style={{
+                    padding: '14px 32px',
+                    backgroundColor: '#dc2626',
+                    color: '#ffffff',
+                    borderRadius: '25px',
+                    border: 'none',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    fontSize: '15px'
+                  }}
+                  onMouseEnter={(e) => e.target.style.backgroundColor = '#b91c1c'}
+                  onMouseLeave={(e) => e.target.style.backgroundColor = '#dc2626'}
+                >
+                  Đăng xuất
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style>{`
         .technician-layout {
@@ -240,11 +339,26 @@ export default function TechnicianLayout() {
           padding: 12px;
           background: #f5f5f7;
           border-radius: 12px;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .user-info-expanded:hover {
+          background: #e5e5e5;
+          transform: translateY(-2px);
         }
 
         .user-avatar {
           font-size: 36px;
           color: #111;
+        }
+
+        .user-avatar-small {
+          font-size: 36px;
+          color: #111;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
 
         .user-details {
@@ -263,49 +377,19 @@ export default function TechnicianLayout() {
           color: #666;
         }
 
-        .logout-btn {
-          width: 40px;
-          height: 40px;
-          background: transparent;
-          border: none;
-          border-radius: 10px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 18px;
-          color: #d32f2f;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-
-        .logout-btn:hover {
-          background: #f7d7d7;
-          color: #b71c1c;
-        }
-
         .user-info-collapsed {
           display: flex;
           justify-content: center;
-        }
-
-        .logout-btn-icon {
-          width: 48px;
-          height: 48px;
-          background: transparent;
-          border: none;
+          padding: 12px;
+          background: #f5f5f7;
           border-radius: 12px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 20px;
-          color: #d32f2f;
           cursor: pointer;
           transition: all 0.2s;
         }
 
-        .logout-btn-icon:hover {
-          background: #f7d7d7;
-          color: #b71c1c;
+        .user-info-collapsed:hover {
+          background: #e5e5e5;
+          transform: scale(1.05);
         }
 
         /* ===== MAIN CONTENT ===== */

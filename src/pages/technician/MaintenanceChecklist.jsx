@@ -118,18 +118,36 @@ export default function MaintenanceChecklist() {
     try {
       setLoading(true);
       const validateRes = await workOrderService.validateChecklist(workOrderId);
-      const validationData = validateRes?.data || validateRes;
+      const validationData = validateRes?.data || validateRes || {};
+      const payload =
+        validationData?.data && typeof validationData.data === "object"
+          ? validationData.data
+          : validationData;
+      const isValid =
+        payload.isValid !== undefined
+          ? payload.isValid
+          : payload.success !== undefined
+          ? payload.success
+          : true;
+      const missingList = Array.isArray(payload.missingRequired)
+        ? payload.missingRequired
+        : Array.isArray(payload.data?.missingRequired)
+        ? payload.data.missingRequired
+        : [];
 
-      if (!validationData.isValid) {
-        const missing = validationData.missingRequired?.map(i => i.title).join(', ');
-        toast.error(`Cannot complete: Missing required items (${missing})`);
+      if (!isValid) {
+        const missingNames = missingList
+          .map((i) => i.title || i.name)
+          .filter(Boolean);
+        const missing = missingList.length ? missingList.join(', ') : 'required items';
+        toast.error(`Cannot complete: Missing ${missing}`);
         return;
       }
 
       if (window.confirm('All items validated. Are you sure you want to complete this work order?')) {
         await workOrderService.completeWorkOrder(workOrderId);
         toast.success('Work order completed successfully!');
-        navigate('/technician/my-work-orders');
+        navigate('/technician/flow');
       }
 
     } catch (error) {
@@ -373,7 +391,7 @@ export default function MaintenanceChecklist() {
           <div className="d-flex gap-2">
             <button className="btn btn-light flex-grow-1 py-2 fw-medium" onClick={() => setShowCompleteModal(false)}>Cancel</button>
             <button
-              className="btn btn-primary flex-grow-1 py-2 fw-medium"
+              className="btn tech-modal-complete-btn flex-grow-1 py-2 fw-medium"
               onClick={handleCompleteItem}
               disabled={!!actionLoading}
             >

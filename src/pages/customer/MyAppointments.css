@@ -39,6 +39,30 @@ h2 + p.text-muted {
   color: #fff;
 }
 
+.appointments-filter-bar .ant-select-selector,
+.appointments-filter-bar .ant-picker,
+.appointments-filter-bar .ant-input,
+.appointments-filter-bar .ant-input-affix-wrapper {
+  border-radius: 25px !important;
+  border: 1px solid #000 !important;
+  background: #fff;
+  box-shadow: none !important;
+  height: 38px;
+  padding: 0 14px;
+}
+
+.appointments-filter-bar .ant-select-selector {
+  display: flex;
+  align-items: center;
+}
+
+.appointments-filter-bar .ant-input {
+  height: 36px;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0;
+}
+
 .appointments-filter-bar select {
   min-width: 180px;
   font-weight: 500;

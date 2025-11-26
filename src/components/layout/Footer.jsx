@@ -188,7 +188,7 @@ const Footer = () => {
           <BrandColumn as={motion.div} variants={itemVariants}>
             <LogoText to="/home">T&N EV Services</LogoText>
             <p>
-              Nền tảng hàng đầu cho việc bảo trì, sửa chữa và nâng cấp xe điện với công nghệ hiện đại và đội ngũ chuyên nghiệp.
+              Leading platform for EV maintenance, repairs, and upgrades with modern tech and a professional team.
             </p>
             <SocialIconsContainer>
               <SocialIcon href="#" target="_blank" rel="noopener noreferrer" whileHover={{ y: -3, scale: 1.1 }}><FaFacebookF /></SocialIcon>
@@ -199,29 +199,28 @@ const Footer = () => {
           </BrandColumn>
 
           <FooterColumn as={motion.div} variants={itemVariants}>
-            <ColumnTitle>Điều hướng</ColumnTitle>
+            <ColumnTitle>Navigation</ColumnTitle>
             <NavList>
-              <NavItem><NavLink to="/home">Trang chủ</NavLink></NavItem>
-              <NavItem><NavLink to="/services">Dịch vụ</NavLink></NavItem>
-              <NavItem><NavLink to="#">Blog</NavLink></NavItem>
-              <NavItem><NavLink to="#">Giới thiệu</NavLink></NavItem>
+              <NavItem><NavLink to="/home">Home</NavLink></NavItem>
+              <NavItem><NavLink to="/products/individual">Products</NavLink></NavItem>
+              <NavItem><NavLink to="#">About</NavLink></NavItem>
             </NavList>
           </FooterColumn>
 
           <FooterColumn as={motion.div} variants={itemVariants}>
-            <ColumnTitle>Pháp lý</ColumnTitle>
+            <ColumnTitle>Legal</ColumnTitle>
             <NavList>
-              <NavItem><NavLink to="#">Điều khoản dịch vụ</NavLink></NavItem>
-              <NavItem><NavLink to="#">Chính sách bảo mật</NavLink></NavItem>
+              <NavItem><NavLink to="#">Terms of Service</NavLink></NavItem>
+              <NavItem><NavLink to="#">Privacy Policy</NavLink></NavItem>
             </NavList>
           </FooterColumn>
 
           <FooterColumn as={motion.div} variants={itemVariants}>
-            <ColumnTitle>Liên hệ</ColumnTitle>
+            <ColumnTitle>Contact</ColumnTitle>
             <NavList>
               <NavItem>support@ev-service.vn</NavItem>
               <NavItem>+84 334 171 139</NavItem>
-              <NavItem>160 Lã Xuân Oai, TP. Thủ Đức</NavItem>
+              <NavItem>160 La Xuan Oai, Thu Duc City</NavItem>
             </NavList>
           </FooterColumn>
 

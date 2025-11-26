@@ -59,6 +59,54 @@ const addPart = ({ id, partId }) =>
     body: JSON.stringify({ request: {} }),
   });
 
+const ensureVietnamDate = (value) => {
+  if (!value) return null;
+  if (value instanceof Date) return new Date(value.getTime());
+  if (typeof value === "number") return new Date(value);
+  if (typeof value !== "string") return null;
+
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  if (!trimmed.includes("T")) {
+    const parsed = new Date(`${trimmed}T00:00:00Z`);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  const hasOffset = /[zZ]|[+-]\d{2}:\d{2}$/.test(trimmed);
+  const isoString = hasOffset ? trimmed : `${trimmed}Z`;
+  const parsed = new Date(isoString);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const toVNDayIdentifier = (value) => {
+  const date = ensureVietnamDate(value);
+  if (!date) return null;
+  return date.toLocaleDateString("en-CA", {
+    timeZone: "Asia/Ho_Chi_Minh",
+  });
+};
+
+const getTodayIdentifier = () =>
+  toVNDayIdentifier(new Date());
+
+const matchesToday = (workOrder, todayId) => {
+  if (!workOrder || !todayId) return false;
+  const candidates = [
+    workOrder.workDate,
+    workOrder.slotDate,
+    workOrder.appointmentDate,
+    workOrder.scheduleDate,
+    workOrder.bookingDate,
+    workOrder.startDate,
+    workOrder.createdDate,
+    workOrder.estimatedCompletionDate,
+    workOrder.checkInDate,
+  ];
+
+  return candidates.some((value) => toVNDayIdentifier(value) === todayId);
+};
+
 const TechnicianFlow = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -119,6 +167,8 @@ const TechnicianFlow = () => {
     onError: (err) => window.alert(getErrorMessage(err)),
   });
 
+  const todayIdentifier = useMemo(() => getTodayIdentifier(), []);
+
   const workOrders = useMemo(() => {
     const data = workOrdersQuery.data || [];
     if (Array.isArray(data)) return data;
@@ -126,8 +176,13 @@ const TechnicianFlow = () => {
     return [];
   }, [workOrdersQuery.data]);
 
+  const todaysWorkOrders = useMemo(
+    () => workOrders.filter((wo) => matchesToday(wo, todayIdentifier)),
+    [workOrders, todayIdentifier]
+  );
+
   const activeWO =
-    workOrders.find(
+    todaysWorkOrders.find(
       (w) =>
         String(w.workOrderId || w.id) === String(selectedWo) ||
         String(w.id) === String(selectedWo)
@@ -233,7 +288,7 @@ const TechnicianFlow = () => {
             className="wo-select"
           >
             <option value="">-- Chọn work order --</option>
-            {workOrders.map((wo) => (
+            {todaysWorkOrders.map((wo) => (
               <option key={wo.id || wo.workOrderId} value={wo.id || wo.workOrderId}>
                 #{wo.id || wo.workOrderId} - {wo.customerName || wo.customer?.fullName || "Khách"} -{" "}
                 {wo.status || wo.state}
@@ -283,27 +338,6 @@ const TechnicianFlow = () => {
 
       <div className="panel grid-2">
         <div className="card-block">
-          <h3>Thêm dịch vụ phát sinh</h3>
-          <label>
-            ID Dịch vụ
-            <input
-              value={serviceId}
-              onChange={(e) => setServiceId(e.target.value)}
-              placeholder="serviceId"
-            />
-          </label>
-          <button
-            className="btn primary"
-            onClick={() =>
-              selectedWo && serviceId && addServiceMut.mutate({ id: selectedWo, serviceId })
-            }
-            disabled={!selectedWo || !serviceId || addServiceMut.isPending}
-          >
-            {addServiceMut.isPending ? "Đang thêm..." : "Thêm dịch vụ"}
-          </button>
-        </div>
-
-        <div className="card-block">
           <h3>Thêm phụ tùng</h3>
           <label>
             ID Phụ tùng
@@ -343,24 +377,24 @@ const TechnicianFlow = () => {
               </tr>
             </thead>
             <tbody>
-              {workOrdersQuery.isLoading ? (
-                <tr>
-                  <td colSpan={6} className="empty">
-                    Đang tải...
-                  </td>
-                </tr>
-              ) : workOrders.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="empty">
-                    Không có work order
-                  </td>
-                </tr>
-              ) : (
-                workOrders.map((wo) => (
-                  <tr key={wo.id || wo.workOrderId} className={String(wo.id || wo.workOrderId) === String(selectedWo) ? "selected-row" : ""}>
-                    <td>{wo.workOrderId || wo.id}</td>
-                    <td>{wo.customerName || wo.customer?.fullName || "-"}</td>
-                    <td>{wo.licensePlate || wo.vehicle?.licensePlate || "-"}</td>
+          {workOrdersQuery.isLoading ? (
+            <tr>
+              <td colSpan={6} className="empty">
+                Đang tải...
+              </td>
+            </tr>
+          ) : todaysWorkOrders.length === 0 ? (
+            <tr>
+              <td colSpan={6} className="empty">
+                Không có work order trong ngày hôm nay
+              </td>
+            </tr>
+          ) : (
+            todaysWorkOrders.map((wo) => (
+              <tr key={wo.id || wo.workOrderId} className={String(wo.id || wo.workOrderId) === String(selectedWo) ? "selected-row" : ""}>
+                <td>{wo.workOrderId || wo.id}</td>
+                <td>{wo.customerName || wo.customer?.fullName || "-"}</td>
+                <td>{wo.licensePlate || wo.vehicle?.licensePlate || "-"}</td>
                     <td>
                       <span className={`badge status-${(wo.status || wo.state || "").toLowerCase()}`}>{wo.status || wo.state || "N/A"}</span>
                     </td>

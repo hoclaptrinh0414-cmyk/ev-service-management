@@ -150,7 +150,25 @@ const Profile = () => {
             }
             extra={!isEditing && (
               <Tooltip title="Update your personal details">
-                <Button icon={<EditOutlined />} type="primary" className="edit-profile-btn" onClick={handleEdit}>Edit Profile</Button>
+                <Button
+                  icon={<EditOutlined />}
+                  className="edit-profile-btn"
+                  onClick={handleEdit}
+                  style={{
+                    backgroundColor: "#000",
+                    borderColor: "#000",
+                    color: "#fff",
+                    borderRadius: 999,
+                    padding: "0.65rem 1.6rem",
+                    fontWeight: 700,
+                    height: 48,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 8,
+                  }}
+                >
+                  Edit Profile
+                </Button>
               </Tooltip>
             )}
           >

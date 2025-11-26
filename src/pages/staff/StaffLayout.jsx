@@ -2,6 +2,7 @@
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { useState } from "react";
+import ConfirmDialog from "../../components/ui/ConfirmDialog";
 
 export default function StaffLayout() {
   const { user, logout } = useAuth();
@@ -10,6 +11,7 @@ export default function StaffLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [hoveredItem, setHoveredItem] = useState(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 
   const menuItems = [
     {
@@ -21,8 +23,7 @@ export default function StaffLayout() {
   ];
 
   const handleLogout = () => {
-    logout();
-    window.location.href = "/login";
+    setShowLogoutDialog(true);
   };
 
   const isCollapsed = !sidebarOpen;
@@ -570,6 +571,20 @@ export default function StaffLayout() {
           letter-spacing: 0.02em !important;
         }
       `}</style>
+
+      <ConfirmDialog
+        open={showLogoutDialog}
+        onOpenChange={setShowLogoutDialog}
+        onConfirm={() => {
+          logout();
+          navigate('/login');
+        }}
+        title="Đăng xuất"
+        description="Bạn có chắc chắn muốn đăng xuất không?"
+        confirmText="Đăng xuất"
+        cancelText="Hủy"
+        variant="logout"
+      />
     </div>
   );
 }

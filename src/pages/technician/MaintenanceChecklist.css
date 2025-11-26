@@ -34,16 +34,22 @@
 }
 
 .tech-back-btn {
-    color: var(--tech-text-sub);
-    font-weight: 500;
+    background: #000;
+    color: #fff;
+    border: 2px solid #000;
+    border-radius: 999px;
+    padding: 0.65rem 1.4rem;
+    font-weight: 700;
     display: inline-flex;
     align-items: center;
-    transition: color 0.2s;
+    gap: 0.5rem;
     text-decoration: none;
 }
 
 .tech-back-btn:hover {
-    color: var(--tech-primary);
+    background: #222;
+    border-color: #222;
+    color: #fff;
 }
 
 .tech-wo-title {
@@ -292,17 +298,17 @@
 
 /* Fixed Footer */
 .tech-footer {
-    position: fixed;
+    position: sticky;
     bottom: 0;
-    left: 0;
-    right: 0;
+    left: auto;
+    right: auto;
     background: white;
     padding: 1rem 1.5rem;
     box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    z-index: 1000;
+    z-index: 1;
     border-top: 1px solid var(--tech-border);
 }
 
@@ -369,6 +375,46 @@
     outline: none;
     border-color: var(--tech-primary);
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Action button tweaks */
+.tech-btn {
+    border-radius: 999px;
+    border-width: 2px;
+    font-weight: 700;
+}
+
+.tech-btn-complete {
+    background-color: #16a34a;
+    border-color: #16a34a;
+    color: #fff;
+}
+
+.tech-btn-complete:hover {
+    background-color: #15803d;
+    border-color: #15803d;
+}
+
+.tech-btn-complete:disabled {
+    background-color: #16a34a !important;
+    border-color: #16a34a !important;
+    color: #fff !important;
+    opacity: 0.55;
+}
+
+.tech-modal-complete-btn {
+    background-color: #16a34a !important;
+    border-color: #16a34a !important;
+    color: #fff !important;
+    border-radius: 12px;
+    font-weight: 700;
+}
+
+.tech-modal-complete-btn:disabled {
+    background-color: #16a34a !important;
+    border-color: #16a34a !important;
+    color: #fff !important;
+    opacity: 0.55;
 }
 
 @media (max-width: 768px) {
