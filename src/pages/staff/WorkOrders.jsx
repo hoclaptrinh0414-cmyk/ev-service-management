@@ -2,10 +2,94 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'react-toastify';
 import staffService from '../../services/staffService';
+import apiService from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import TechnicianCandidatesModal from './TechnicianCandidatesModal';
 import AddServicesModal from './AddServicesModal';
 import DeliveryPaymentModal from './DeliveryPaymentModal';
+
+const ensureUtcDateTime = (value) => {
+  if (value instanceof Date) return value;
+  if (typeof value === 'number') return new Date(value);
+  if (typeof value !== 'string' || value.trim() === '') return null;
+
+  const trimmed = value.trim();
+  if (!trimmed.includes('T')) {
+    const parsed = new Date(trimmed);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  const hasOffset = /[zZ]|[+-]\d{2}:\d{2}$/.test(trimmed);
+  const isoString = hasOffset ? trimmed : `${trimmed}Z`;
+  const date = new Date(isoString);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const formatVietnamDateTime = (value, options = {}) => {
+  const date = ensureUtcDateTime(value);
+  if (!date) return null;
+  try {
+    return date.toLocaleString('vi-VN', {
+      timeZone: 'Asia/Ho_Chi_Minh',
+      ...options,
+    });
+  } catch {
+    return null;
+  }
+};
+
+const vietnamDateISOFormatter = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'Asia/Ho_Chi_Minh',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+
+const getDateIdentifier = (value) => {
+  if (!value) return '';
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value.trim())) {
+    return value.trim();
+  }
+
+  const date = ensureUtcDateTime(value);
+  if (!date || Number.isNaN(date.getTime())) return '';
+
+  return date.toLocaleDateString('en-CA', {
+    timeZone: 'Asia/Ho_Chi_Minh',
+  });
+};
+
+const doesWorkOrderMatchDate = (workOrder, targetDate) => {
+  if (!targetDate) return true;
+  const candidates = [
+    workOrder.workDate,
+    workOrder.WorkDate,
+    workOrder.slotDate,
+    workOrder.SlotDate,
+    workOrder.slotDay,
+    workOrder.SlotDay,
+    workOrder.appointmentDate,
+    workOrder.AppointmentDate,
+    workOrder.appointmentSlotDate,
+    workOrder.AppointmentSlotDate,
+    workOrder.bookingDate,
+    workOrder.BookingDate,
+    workOrder.startDate,
+    workOrder.StartDate,
+    workOrder.createdDate,
+    workOrder.CreatedDate,
+    workOrder.estimatedCompletionDate,
+    workOrder.EstimatedCompletionDate,
+    workOrder.checkInDate,
+    workOrder.CheckInDate,
+    workOrder.actualStartDate,
+    workOrder.ActualStartDate,
+  ];
+
+  return candidates.some(
+    (candidate) => getDateIdentifier(candidate) === targetDate,
+  );
+};
 
 const resolveServiceCenterId = (user) =>
   user?.serviceCenterId ||
@@ -41,12 +125,14 @@ export default function WorkOrders() {
   const [serviceCenterLoading, setServiceCenterLoading] = useState(false);
   const [serviceCenterError, setServiceCenterError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchDate, setSearchDate] = useState('');
   const [searching, setSearching] = useState(false);
   const [isSearchMode, setIsSearchMode] = useState(false);
   const [lastAutoContext, setLastAutoContext] = useState(null);
   const autoContextHandled = useRef(false);
   const [activeSearchTerm, setActiveSearchTerm] = useState('');
   const [activeSearchCenter, setActiveSearchCenter] = useState(null);
+  const [activeSearchDate, setActiveSearchDate] = useState('');
   const [qcRating, setQcRating] = useState(5);
   const [qcNotes, setQcNotes] = useState('');
   const [existingQC, setExistingQC] = useState(null);
@@ -55,6 +141,16 @@ export default function WorkOrders() {
   const [showCandidatesModal, setShowCandidatesModal] = useState(false);
   const [showAddServicesModal, setShowAddServicesModal] = useState(false);
   const [deliveryPaymentModal, setDeliveryPaymentModal] = useState({ show: false, mode: 'validate' });
+  const [parts, setParts] = useState([]);
+  const [partId, setPartId] = useState('');
+  const [quantity, setQuantity] = useState(1);
+  const [searchPart, setSearchPart] = useState('');
+  const [loadingParts, setLoadingParts] = useState(false);
+  const [outstandingAmount, setOutstandingAmount] = useState(0);
+  const [invoiceId, setInvoiceId] = useState(null);
+  const [paymentMethod, setPaymentMethod] = useState('Cash');
+  const [outstandingLoading, setOutstandingLoading] = useState(false);
+  const [paymentLoading, setPaymentLoading] = useState(false);
 
   const getTechnicianDisplay = useCallback(
     (wo) => {
@@ -327,6 +423,19 @@ export default function WorkOrders() {
 
   const handlePageChange = (nextPage) => {
     if (nextPage < 1 || nextPage > totalPages || nextPage === page) return;
+
+    if (isSearchMode) {
+      const plate = activeSearchTerm || searchTerm;
+      const center = activeSearchCenter || serviceCenterId;
+      searchByLicensePlate({
+        licensePlate: plate,
+        centerId: center,
+        pageNumber: nextPage,
+        updatePageState: false,
+        workDate: activeSearchDate || searchDate,
+      });
+    }
+
     setPage(nextPage);
   };
 
@@ -335,15 +444,19 @@ export default function WorkOrders() {
     searchByLicensePlate({
       licensePlate: searchTerm,
       centerId: serviceCenterId,
-      autoOpen: true,
+      autoOpen: false,
+      workDate: searchDate,
     });
   };
 
   const handleClearSearch = () => {
     setIsSearchMode(false);
     setSearchTerm('');
+    setSearchDate('');
     setActiveSearchTerm('');
     setActiveSearchCenter(null);
+    setActiveSearchDate('');
+    setPage(1);
     fetchWorkOrders(1);
   };
 
@@ -465,7 +578,14 @@ export default function WorkOrders() {
   }, [loadQualityCheckData, technicians]);
 
   const searchByLicensePlate = useCallback(
-    async ({ licensePlate, centerId, autoOpen = false } = {}) => {
+    async ({
+      licensePlate,
+      centerId,
+      workDate,
+      autoOpen = false,
+      pageNumber = 1,
+      updatePageState = true,
+    } = {}) => {
       const trimmedPlate = (licensePlate || '').trim();
       if (!trimmedPlate) {
         toast.warn('Vui lòng nhập biển số xe để tìm WorkOrder');
@@ -482,26 +602,63 @@ export default function WorkOrders() {
       try {
         setActiveSearchTerm(trimmedPlate);
         setActiveSearchCenter(centerToUse);
-        const response = await staffService.searchWorkOrders({
+        const normalizedDate =
+          typeof workDate === 'string'
+            ? workDate
+            : workDate
+            ? `${workDate}`
+            : searchDate;
+        const sanitizedDate = getDateIdentifier(normalizedDate);
+        setActiveSearchDate(sanitizedDate);
+
+        const queryParams = {
           SearchTerm: trimmedPlate,
           ServiceCenterId: centerToUse,
-          PageSize: 5,
+          Page: pageNumber,
+          PageNumber: pageNumber,
+          PageIndex: Math.max(0, pageNumber - 1),
+          PageSize: PAGE_SIZE,
           SortBy: 'CreatedDate',
           SortDirection: 'desc',
-        });
+        };
 
-        const { items } = normalizeWorkOrdersResponse(response, 1);
-        if (!items.length) {
-          toast.warn('Không tìm thấy WorkOrder cho xe này');
+        if (sanitizedDate) {
+          queryParams.WorkDate = sanitizedDate;
+          queryParams.SlotDate = sanitizedDate;
+          queryParams.StartDate = sanitizedDate;
+          queryParams.Date = sanitizedDate;
+          queryParams.AppointmentDate = sanitizedDate;
+        }
+
+        const response = await staffService.searchWorkOrders(queryParams);
+
+        const { items, totalPages: total } = normalizeWorkOrdersResponse(
+          response,
+          pageNumber,
+        );
+        const filteredItems = sanitizedDate
+          ? items.filter((wo) => doesWorkOrderMatchDate(wo, sanitizedDate))
+          : items;
+
+        if (!filteredItems.length) {
+          const message = sanitizedDate
+            ? 'Không tìm thấy WorkOrder cho xe này vào ngày đã chọn'
+            : 'Không tìm thấy WorkOrder cho xe này';
+          toast.warn(message);
           setWorkOrders([]);
           setIsSearchMode(true);
           setTotalPages(1);
+          if (updatePageState) {
+            setPage(1);
+          }
           return;
         }
 
-        setWorkOrders(items);
-        setTotalPages(1);
-        setPage(1);
+        setWorkOrders(filteredItems);
+        setTotalPages(Math.max(1, total || 1));
+        if (updatePageState) {
+          setPage(pageNumber);
+        }
         setIsSearchMode(true);
 
         if (autoOpen) {
@@ -522,7 +679,13 @@ export default function WorkOrders() {
         setSearching(false);
       }
     },
-    [normalizeWorkOrdersResponse, serviceCenterId, viewWorkOrderDetail],
+    [
+      normalizeWorkOrdersResponse,
+      serviceCenterId,
+      viewWorkOrderDetail,
+      PAGE_SIZE,
+      searchDate,
+    ],
   );
 
   useEffect(() => {
@@ -538,11 +701,18 @@ export default function WorkOrders() {
       if (parsed.serviceCenterId) {
         setServiceCenterId(Number(parsed.serviceCenterId));
       }
+      const restoredDate = parsed.slotDate
+        ? parsed.slotDate.split('T')[0]
+        : parsed.workDate || '';
+      if (restoredDate) {
+        setSearchDate(restoredDate);
+      }
       autoContextHandled.current = true;
       searchByLicensePlate({
         licensePlate: parsed.licensePlate,
         centerId: parsed.serviceCenterId,
         autoOpen: true,
+        workDate: restoredDate,
       });
       sessionStorage.removeItem('staff:lastCheckInContext');
     } catch (err) {
@@ -788,9 +958,24 @@ export default function WorkOrders() {
     if (!selectedWO) return;
 
     try {
+      const woId = selectedWO.workOrderId || selectedWO.id;
+
+      // Step 1: ensure outstanding amount is 0 before completing
+      const deliveryInfo = await fetchOutstanding(woId, { silent: true });
+      const latestOutstanding =
+        Number(deliveryInfo?.outstandingAmount) || outstandingAmount || 0;
+      if (latestOutstanding > 0) {
+        toast.error(
+          `Work order còn công nợ ${latestOutstanding.toLocaleString(
+            'vi-VN',
+          )} VND. Vui lòng thu đủ trước khi hoàn tất.`,
+        );
+        return;
+      }
+
       // Validate checklist first
       const validationResponse = await staffService.validateChecklist(
-        selectedWO.workOrderId || selectedWO.id,
+        woId,
       );
       const validationPayload =
         validationResponse?.data || validationResponse || {};
@@ -813,7 +998,7 @@ export default function WorkOrders() {
 
       // Complete work order
       await staffService.completeWorkOrder(
-        selectedWO.workOrderId || selectedWO.id,
+        woId,
       );
       toast.success('Work order completed successfully!');
 
@@ -863,6 +1048,189 @@ export default function WorkOrders() {
     }
   };
 
+  useEffect(() => {
+    const loadParts = async () => {
+      try {
+        setLoadingParts(true);
+        const params = new URLSearchParams();
+        if (serviceCenterId) {
+          params.append('ServiceCenterId', serviceCenterId);
+        }
+        params.append('PageSize', 100);
+        if (searchPart.trim()) {
+          params.append('SearchTerm', searchPart.trim());
+        }
+        const endpoint = `/inventory${params.toString() ? `?${params.toString()}` : ''}`;
+        const response = await apiService.request(endpoint);
+        const rawList =
+          (Array.isArray(response?.data?.items) && response.data.items) ||
+          (Array.isArray(response?.data) && response.data) ||
+          (Array.isArray(response?.items) && response.items) ||
+          (Array.isArray(response) && response) ||
+          [];
+        const normalizedParts = rawList
+          .map((item) => {
+            const id =
+              item.partId ??
+              item.PartId ??
+              item.inventoryId ??
+              item.InventoryId ??
+              item.id;
+            const name =
+              item.partName ??
+              item.PartName ??
+              item.name ??
+              item.Name ??
+              (id ? `Part #${id}` : '');
+            if (!id || !name) return null;
+            return {
+              id,
+              name,
+              price:
+                item.sellingPrice ??
+                item.SellingPrice ??
+                item.price ??
+                item.Price ??
+                0,
+              stock:
+                item.availableStock ??
+                item.AvailableStock ??
+                item.currentStock ??
+                item.CurrentStock ??
+                null,
+            };
+          })
+          .filter(Boolean);
+        setParts(normalizedParts);
+      } catch (err) {
+        console.error('Load parts error:', err);
+        toast.error('Không thể tải danh sách phụ tùng');
+        setParts([]);
+      } finally {
+        setLoadingParts(false);
+      }
+    };
+    const timer = setTimeout(loadParts, 300);
+    return () => clearTimeout(timer);
+  }, [searchPart, serviceCenterId]);
+
+  const handleAddPart = async (e) => {
+    e.preventDefault();
+    if (!selectedWO || !partId || quantity < 1) {
+      toast.warn('Please select part and quantity.');
+      return;
+    }
+    try {
+      const woId = selectedWO.workOrderId || selectedWO.id;
+      await apiService.request(
+        `/work-orders/${woId}/parts/${partId}?quantity=${quantity}`,
+        {
+          method: 'POST',
+        },
+      );
+      toast.success('Part added to work order.');
+      setPartId('');
+      setQuantity(1);
+      setSearchPart('');
+      await viewWorkOrderDetail(woId);
+    } catch (err) {
+      console.error('Add part error:', err);
+      toast.error('Failed to add part.');
+    }
+  };
+
+  const fetchOutstanding = useCallback(
+    async (workOrderIdOverride, options = {}) => {
+      const { silent = false } = options;
+      const targetWoId =
+        workOrderIdOverride ||
+        selectedWO?.workOrderId ||
+        selectedWO?.id;
+
+      if (!targetWoId) {
+        if (!silent) {
+          toast.warn('No work order selected.');
+        }
+        return null;
+      }
+
+      setOutstandingLoading(true);
+      try {
+        const response = await apiService.request(
+          `/work-orders/${targetWoId}/validate-delivery`,
+        );
+        const payload = response?.data || response;
+        const amount = Number(payload?.outstandingAmount) || 0;
+        const invoice = payload?.invoiceId ?? null;
+
+        setOutstandingAmount(amount);
+        setInvoiceId(invoice);
+
+        if (!silent) {
+          if (amount > 0) {
+            toast.info(
+              `Outstanding: ${amount.toLocaleString('vi-VN')} VND`,
+            );
+          } else {
+            toast.success('Không còn công nợ. Có thể bàn giao xe.');
+          }
+        }
+
+        return payload;
+      } catch (err) {
+        console.error('Fetch outstanding error:', err);
+        if (!silent) {
+          toast.error(
+            err.response?.data?.message ||
+              err.message ||
+              'Failed to fetch outstanding amount.',
+          );
+        }
+        throw err;
+      } finally {
+        setOutstandingLoading(false);
+      }
+    },
+    [selectedWO],
+  );
+
+  const handlePayment = async (e) => {
+    e.preventDefault();
+    if (!invoiceId || outstandingAmount <= 0) {
+      toast.warn('No payment needed or invoice not found.');
+      return;
+    }
+    try {
+      const woId = selectedWO?.workOrderId || selectedWO?.id;
+      if (!woId) {
+        toast.warn('No work order selected.');
+        return;
+      }
+
+      setPaymentLoading(true);
+      await apiService.request('/payments/manual', {
+        method: 'POST',
+        body: JSON.stringify({
+          invoiceId,
+          amount: outstandingAmount,
+          method: paymentMethod,
+          note: 'Thanh toán tại quầy',
+        }),
+      });
+
+      toast.success('Payment successful.');
+      await fetchOutstanding(woId, { silent: true });
+      await viewWorkOrderDetail(woId);
+    } catch (err) {
+      console.error('Payment error:', err);
+      toast.error(
+        err.response?.data?.message || err.message || 'Payment failed.',
+      );
+    } finally {
+      setPaymentLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className='loading-container'>
@@ -875,6 +1243,7 @@ export default function WorkOrders() {
   const selectedWOStatus = selectedWO
     ? normaliseKey(selectedWO.statusName || selectedWO.status || '')
     : '';
+  const displayedWorkOrders = workOrders;
 
   return (
     <div className='workorders-page'>
@@ -904,53 +1273,63 @@ export default function WorkOrders() {
               )}
             </div>
             <form className='search-form' onSubmit={handleSearchSubmit}>
-              <div className='search-input-group'>
-                <label>Biển số</label>
-                <input
-                  type='text'
-                  placeholder='VD: 29A-12345'
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-              <div className='search-input-group'>
-                <label>Trung tâm</label>
-                {serviceCenterLoading ? (
-                  <span className='helper-text'>Đang tải...</span>
-                ) : (
-                  <select
-                    value={serviceCenterId ?? ''}
-                    onChange={(e) => {
-                      const newValue = e.target.value ? Number(e.target.value) : null;
-                      console.log('[WorkOrders] Service Center changed to:', newValue);
-                      setServiceCenterId(newValue);
-                    }}
-                  >
-                    <option value=''>-- Chọn trung tâm --</option>
-                    {serviceCenters.map((center, index) => {
-                      const centerValue =
-                        center.centerId ||
-                        center.serviceCenterId ||
-                        center.id;
-                      const centerLabel =
-                        center.centerName ||
-                        center.serviceCenterName ||
-                        center.name ||
-                        center.centerCode ||
-                        `Center ${centerValue}`;
-                      console.log(`[WorkOrders] Rendering option ${index + 1}:`, {
-                        centerValue,
-                        centerLabel,
-                        center
-                      });
-                      return (
-                        <option key={centerValue} value={centerValue}>
-                          {centerLabel}
-                        </option>
-                      );
-                    })}
-                  </select>
-                )}
+              <div className='search-inputs'>
+                <div className='search-input-group'>
+                  <label>Biển số</label>
+                  <input
+                    type='text'
+                    placeholder='VD: 29A-12345'
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                <div className='search-input-group'>
+                  <label>Trung tâm</label>
+                  {serviceCenterLoading ? (
+                    <span className='helper-text'>Đang tải...</span>
+                  ) : (
+                    <select
+                      value={serviceCenterId ?? ''}
+                      onChange={(e) => {
+                        const newValue = e.target.value ? Number(e.target.value) : null;
+                        console.log('[WorkOrders] Service Center changed to:', newValue);
+                        setServiceCenterId(newValue);
+                      }}
+                    >
+                      <option value=''>-- Chọn trung tâm --</option>
+                      {serviceCenters.map((center, index) => {
+                        const centerValue =
+                          center.centerId ||
+                          center.serviceCenterId ||
+                          center.id;
+                        const centerLabel =
+                          center.centerName ||
+                          center.serviceCenterName ||
+                          center.name ||
+                          center.centerCode ||
+                          `Center ${centerValue}`;
+                        console.log(`[WorkOrders] Rendering option ${index + 1}:`, {
+                          centerValue,
+                          centerLabel,
+                          center
+                        });
+                        return (
+                          <option key={centerValue} value={centerValue}>
+                            {centerLabel}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  )}
+                </div>
+                <div className='search-input-group'>
+                  <label>Ngày</label>
+                  <input
+                    type='date'
+                    value={searchDate}
+                    onChange={(e) => setSearchDate(e.target.value)}
+                  />
+                </div>
               </div>
               <div className='search-actions'>
                 <button
@@ -981,7 +1360,7 @@ export default function WorkOrders() {
             <div className='section-title'>
               <i className='bi bi-tools'></i>
               <h2>All Work Orders</h2>
-              <span className='count-badge'>{workOrders.length}</span>
+              <span className='count-badge'>{displayedWorkOrders.length}</span>
             </div>
 
             {isSearchMode && (
@@ -999,10 +1378,23 @@ export default function WorkOrders() {
                     <strong>{getServiceCenterLabel(activeSearchCenter)}</strong>
                   </>
                 )}
+                {activeSearchDate && (
+                  <>
+                    {' '}
+                    vào{' '}
+                    <strong>
+                      {formatVietnamDateTime(`${activeSearchDate}T00:00:00`, {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                      }) || activeSearchDate}
+                    </strong>
+                  </>
+                )}
               </div>
             )}
 
-            {workOrders.length === 0 ? (
+            {displayedWorkOrders.length === 0 ? (
               <div className='empty-state'>
                 <i className='bi bi-inbox'></i>
                 <h3>No Work Orders</h3>
@@ -1010,7 +1402,7 @@ export default function WorkOrders() {
               </div>
             ) : (
               <div className='workorders-grid'>
-                {workOrders.map((wo) => {
+                {displayedWorkOrders.map((wo) => {
                   const cardWOId = wo.workOrderId || wo.id;
                   return (
                     <div
@@ -1055,15 +1447,13 @@ export default function WorkOrders() {
                         <div className='info-item'>
                           <i className='bi bi-clock-history'></i>
                           <span>
-                            {wo.startDate
-                              ? new Date(wo.startDate).toLocaleString('vi-VN', {
-                                  day: '2-digit',
-                                  month: '2-digit',
-                                  year: 'numeric',
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                })
-                              : 'N/A'}
+                            {formatVietnamDateTime(wo.startDate, {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            }) || 'N/A'}
                           </span>
                         </div>
 
@@ -1084,7 +1474,7 @@ export default function WorkOrders() {
                 })}
               </div>
             )}
-            {!isSearchMode && totalPages > 1 && (
+            {totalPages > 1 && (
               <div className='pagination-container'>
                 <button
                   disabled={page <= 1}
@@ -1308,16 +1698,20 @@ export default function WorkOrders() {
                   </div>
 
                   <div className='checklist-items'>
-                    {checklist.map((item, index) => (
-                      <div
-                        key={item.itemId || index}
-                        className='checklist-item'
-                      >
-                        <div className='item-content'>
-                          <div className='item-header'>
-                            <span className='item-title'>
-                              {item.itemDescription || `Item ${index + 1}`}
-                            </span>
+                    {checklist.map((item, index) => {
+                      const completedLabel = formatVietnamDateTime(
+                        item.completedDate,
+                      );
+                      return (
+                        <div
+                          key={item.itemId || index}
+                          className='checklist-item'
+                        >
+                          <div className='item-content'>
+                            <div className='item-header'>
+                              <span className='item-title'>
+                                {item.itemDescription || `Item ${index + 1}`}
+                              </span>
                             <span
                               className={`item-status ${
                                 item.isCompleted ? 'completed' : 'pending'
@@ -1331,17 +1725,13 @@ export default function WorkOrders() {
                             <p className='item-notes'>{item.notes}</p>
                           )}
 
-                          {item.completedByName && (
-                            <p className='item-notes'>
-                              By: {item.completedByName}{' '}
-                              {item.completedDate
-                                ? ` • ${new Date(
-                                    item.completedDate,
-                                  ).toLocaleString('vi-VN')}`
-                                : ''}
-                            </p>
-                          )}
-                        </div>
+                            {item.completedByName && (
+                              <p className='item-notes'>
+                                By: {item.completedByName}{' '}
+                                {completedLabel ? ` • ${completedLabel}` : ''}
+                              </p>
+                            )}
+                          </div>
 
                         {!item.isCompleted && selectedWOStatus === 'inprogress' && (
                             <div style={{ display: 'flex', gap: '8px' }}>
@@ -1375,8 +1765,9 @@ export default function WorkOrders() {
                               )}
                             </div>
                           )}
-                      </div>
-                    ))}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               ) : (
@@ -1441,9 +1832,8 @@ export default function WorkOrders() {
                         {existingQC.updatedAt && (
                           <p className='qc-meta'>
                             Updated at:{' '}
-                            {new Date(
-                              existingQC.updatedAt,
-                            ).toLocaleString('vi-VN')}
+                            {formatVietnamDateTime(existingQC.updatedAt) ||
+                              'N/A'}
                           </p>
                         )}
                       </>
@@ -1477,6 +1867,140 @@ export default function WorkOrders() {
                     >
                       {qcLoading ? 'Saving...' : 'Save Quality Check'}
                     </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Add Parts & Payment Card */}
+              <div className='detail-card'>
+                <div className='card-header-detail'>
+                  <h2>Add Service, Parts & Payment</h2>
+                </div>
+                <div className='card-body-detail'>
+                  {/* Add Service Section */}
+                  <div style={{ marginBottom: '24px', padding: '16px', background: '#f8f9fa', borderRadius: '8px' }}>
+                    <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px' }}>Add Service</h3>
+                    <button
+                      className='btn-action primary'
+                      onClick={() => setShowAddServicesModal(true)}
+                      style={{ width: '100%' }}
+                    >
+                      <i className='bi bi-plus-circle'></i> Add Service to Work Order
+                    </button>
+                  </div>
+
+                  {/* Add Part Section */}
+                  <div style={{ marginBottom: '24px', padding: '16px', background: '#f8f9fa', borderRadius: '8px' }}>
+                    <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px' }}>Add Part</h3>
+                    <form onSubmit={handleAddPart}>
+                      <div style={{ marginBottom: '12px' }}>
+                        <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500' }}>Search Part</label>
+                        <input
+                          type='text'
+                          value={searchPart}
+                          onChange={(e) => setSearchPart(e.target.value)}
+                          placeholder='Lọc theo tên phụ tùng...'
+                          style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+                        />
+                      </div>
+                      <div style={{ marginBottom: '12px' }}>
+                        <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500' }}>Part</label>
+                        <select
+                          value={partId}
+                          onChange={(e) => setPartId(e.target.value)}
+                          disabled={loadingParts}
+                          required
+                          style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+                        >
+                          <option value=''>-- Select part --</option>
+                          {parts.map((part) => (
+                            <option key={part.id} value={part.id}>
+                              {part.name}
+                              {typeof part.stock === 'number' ? ` • Tồn: ${part.stock}` : ''}
+                              {' - '}
+                              {(part.price || 0).toLocaleString('vi-VN')} VND
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div style={{ marginBottom: '12px' }}>
+                        <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500' }}>Quantity</label>
+                        <input
+                          type='number'
+                          value={quantity}
+                          onChange={(e) => setQuantity(Number(e.target.value))}
+                          min='1'
+                          required
+                          style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+                        />
+                      </div>
+                      <button type='submit' className='btn-action primary' style={{ width: '100%' }}>
+                        <i className='bi bi-plus-lg'></i> Add Part
+                      </button>
+                    </form>
+                  </div>
+
+                  {/* Payment Section */}
+                  <div style={{ padding: '16px', background: '#f8f9fa', borderRadius: '8px' }}>
+                    <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px' }}>Counter Payment</h3>
+                    <button
+                      className='btn-action secondary'
+                      onClick={() => fetchOutstanding()}
+                      disabled={outstandingLoading}
+                      style={{ width: '100%', marginBottom: '12px' }}
+                    >
+                      {outstandingLoading ? (
+                        <>
+                          <span className='spinner-border spinner-border-sm me-2'></span>
+                          Đang kiểm tra...
+                        </>
+                      ) : (
+                        <>
+                          <i className='bi bi-calculator'></i> Fetch Outstanding Amount
+                        </>
+                      )}
+                    </button>
+                    {outstandingAmount > 0 && invoiceId && (
+                      <form onSubmit={handlePayment}>
+                        <div style={{ marginBottom: '12px' }}>
+                          <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500' }}>Outstanding Amount</label>
+                          <input
+                            type='text'
+                            value={`${outstandingAmount.toLocaleString()} VND`}
+                            disabled
+                            style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px', background: '#e9ecef' }}
+                          />
+                        </div>
+                        <div style={{ marginBottom: '12px' }}>
+                          <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500' }}>Payment Method</label>
+                          <select
+                            value={paymentMethod}
+                            onChange={(e) => setPaymentMethod(e.target.value)}
+                            style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+                          >
+                            <option value='Cash'>Cash</option>
+                            <option value='BankTransfer'>Bank Transfer</option>
+                          </select>
+                        </div>
+                        <button
+                          type='submit'
+                          className='btn-action success'
+                          style={{ width: '100%' }}
+                          disabled={paymentLoading}
+                        >
+                          {paymentLoading ? (
+                            <>
+                              <span className='spinner-border spinner-border-sm me-2'></span>
+                              Đang thanh toán...
+                            </>
+                          ) : (
+                            <>
+                              <i className='bi bi-credit-card'></i> Process Payment
+                            </>
+                          )}
+                        </button>
+                      </form>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1580,6 +2104,12 @@ export default function WorkOrders() {
         }
 
         .search-form {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+
+        .search-inputs {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
           gap: 16px;
@@ -1840,12 +2370,12 @@ export default function WorkOrders() {
           padding: 20px 24px;
           border-top: 1px solid #e5e5e5;
           display: flex;
+          flex-direction: column;
           gap: 12px;
-          flex-wrap: wrap;
         }
 
         .btn-action {
-          padding: 10px 20px;
+          padding: 12px 20px;
           border: none;
           border-radius: 25px;
           font-size: 14px;
@@ -1854,7 +2384,9 @@ export default function WorkOrders() {
           transition: all 0.2s;
           display: flex;
           align-items: center;
+          justify-content: center;
           gap: 8px;
+          width: 100%;
         }
 
         .btn-action.primary {
@@ -1886,20 +2418,30 @@ export default function WorkOrders() {
 
         .select-technician,
         .select-template {
-          padding: 10px 16px;
-          border: 1px solid #e5e5e5;
+          padding: 12px 16px;
+          border: 2px solid #1a1a1a;
           border-radius: 25px;
           font-size: 14px;
-          color: #1a1a1a;
+          font-weight: 500;
+          background: #1a1a1a;
+          color: white;
           cursor: pointer;
           transition: all 0.2s;
-          flex: 1;
+          width: 100%;
+          text-align: center;
         }
 
         .select-technician:focus,
         .select-template:focus {
           outline: none;
-          border-color: #1a1a1a;
+          border-color: #333;
+          background: #333;
+        }
+
+        .select-technician option,
+        .select-template option {
+          background: white;
+          color: #1a1a1a;
         }
 
         .no-checklist-msg {

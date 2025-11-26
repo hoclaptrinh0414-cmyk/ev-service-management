@@ -6,6 +6,36 @@ import { FaCalendarAlt, FaWrench, FaRoad, FaTag, FaListAlt } from 'react-icons/f
 import { maintenanceService } from '../services/maintenanceService';
 import './VehicleHistoryModal.css';
 
+// Attempt to fix mojibake strings (UTF-8 shown as Latin-1, etc.)
+const normalizeText = (text) => {
+  if (!text) return '';
+  const raw = String(text);
+
+  const candidates = [raw];
+
+  // Percent-decoded variant (if any % present)
+  if (raw.includes('%')) {
+    try {
+      candidates.push(decodeURIComponent(raw));
+    } catch {}
+  }
+
+  // Legacy escape/unescape path
+  try {
+    candidates.push(decodeURIComponent(escape(raw)));
+  } catch {}
+
+  // Latin1 -> UTF-8 re-decode
+  try {
+    const bytes = Uint8Array.from(raw, (c) => c.charCodeAt(0));
+    candidates.push(new TextDecoder('utf-8').decode(bytes));
+  } catch {}
+
+  // Choose the first candidate without the replacement char
+  const clean = candidates.find((c) => c && !c.includes('�'));
+  return clean || candidates[candidates.length - 1] || raw;
+};
+
 // Helper to normalize date strings to YYYY-MM-DD for consistent comparison
 const toYYYYMMDD = (date) => {
     const d = new Date(date);
@@ -132,7 +162,7 @@ const VehicleHistoryModal = ({ vehicleId, show, onHide }) => {
                               </span>
                               <h6 className="vh-timeline-service">
                                 <FaWrench className="vh-icon" />
-                                {item.serviceType}
+                                {normalizeText(item.serviceType)}
                               </h6>
                             </div>
                             <div className="vh-timeline-details">
@@ -145,7 +175,7 @@ const VehicleHistoryModal = ({ vehicleId, show, onHide }) => {
                                 Cost: {formatCurrency(item.totalCost)}
                               </span>
                             </div>
-                            {item.notes && <p className="vh-timeline-notes">{item.notes}</p>}
+                            {item.notes && <p className="vh-timeline-notes">{normalizeText(item.notes)}</p>}
                           </div>
                         </div>
                       ))}

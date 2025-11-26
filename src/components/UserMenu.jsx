@@ -58,7 +58,7 @@ const UserMenu = () => {
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const menuRef = useRef(null);
 
-  // Đóng menu khi click ra ngoài
+  // Close menu on outside click
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
@@ -91,7 +91,7 @@ const UserMenu = () => {
     }
   };
 
-  // Lấy chữ cái đầu của tên để làm avatar
+  // Get initials for avatar
   const getInitials = () => {
     const name = user?.fullName || user?.username || 'U';
     const words = name.split(' ');
@@ -153,10 +153,10 @@ const UserMenu = () => {
               <LogOut style={{ width: '40px', height: '40px', color: '#dc2626' }} />
             </div>
             <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '12px', color: '#1f2937' }}>
-              Đăng xuất
+              Log out
             </h2>
             <p style={{ color: '#6b7280', fontSize: '15px', marginBottom: '32px', lineHeight: '1.6' }}>
-              Bạn có chắc chắn muốn đăng xuất khỏi hệ thống?
+              Are you sure you want to log out?
             </p>
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
               <button
@@ -175,7 +175,7 @@ const UserMenu = () => {
                 onMouseEnter={(e) => e.target.style.backgroundColor = '#e5e7eb'}
                 onMouseLeave={(e) => e.target.style.backgroundColor = '#f3f4f6'}
               >
-                Hủy
+                Cancel
               </button>
               <button
                 onClick={handleConfirmLogout}
@@ -193,7 +193,7 @@ const UserMenu = () => {
                 onMouseEnter={(e) => e.target.style.backgroundColor = '#b91c1c'}
                 onMouseLeave={(e) => e.target.style.backgroundColor = '#dc2626'}
               >
-                Đăng xuất
+                Log out
               </button>
             </div>
           </div>
@@ -252,14 +252,14 @@ const UserMenu = () => {
               onClick={() => handleMenuItemClick(() => navigate('/profile'))}
             >
               <User className="item-icon" />
-              Thông tin cá nhân
+              Profile
             </button>
             <button
               className="dropdown-item"
               onClick={() => handleMenuItemClick(() => navigate('/register-vehicle'))}
             >
               <Car className="item-icon" />
-              Đăng ký xe mới
+              Register vehicle
             </button>
             <button
               className="dropdown-item"
@@ -279,7 +279,7 @@ const UserMenu = () => {
               onClick={() => handleMenuItemClick(handleLogoutClick)}
             >
               <LogOut className="item-icon" />
-              Đăng xuất
+              Log out
             </button>
           </div>
         </div>

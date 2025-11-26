@@ -16,7 +16,9 @@ export const Dialog = ({ open, onOpenChange, children }) => {
         style={{
           position: 'fixed',
           inset: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          backgroundColor: 'rgba(0, 0, 0, 0.6)',
+          backdropFilter: 'none',
+          WebkitBackdropFilter: 'none',
           zIndex: 10000
         }}
         onClick={() => onOpenChange?.(false)}

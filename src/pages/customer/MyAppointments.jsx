@@ -98,6 +98,7 @@ const MyAppointments = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortBy, setSortBy] = useState("dateDesc"); // dateAsc | dateDesc
   const [dateFilter, setDateFilter] = useState(""); // YYYY-MM-DD
+  const [licensePlateFilter, setLicensePlateFilter] = useState("");
 
   // Modals
   const [selectedAppointment, setSelectedAppointment] = useState(null);
@@ -149,7 +150,7 @@ const MyAppointments = () => {
     return (
       <div className="d-flex flex-wrap align-items-center justify-content-between my-3">
         <div className="text-muted small">
-          Trang {page}/{totalPages} - {totalCount} lich hen
+          Page {page}/{totalPages} - {totalCount} appointments
         </div>
         <div className="d-flex align-items-center gap-2">
           <label className="mb-0 small text-muted">Page size</label>
@@ -198,11 +199,19 @@ const MyAppointments = () => {
   useEffect(() => {
     // Reset trang khi đổi filter
     setPage(1);
-  }, [activeTab, statusFilter, sortBy, dateFilter]);
+  }, [activeTab, statusFilter, sortBy, dateFilter, licensePlateFilter]);
 
   useEffect(() => {
     loadAppointments();
-  }, [activeTab, statusFilter, sortBy, dateFilter, page, pageSize]);
+  }, [
+    activeTab,
+    statusFilter,
+    sortBy,
+    dateFilter,
+    licensePlateFilter,
+    page,
+    pageSize,
+  ]);
 
   const loadAppointments = async () => {
     const statusMapIds = {
@@ -236,6 +245,12 @@ const MyAppointments = () => {
       params.endDate = dateFilter;
     }
 
+    const plate = licensePlateFilter.trim();
+    if (plate) {
+      params.licensePlate = plate;
+      params.vehicleLicensePlate = plate;
+    }
+
     try {
       setLoading(true);
       const response = await appointmentService.getMyAppointments(params);
@@ -244,24 +259,41 @@ const MyAppointments = () => {
       const items = payload.items || payload.data || payload || [];
       console.log("Extracted Items:", items);
 
-      setAppointments(items);
+      const filteredItems = items.filter((item) => {
+        const dateMatches =
+          !dateFilter ||
+          (item.appointmentDate || item.slotDate || "")
+            .toString()
+            .slice(0, 10) === dateFilter;
+
+        const plateInput = normalizePlate(licensePlateFilter);
+        const plateValue = normalizePlate(
+          item.vehicleLicensePlate ||
+            item.licensePlate ||
+            item.vehiclePlate ||
+            ""
+        );
+        const plateMatches = !plateInput || plateValue.includes(plateInput);
+
+        return dateMatches && plateMatches;
+      });
+
+      setAppointments(filteredItems);
       const total =
-        payload.totalCount ?? payload.TotalCount ?? items.length ?? 0;
+        filteredItems.length ||
+        payload.totalCount ||
+        payload.TotalCount ||
+        items.length ||
+        0;
       setTotalCount(total);
-      console.log("Total Count:", total);
-      const pages =
-        payload.totalPages ??
-        payload.TotalPages ??
-        Math.max(1, Math.ceil(total / Math.max(pageSize, 1)));
+      console.log("Total Count (filtered):", total);
+      const pages = Math.max(1, Math.ceil(total / Math.max(pageSize, 1)));
       setTotalPages(pages);
-      console.log("Total Pages:", pages);
+      console.log("Total Pages (filtered):", pages);
     } catch (error) {
       console.error("Error loading appointments:", error);
-      setMessage("Khong the tai danh sach lich hen. Vui long thu lai.");
-      toast.error(
-        "Không thể tải danh sách lịch hẹn. Vui lòng thử lại.",
-        toastConfig
-      );
+      setMessage("Unable to load appointments. Please try again.");
+      toast.error("Unable to load appointments. Please try again.", toastConfig);
     } finally {
       setLoading(false);
     }
@@ -293,7 +325,7 @@ const MyAppointments = () => {
       console.error("Error loading centers:", error);
       setActiveCenters([]);
       toast.warning(
-        "Không thể tải danh sách trung tâm. Vui lòng thử lại.",
+        "Unable to load service centers. Please try again.",
         toastConfig
       );
     } finally {
@@ -321,6 +353,22 @@ const MyAppointments = () => {
     return `${start} - ${end}`;
   };
 
+  const normalizePlate = (value) =>
+    (value || "").toString().trim().toLowerCase().replace(/[\s-]/g, "");
+
+  const filterControlStyle = {
+    borderRadius: 25,
+    border: "1px solid #000",
+  };
+
+  const getPaymentStatusColor = (status) => {
+    const s = (status || "").toString().trim().toLowerCase();
+    if (["paid", "success", "completed"].includes(s)) return "#52c41a"; // green
+    if (["failed", "error", "declined"].includes(s)) return "#f5222d"; // red
+    if (["pending", "processing", "inprogress"].includes(s)) return "#faad14"; // amber
+    return "#1890ff"; // default blue
+  };
+
   const handleReschedule = async (appointment) => {
     if (!appointment) return;
     if (
@@ -329,7 +377,7 @@ const MyAppointments = () => {
       )
     ) {
       toast.info(
-        "Chi lich co trang thai Pending/Confirmed/In progress moi duoc doi lich.",
+        "Only Pending/Confirmed/In progress appointments can be rescheduled.",
         toastConfig
       );
       return;
@@ -369,13 +417,13 @@ const MyAppointments = () => {
         : [];
       setAvailableSlots(slots);
       if (!slots.length) {
-        setMessage("Trung tam nay khong con khung gio trong ngay ban chon.");
+        setMessage("No slots available for this center on the selected day.");
       }
     } catch (error) {
       console.error("Error loading slots:", error);
       setAvailableSlots([]);
       setMessage(
-        "Khong tai duoc khung gio. Thu lai hoac chon trung tam/ ngay khac."
+        "Unable to load time slots. Please try again or pick another center/date."
       );
     }
   };
@@ -388,15 +436,15 @@ const MyAppointments = () => {
 
   const confirmReschedule = async () => {
     if (!selectedCenterId) {
-      setMessage("Vui long chon trung tam moi.");
+      setMessage("Please choose a service center.");
       return;
     }
     if (!rescheduleDate) {
-      setMessage("Vui long chon ngay moi.");
+      setMessage("Please choose a date.");
       return;
     }
     if (!selectedSlot) {
-      setMessage("Vui long chon khung gio moi.");
+      setMessage("Please choose a time slot.");
       return;
     }
 
@@ -424,7 +472,7 @@ const MyAppointments = () => {
       console.error("Error rescheduling:", error);
       const errMsg =
         error.response?.data?.message ||
-        "Khong the doi lich. Vui long thu lai.";
+        "Unable to reschedule. Please try again.";
       setMessage(errMsg);
       toast.error(errMsg, toastConfig);
     } finally {
@@ -434,7 +482,7 @@ const MyAppointments = () => {
 
   const confirmCancel = async () => {
     if (!cancelReason.trim()) {
-      setMessage("Vui long nhap ly do huy lich.");
+      setMessage("Please enter a cancellation reason.");
       return;
     }
 
@@ -444,8 +492,8 @@ const MyAppointments = () => {
         selectedAppointment.appointmentId,
         cancelReason
       );
-      setMessage("Huy lich thanh cong!");
-      toast.success("Đã hủy lịch hẹn.", toastConfig);
+      setMessage("Appointment cancelled successfully!");
+      toast.success("Appointment cancelled.", toastConfig);
       setShowCancelModal(false);
       setCancelReason("");
       loadAppointments();
@@ -454,7 +502,7 @@ const MyAppointments = () => {
       console.error("Error cancelling:", error);
       const errMsg =
         error.response?.data?.message ||
-        "Khong the huy lich. Vui long thu lai.";
+        "Unable to cancel this appointment. Please try again.";
       setMessage(errMsg);
       toast.error(errMsg, toastConfig);
     } finally {
@@ -468,15 +516,15 @@ const MyAppointments = () => {
     try {
       setLoading(true);
       await appointmentService.deleteAppointment(pendingDeleteId);
-      setMessage("Xoa lich hen thanh cong!");
-      toast.success("Đã xóa lịch hẹn.", toastConfig);
+      setMessage("Appointment deleted successfully!");
+      toast.success("Appointment deleted.", toastConfig);
       loadAppointments();
       setTimeout(() => setMessage(""), 2500);
     } catch (error) {
       console.error("Error deleting:", error);
       const errMsg =
         error.response?.data?.message ||
-        "Khong the xoa lich hen. Chi xoa duoc lich dang Pending.";
+        "Unable to delete this appointment. Only pending appointments can be removed.";
       setMessage(errMsg);
       toast.error(errMsg, toastConfig);
     } finally {
@@ -497,7 +545,7 @@ const MyAppointments = () => {
       setShowDetailModal(true);
     } catch (error) {
       console.error("Error loading appointment detail:", error);
-      toast.error("Không thể tải chi tiết lịch hẹn.", toastConfig);
+      toast.error("Unable to load appointment details.", toastConfig);
     } finally {
       setDetailLoading(false);
     }
@@ -602,22 +650,30 @@ const MyAppointments = () => {
                 style={{ fontSize: "1.75rem", fontWeight: 600 }}
               >
                 <i className="bi bi-calendar-check me-2"></i>
-                Lich hen cua toi
+                My Appointments
               </h2>
               <p className="text-muted mb-0">
-                Xem, doi lich, huy lich nhanh chong
+                View, reschedule, and cancel your bookings fast
               </p>
             </div>
-            <Link to="/schedule-service" className="btn btn-primary btn-lg">
+            <Link
+              to="/schedule-service"
+              className="btn btn-dark btn-lg"
+              style={{
+                backgroundColor: "#000",
+                color: "#fff",
+                borderColor: "#000",
+              }}
+            >
               <i className="bi bi-plus-circle me-1"></i>
-              Dat lich moi
+              Schedule service
             </Link>
           </div>
 
           {message && (
             <div
               className={`alert ${
-                message.toLowerCase().includes("thanh cong")
+                message.toLowerCase().includes("success")
                   ? "alert-success"
                   : "alert-danger"
               }`}
@@ -629,18 +685,18 @@ const MyAppointments = () => {
           <div className="appointments-filter-bar d-flex flex-wrap align-items-center gap-3 mb-3">
             <Select
               value={activeTab}
-              style={{ width: 120 }}
+              style={{ width: 120, ...filterControlStyle }}
               onChange={setActiveTab}
             >
               <Select.Option value="all">
-                Tat ca ({totalCount || appointments.length || 0})
+                All ({totalCount || appointments.length || 0})
               </Select.Option>
-              <Select.Option value="upcoming">Sap toi</Select.Option>
+              <Select.Option value="upcoming">Upcoming</Select.Option>
             </Select>
 
             <Select
               value={statusFilter}
-              style={{ width: 180 }}
+              style={{ width: 180, ...filterControlStyle }}
               onChange={setStatusFilter}
             >
               <Select.Option value="all">Status: all</Select.Option>
@@ -658,23 +714,36 @@ const MyAppointments = () => {
             </Select>
 
             <DatePicker
+              style={filterControlStyle}
               onChange={(date, dateString) => setDateFilter(dateString)}
             />
 
-            <Select value={sortBy} style={{ width: 120 }} onChange={setSortBy}>
-              <Select.Option value="dateDesc">Moi nhat</Select.Option>
-              <Select.Option value="dateAsc">Cu nhat</Select.Option>
+            <Input
+              allowClear
+              placeholder="Enter license plate"
+              value={licensePlateFilter}
+              onChange={(e) => setLicensePlateFilter(e.target.value)}
+              style={{ width: 180, ...filterControlStyle }}
+            />
+
+            <Select
+              value={sortBy}
+              style={{ width: 120, ...filterControlStyle }}
+              onChange={setSortBy}
+            >
+              <Select.Option value="dateDesc">Newest</Select.Option>
+              <Select.Option value="dateAsc">Oldest</Select.Option>
             </Select>
 
             {/* Pagination inline with filters */}
             {totalPages > 1 && (
               <div className="d-flex align-items-center gap-2 ms-auto">
                 <span className="text-muted small">
-                  Trang {page}/{totalPages}
+                  Page {page}/{totalPages}
                 </span>
                 <Select
                   value={page}
-                  style={{ width: 80 }}
+                  style={{ width: 80, ...filterControlStyle }}
                   onChange={(p) => setPage(p)}
                   disabled={loading}
                 >
@@ -688,7 +757,7 @@ const MyAppointments = () => {
                 </Select>
                 <Select
                   value={pageSize}
-                  style={{ width: 90 }}
+                  style={{ width: 90, ...filterControlStyle }}
                   onChange={(ps) => {
                     setPage(1);
                     setPageSize(ps);
@@ -712,9 +781,17 @@ const MyAppointments = () => {
                   className="bi bi-calendar-x"
                   style={{ fontSize: "3rem", color: "#ccc" }}
                 ></i>
-                <p className="mt-3 text-muted">Khong co lich hen nao</p>
-                <Link to="/schedule-service" className="btn btn-primary mt-2">
-                  Dat lich ngay
+                <p className="mt-3 text-muted">No appointments yet</p>
+                <Link
+                  to="/schedule-service"
+                  className="btn btn-dark mt-2"
+                  style={{
+                    backgroundColor: "#000",
+                    color: "#fff",
+                    borderColor: "#000",
+                  }}
+                >
+                  Book now
                 </Link>
               </div>
             ) : (
@@ -730,6 +807,11 @@ const MyAppointments = () => {
                   );
                   const statusInfo =
                     statusMap[canonStatus] || statusMap.unknown;
+                  const licensePlate =
+                    appointment.vehicleLicensePlate ||
+                    appointment.licensePlate ||
+                    appointment.vehiclePlate ||
+                    "";
 
                   return (
                     <Col
@@ -744,6 +826,7 @@ const MyAppointments = () => {
                           appointment.appointmentCode ||
                           appointment.appointmentId
                         }`}
+                        headStyle={{ textAlign: "left" }}
                         extra={
                           <Tag color={statusInfo.color}>{statusInfo.text}</Tag>
                         }
@@ -754,7 +837,7 @@ const MyAppointments = () => {
                               loadAppointmentDetail(appointment.appointmentId)
                             }
                           >
-                            Chi tiết
+                            Details
                           </Button>,
                           <Space>
                             {canReschedule(canonStatus) && (
@@ -763,7 +846,7 @@ const MyAppointments = () => {
                                 ghost
                                 onClick={() => handleReschedule(appointment)}
                               >
-                                Doi lich
+                                Reschedule
                               </Button>
                             )}
                             {canCancel(canonStatus) && (
@@ -773,7 +856,7 @@ const MyAppointments = () => {
                                   handleCancelAppointment(appointment)
                                 }
                               >
-                                Huy
+                                Cancel
                               </Button>
                             )}
                             {canonStatus === "cancelled" && (
@@ -785,7 +868,7 @@ const MyAppointments = () => {
                                   setShowDeleteModal(true);
                                 }}
                               >
-                                Xoa
+                                Delete
                               </Button>
                             )}
                           </Space>,
@@ -794,18 +877,22 @@ const MyAppointments = () => {
                         style={{ marginBottom: 12 }}
                       >
                         <p>
-                          <strong>Xe:</strong>{" "}
+                          <strong>Vehicle:</strong>{" "}
                           {appointment.vehicleName ||
                             appointment.vehicleModel ||
                             "N/A"}{" "}
-                          ({appointment.vehicleLicensePlate || ""})
                         </p>
+                        {licensePlate && (
+                          <p className="text-muted mb-1">
+                            License plate: <strong>{licensePlate}</strong>
+                          </p>
+                        )}
                         <p>
-                          <strong>Trung tam:</strong>{" "}
+                          <strong>Service center:</strong>{" "}
                           {appointment.serviceCenterName || "N/A"}
                         </p>
                         <p>
-                          <strong>Thoi gian:</strong>{" "}
+                          <strong>Time:</strong>{" "}
                           {formatDate(
                             appointment.appointmentDate || appointment.slotDate
                           )}{" "}
@@ -817,8 +904,10 @@ const MyAppointments = () => {
                         </p>
                         {paymentStatus && (
                           <p>
-                            <strong>Thanh toan:</strong>{" "}
-                            <Tag color="blue">{paymentStatus}</Tag>
+                            <strong>Payment:</strong>{" "}
+                            <Tag color={getPaymentStatusColor(paymentStatus)}>
+                              {paymentStatus}
+                            </Tag>
                           </p>
                         )}
                       </Card>
@@ -852,22 +941,22 @@ const MyAppointments = () => {
       </section>
 
       <Modal
-        title="Doi lich hen"
+        title="Reschedule appointment"
         visible={showRescheduleModal}
         onOk={confirmReschedule}
         onCancel={() => setShowRescheduleModal(false)}
         confirmLoading={loading}
-        okText="Xac nhan doi lich"
-        cancelText="Huy"
+        okText="Confirm reschedule"
+        cancelText="Cancel"
       >
         <Space direction="vertical" style={{ width: "100%" }}>
           <Select
-            placeholder="Chon trung tam moi"
+            placeholder="Select new service center"
             style={{ width: "100%" }}
             value={selectedCenterId}
             loading={centersLoading}
             notFoundContent={
-              centersLoading ? "Dang tai..." : "Khong co trung tam"
+              centersLoading ? "Loading..." : "No service center"
             }
             onChange={(value) => {
               setSelectedCenterId(value);
@@ -884,7 +973,7 @@ const MyAppointments = () => {
                   c.serviceCenterName ||
                   c.name ||
                   c.centerCode ||
-                  "Trung tam";
+                  "Service center";
 
                 if (!id) return null;
 
@@ -923,7 +1012,7 @@ const MyAppointments = () => {
                 role="alert"
                 style={{ padding: 8 }}
               >
-                Khong co khung gio trong hoac chua tai khung gio.
+                No available slots or slots not loaded yet.
               </div>
             )}
           {availableSlots.length > 0 && (
@@ -961,44 +1050,42 @@ const MyAppointments = () => {
       </Modal>
 
       <Modal
-        title="Huy lich hen"
+        title="Cancel appointment"
         visible={showCancelModal}
         onOk={confirmCancel}
         onCancel={() => setShowCancelModal(false)}
         confirmLoading={loading}
-        okText="Xac nhan huy"
-        cancelText="Khong"
+        okText="Confirm cancel"
+        cancelText="No"
       >
-        <p>Ban co chac muon huy lich hen nay?</p>
+        <p>Are you sure you want to cancel this appointment?</p>
         <Input.TextArea
           rows={3}
           value={cancelReason}
           onChange={(e) => setCancelReason(e.target.value)}
-          placeholder="Nhap ly do huy lich..."
+          placeholder="Enter cancellation reason..."
         />
       </Modal>
 
       <Modal
-        title="Xóa lịch hẹn"
+        title="Delete appointment"
         visible={showDeleteModal}
         onOk={handleDeleteAppointment}
         onCancel={() => setShowDeleteModal(false)}
         confirmLoading={loading}
-        okText="Xac nhan xoa"
-        cancelText="Huy"
+        okText="Confirm delete"
+        cancelText="Cancel"
       >
-        <p>
-          Ban co chac muon xoa lich hen nay? (Chi xoa duoc lich dang Pending)
-        </p>
+        <p>Delete this appointment? (Only pending appointments can be deleted)</p>
       </Modal>
 
       <Modal
         title={
           detailData
-            ? `Chi tiet lich hen #${
+            ? `Appointment details #${
                 detailData.appointmentCode || detailData.appointmentId
               }`
-            : "Chi tiet lich hen"
+            : "Appointment details"
         }
         visible={showDetailModal}
         onCancel={() => setShowDetailModal(false)}
@@ -1054,43 +1141,43 @@ const MyAppointments = () => {
             </div>
 
             <Space direction="vertical" style={{ width: "100%" }} size="middle">
-              {/* Khách hàng & nguồn */}
+              {/* Customer & source */}
               <div>
                 <div style={{ fontWeight: 700, marginBottom: 6 }}>
-                  👤 Khach hang & Nguon
+                  👤 Customer & Source
                 </div>
                 <Divider style={{ margin: "8px 0" }} />
                 <Row gutter={[16, 12]}>
                   <Col span={12}>
                     {renderDetailRow(
-                      "Khach hang",
+                      "Customer",
                       `${detailData.customerName || ""} (${
                         detailData.customerPhone || ""
                       })`
                     )}
                   </Col>
                   <Col span={12}>
-                    {renderDetailRow("Nguon", detailData.source || "N/A")}
+                    {renderDetailRow("Source", detailData.source || "N/A")}
                   </Col>
                   <Col span={24}>
                     {renderDetailRow(
-                      "Ghi chu",
+                      "Notes",
                       detailData.customerNotes || "—"
                     )}
                   </Col>
                 </Row>
               </div>
 
-              {/* Xe & trung tâm */}
+              {/* Vehicle & center */}
               <div>
                 <div style={{ fontWeight: 700, marginBottom: 6 }}>
-                  🚗 Xe & Trung tam
+                  🚗 Vehicle & Service center
                 </div>
                 <Divider style={{ margin: "8px 0" }} />
                 <Row gutter={[16, 12]}>
                   <Col span={12}>
                     {renderDetailRow(
-                      "Xe",
+                      "Vehicle",
                       `${detailData.vehicleName || ""} (${
                         detailData.licensePlate || ""
                       })`
@@ -1101,7 +1188,7 @@ const MyAppointments = () => {
                   </Col>
                   <Col span={24}>
                     {renderDetailRow(
-                      "Trung tam",
+                      "Service center",
                       `${detailData.serviceCenterName || ""} - ${
                         detailData.serviceCenterAddress || ""
                       }`
@@ -1110,16 +1197,16 @@ const MyAppointments = () => {
                 </Row>
               </div>
 
-              {/* Thời gian & thanh toán */}
+              {/* Time & payment */}
               <div>
                 <div style={{ fontWeight: 700, marginBottom: 6 }}>
-                  🕒 Thoi gian & 💳 Thanh toan
+                  🕒 Time & 💳 Payment
                 </div>
                 <Divider style={{ margin: "8px 0" }} />
                 <Row gutter={[16, 12]}>
                   <Col span={12}>
                     {renderDetailRow(
-                      "Thoi gian",
+                      "Time",
                       `${formatDate(detailData.slotDate)} ${formatTimeRange(
                         detailData.slotStartTime,
                         detailData.slotEndTime
@@ -1127,23 +1214,21 @@ const MyAppointments = () => {
                     )}
                   </Col>
                   <Col span={12}>
-                    {renderDetailRow("Uu tien", detailData.priority || "N/A")}
+                    {renderDetailRow("Priority", detailData.priority || "N/A")}
                   </Col>
                   <Col span={12}>
                     {renderDetailRow(
-                      "Thanh toan",
-                      `${
-                        detailData.paymentStatus || "N/A"
-                      } • Da tra: ${formatCurrency(
+                      "Payment",
+                      `${detailData.paymentStatus || "N/A"} • Paid: ${formatCurrency(
                         detailData.paidAmount || 0
-                      )} • Con lai: ${formatCurrency(
+                      )} • Outstanding: ${formatCurrency(
                         detailData.outstandingAmount || 0
                       )}`
                     )}
                   </Col>
                   <Col span={12}>
                     {renderDetailRow(
-                      "Nguoi tao",
+                      "Created by",
                       `${detailData.createdByName || ""} - ${formatDate(
                         detailData.createdDate
                       )}`
@@ -1152,16 +1237,16 @@ const MyAppointments = () => {
                 </Row>
               </div>
 
-              {/* Tổng quan thanh toán */}
+              {/* Payment summary */}
               <div>
                 <div style={{ fontWeight: 700, marginBottom: 6 }}>
-                  💰 Tong quan thanh toan
+                  💰 Payment overview
                 </div>
                 <Divider style={{ margin: "8px 0" }} />
                 <Row gutter={[12, 8]}>
                   <Col span={8}>
                     {renderDetailRow(
-                      "Tong tien",
+                      "Total",
                       formatCurrency(
                         detailData.estimatedCost || detailData.finalCost
                       )
@@ -1169,23 +1254,23 @@ const MyAppointments = () => {
                   </Col>
                   <Col span={8}>
                     {renderDetailRow(
-                      "Da thanh toan",
+                      "Paid",
                       formatCurrency(detailData.paidAmount || 0)
                     )}
                   </Col>
                   <Col span={8}>
                     {renderDetailRow(
-                      "Con lai",
+                      "Outstanding",
                       formatCurrency(detailData.outstandingAmount || 0)
                     )}
                   </Col>
                 </Row>
               </div>
 
-              {/* Dịch vụ / gói */}
+              {/* Services / packages */}
               <div>
                 <div style={{ fontWeight: 700, marginBottom: 6 }}>
-                  🧰 Dich vu / Goi
+                  🧰 Services / Packages
                 </div>
                 <Divider style={{ margin: "8px 0" }} />
                 <div style={{ marginTop: 4 }}>
@@ -1206,7 +1291,7 @@ const MyAppointments = () => {
                     onClick={() => handleCancelAppointment(detailData)}
                     disabled={loading}
                   >
-                    Huy lich
+                    Cancel
                   </Button>
                 )}
                 {canReschedule(
@@ -1216,20 +1301,20 @@ const MyAppointments = () => {
                     onClick={() => handleReschedule(detailData)}
                     disabled={loading}
                   >
-                    Doi lich
+                    Reschedule
                   </Button>
                 )}
                 <Button
                   type="primary"
                   onClick={() => setShowDetailModal(false)}
                 >
-                  Dong
+                  Close
                 </Button>
               </div>
             </Space>
           </div>
         ) : (
-          <div className="text-muted">Khong co du lieu chi tiet.</div>
+          <div className="text-muted">No detail data available.</div>
         )}
       </Modal>
     </MainLayout>

@@ -1,18 +1,4 @@
 .main-content-area {
   padding-top: 80px;
   background-color: #f5f6f8; /* Ensure it has a background color */
-  position: relative; /* Needed for pseudo-element positioning */
-}
-
-/* Add a shadow overlay at the bottom to soften the transition to the footer */
-.main-content-area::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 150px; /* Height of the shadow/fade effect */
-  background: linear-gradient(to top, rgba(245, 246, 248, 1) 10%, rgba(245, 246, 248, 0) 100%);
-  pointer-events: none; /* Allows clicks to pass through */
-  z-index: 10;
 }

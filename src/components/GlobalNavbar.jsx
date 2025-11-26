@@ -66,8 +66,7 @@ const GlobalNavbar = () => {
 
   const getNavLinks = () => {
     const commonLinks = [
-      { path: '/services', label: 'Services' },
-      { path: '/blog', label: 'Blog' },
+      { path: '/products/individual', label: 'Products' },
       { path: '/about', label: 'About' },
       { path: '/contact', label: 'Contact' },
     ];
@@ -102,16 +101,16 @@ const GlobalNavbar = () => {
           { path: '/home', label: 'Home' },
           { path: '/my-appointments', label: 'Appointments' },
           { path: '/schedule-service', label: 'Schedule Service' },
-          { path: '/services', label: 'Services' },
-          { path: '/blog', label: 'Blog' },
+          { path: '/products/individual', label: 'Products' },
         ];
     }
   };
 
   const navLinks = getNavLinks();
+  const isHome = location.pathname === '/home';
 
   return (
-    <nav className="navbar navbar-expand-lg static-navbar-custom global-navbar">
+    <nav className={`navbar navbar-expand-lg static-navbar-custom global-navbar ${isHome ? 'home-nav' : ''}`}>
       <div className="container-fluid top-navbar-container">
         {/* Logo */}
         <div className="navbar-col-left">
@@ -177,10 +176,11 @@ const GlobalNavbar = () => {
           border-bottom: none;
           padding: 0;
           min-height: auto;
-          backdrop-filter: blur(10px);
-          -webkit-backdrop-filter: blur(10px);
+          backdrop-filter: blur(20px) saturate(180%);
+          -webkit-backdrop-filter: blur(20px) saturate(180%);
+          box-shadow: 0 1px 0 rgba(255, 255, 255, 0.1);
         }
-
+        
         .global-navbar .logo-text {
           color: #000 !important;
         }
@@ -189,6 +189,8 @@ const GlobalNavbar = () => {
           color: #000 !important;
           opacity: 0.9;
         }
+
+        /* Home transparent styles removed to match other pages */
 
         .global-navbar .main-menu-minimal .nav-link {
           color: #000 !important;
@@ -221,6 +223,8 @@ const GlobalNavbar = () => {
         .global-navbar .navbar-collapse .nav-link:hover {
           color: #000 !important;
         }
+
+        
 
         .top-navbar-container {
           display: grid;

@@ -1,18 +1,17 @@
-// src/pages/staff/Settings.jsx
+// src/pages/technician/Settings.jsx
 import { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { toast } from "react-toastify";
 
-export default function Settings() {
+export default function TechnicianSettings() {
   const { user, logout } = useAuth();
   const [formData, setFormData] = useState({
     fullName: user?.FullName || user?.fullName || user?.displayName || "",
     email: user?.Email || user?.email || "",
+    phoneNumber: user?.PhoneNumber || user?.phoneNumber || user?.phone || "",
   });
 
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
-
-  const handleChange = () => {};
 
   const handleLogout = () => {
     setShowLogoutDialog(true);
@@ -86,9 +85,20 @@ export default function Settings() {
               />
             </div>
 
+            <div className="form-group">
+              <label className="form-label">
+                Phone number
+              </label>
+              <input
+                type="tel"
+                name="phoneNumber"
+                value={formData.phoneNumber}
+                readOnly
+                className="form-input disabled"
+              />
             </div>
 
-            {/* Action Buttons removed since staff cannot edit */}
+            </div>
           </div>
         </div>
 
@@ -132,10 +142,6 @@ export default function Settings() {
           overflow: hidden;
         }
 
-        .settings-card.danger-card {
-          border-color: #fee;
-        }
-
         .card-header-settings {
           padding: 24px;
           border-bottom: 1px solid #e5e5e5;
@@ -164,11 +170,6 @@ export default function Settings() {
           font-size: 24px;
           color: #1a1a1a;
           flex-shrink: 0;
-        }
-
-        .settings-icon.danger {
-          background: #fee;
-          color: #ff3b30;
         }
 
         .icon-title h3 {
@@ -250,62 +251,6 @@ export default function Settings() {
           cursor: not-allowed;
         }
 
-        .form-input::placeholder {
-          color: #d1d1d6;
-        }
-
-        /* Action Buttons */
-        .action-buttons {
-          display: flex;
-          gap: 12px;
-          justify-content: flex-end;
-          margin-top: 24px;
-          padding-top: 24px;
-          border-top: 1px solid #e5e5e5;
-        }
-
-        .btn-edit,
-        .btn-cancel,
-        .btn-save {
-          padding: 10px 20px;
-          border: none;
-          border-radius: 25px;
-          font-size: 14px;
-          font-weight: 500;
-          cursor: pointer;
-          transition: all 0.2s;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-
-        .btn-edit {
-          background: #f5f5f7;
-          color: #1a1a1a;
-        }
-
-        .btn-edit:hover {
-          background: #e5e5e5;
-        }
-
-        .btn-cancel {
-          background: #f5f5f7;
-          color: #1a1a1a;
-        }
-
-        .btn-cancel:hover {
-          background: #e5e5e5;
-        }
-
-        .btn-save {
-          background: #1a1a1a;
-          color: white;
-        }
-
-        .btn-save:hover {
-          background: #000;
-        }
-
         /* Logout Inline Button */
         .btn-logout-inline {
           padding: 10px 20px;
@@ -340,17 +285,6 @@ export default function Settings() {
           }
 
           .btn-logout-inline {
-            width: 100%;
-            justify-content: center;
-          }
-
-          .action-buttons {
-            flex-direction: column;
-          }
-
-          .btn-edit,
-          .btn-cancel,
-          .btn-save {
             width: 100%;
             justify-content: center;
           }

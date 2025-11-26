@@ -48,6 +48,28 @@ export default function TechnicianCandidatesModal({
     onClose();
   };
 
+  const getScoreStyle = (score) => {
+    const value = Number(score) || 0;
+    if (value < 70) return { backgroundColor: '#b91c1c', color: '#fff' };
+    if (value < 90) return { backgroundColor: '#92400e', color: '#fff' };
+    return { backgroundColor: '#15803d', color: '#fff' };
+  };
+
+  const chooseBtnStyle = {
+    backgroundColor: '#16a34a',
+    borderColor: '#16a34a',
+    borderWidth: 2,
+    color: '#fff',
+    borderRadius: 999,
+    padding: '0.45rem 0.9rem',
+    fontWeight: 700,
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    height: 40,
+  };
+
   if (!show) return null;
 
   return (
@@ -125,7 +147,19 @@ export default function TechnicianCandidatesModal({
                             <small className="text-muted">{tech.email}</small>
                           </td>
                           <td>
-                            <span className="badge bg-primary">{score.toFixed(1)}</span>
+                            <span
+                              className="badge"
+                              style={{
+                                ...getScoreStyle(score),
+                                borderRadius: 12,
+                                padding: '6px 10px',
+                                minWidth: 50,
+                                textAlign: 'center',
+                                fontWeight: 700,
+                              }}
+                            >
+                              {score.toFixed(1)}
+                            </span>
                           </td>
                           <td>
                             <div style={{ maxWidth: '150px' }}>
@@ -153,11 +187,12 @@ export default function TechnicianCandidatesModal({
                           </td>
                           <td>
                             <button
-                              className="btn btn-sm btn-primary"
+                              className="btn btn-sm"
                               onClick={() => handleSelect(tech)}
+                              style={chooseBtnStyle}
+                              aria-label="Select technician"
                             >
-                              <i className="bi bi-check-lg me-1"></i>
-                              Chọn
+                              <i className="bi bi-check-lg"></i>
                             </button>
                           </td>
                         </tr>

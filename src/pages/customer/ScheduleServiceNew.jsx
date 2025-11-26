@@ -953,7 +953,13 @@ const ScheduleServiceNew = () => {
                                         setHistoryModalVisible(true);
                                       }}
                                     >
-                                      View maintenance history
+                                      <i
+                                        className="bi bi-clock-history"
+                                        aria-hidden="true"
+                                      ></i>
+                                      <span className="visually-hidden">
+                                        View maintenance history
+                                      </span>
                                     </button>
                                   )}
                                 </div>
@@ -990,13 +996,13 @@ const ScheduleServiceNew = () => {
                               // Try multiple possible ID field names
                               const centerId = center.serviceCenterId || center.id || center.centerId;
                               console.log('🏢 Rendering option:', { center, centerId });
-                              return (
-                                <option key={centerId} value={centerId}>
-                                  {center.name} - {center.address}
-                                </option>
-                              );
-                            })}
-                          </select>
+                                return (
+                                  <option key={centerId} value={centerId}>
+                                    {center.name} - {center.fullAddress || center.address}
+                                  </option>
+                                );
+                              })}
+                            </select>
                         </div>
 
                         {/* Date Selection */}
